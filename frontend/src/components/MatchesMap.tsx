@@ -49,7 +49,7 @@ export const MatchesMap = ({ matches, onMapLoad, homeCourt, currentUserId }: Mat
     
     matches.forEach((match) => {
       // Exclude cancelled matches
-      if (match.status === 'cancelled') return;
+      if (match.status === 'CANCELLED') return;
       // Exclude matches created by the current user
       if (currentUserId && match.creatorUserId === currentUserId) return;
       
