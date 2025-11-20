@@ -1,0 +1,137 @@
+CursorAI Prompt — “CourtMate” Tennis App
+
+Objective:
+Build a full-stack web app (desktop + mobile responsive + PWA) called CourtMate that connects recreational tennis players to schedule matches, track results, and monitor performance. The app must be production-ready, including backend, frontend, database, real-time chat, and basic UI wireframes.
+
+1. Core Features
+User Registration & Profile
+
+Register with email + password + phone verification (SMS).
+
+Profile includes: first/last name, email, phone, optional photo, bio, play style, tennis rating (manual entry: UTR / USTA / custom), Home Court toggle.
+
+Users without a home court cannot match with other users without a home court.
+
+Courts
+
+Users can manually add courts: name, address, coordinates, surfaces, public/private.
+
+Validate court address with Google Maps Places API.
+
+Admin approves courts.
+
+Surface type determines color in the calendar (Hard=blue, Clay=red, Grass=green, Indoor=gray).
+
+Match Creation & Calendar
+
+Users create matches with multiple time slots for the same day.
+
+Required fields: court, date(s), time slots, match format (singles/doubles).
+
+Optional filters: skill level, gender, max distance, surface.
+
+Calendar shows all matches matching user preferences with color-coded surfaces.
+
+Slot Acceptance & Confirmation
+
+User B applies to a slot → auto-lock pending confirmation by creator.
+
+Creator confirms → match becomes CONFIRMED.
+
+Lock expires if not confirmed in X hours.
+
+Only players with home court can participate.
+
+Chat
+
+Real-time chat inside match detail (Socket.IO / Pusher).
+
+Notifications for new messages via email/SMS if opted-in.
+
+Results & Stats
+
+Players can record full scores (e.g., “6-4 3-6 6-2”).
+
+Tracks: win streak, ELO rating, head-to-head history.
+
+No losing streaks displayed.
+
+Notifications
+
+Types: Match Created, Match Accepted, Match Confirmed, Court Changes, Score Reminder, New Chat.
+
+Users choose email or SMS per notification type.
+
+Admin Panel
+
+Manage users (suspend, ban, edit).
+
+Approve courts.
+
+Resolve disputes and override confirmations.
+
+2. Technical Stack
+
+Frontend: Next.js + React + TypeScript + TailwindCSS, responsive, PWA-ready.
+
+Backend: Node.js + TypeScript (NestJS).
+
+Database: PostgreSQL + PostGIS (distance queries).
+
+Cache/Locks: Redis (slot auto-locks).
+
+Real-time: Socket.IO.
+
+Auth: JWT + bcrypt/argon2, SMS via Twilio.
+
+Email: SendGrid.
+
+Maps: Google Places API.
+
+Hosting: Frontend (Vercel), Backend (AWS/GCP Docker), Postgres (managed).
+
+Testing: Jest + Supertest + React Testing Library.
+
+3. Database Models
+
+Users, Courts, Matches, MatchSlots, Applications, ChatMessages, Results, ELOLogs, AdminActions, Reports.
+
+4. Deliverables
+
+Working frontend + backend code.
+
+Dockerfiles + docker-compose for local dev.
+
+Seed scripts: 200 users, 100 courts.
+
+Unit & integration tests for critical flows.
+
+Admin dashboard.
+
+UI wireframes / basic layout.
+
+OpenAPI / Swagger docs.
+
+PWA support.
+
+MVP priority: Registration, profile, court add/validation, match creation with multiple slots, slot auto-lock + confirm, chat, calendar view, score entry, ELO, notifications, admin panel, DB schema, tests.
+
+Post-MVP (optional): Paid subscriptions, tournaments/ladders, coach marketplace, automatic court availability integrations.
+
+5. User Flow Summary
+
+Register + verify phone.
+
+Create profile + optionally upload photo/bio/play style.
+
+Add home court or select “no home court.”
+
+Create match with multiple slots → calendar displays to matching users.
+
+Other users apply → slot auto-lock → creator confirms → match is booked.
+
+Players chat in match detail.
+
+After match, players submit scores → ELO updates, stats recorded.
+
+Notifications sent as configured.

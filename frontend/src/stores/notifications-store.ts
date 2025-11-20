@@ -1,0 +1,79 @@
+import { create } from 'zustand';
+import { Notification, NotificationPreference } from '@/types';
+import { notificationsApi } from '@/lib/notifications';
+
+interface NotificationsState {
+  notifications: Notification[];
+  preferences: NotificationPreference[];
+  unreadCount: number;
+  isLoading: boolean;
+  fetchNotifications: () => Promise<void>;
+  fetchPreferences: () => Promise<void>;
+  updatePreference: (data: {
+    notificationType: string;
+    emailEnabled: boolean;
+    smsEnabled: boolean;
+  }) => Promise<void>;
+  addNotification: (notification: Notification) => void;
+  markAsRead: (notificationId: string) => void;
+}
+
+export const useNotificationsStore = create<NotificationsState>((set, get) => ({
+  notifications: [],
+  preferences: [],
+  unreadCount: 0,
+  isLoading: false,
+
+  fetchNotifications: async () => {
+    const state = get();
+    // Prevent multiple simultaneous calls
+    if (state.isLoading) {
+      return;
+    }
+
+    set({ isLoading: true });
+    try {
+      const notifications = await notificationsApi.getMyNotifications();
+      const unreadCount = notifications.filter((n) => n.status === 'SENT').length;
+      set({ notifications, unreadCount, isLoading: false });
+    } catch (error) {
+      set({ isLoading: false });
+      // Don't throw - just log the error to prevent infinite loops
+      console.error('Failed to fetch notifications:', error);
+    }
+  },
+
+  fetchPreferences: async () => {
+    try {
+      const preferences = await notificationsApi.getPreferences();
+      set({ preferences });
+    } catch (error) {
+      console.error('Failed to fetch preferences:', error);
+    }
+  },
+
+  updatePreference: async (data) => {
+    try {
+      await notificationsApi.updatePreference(data);
+      await get().fetchPreferences();
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  addNotification: (notification: Notification) => {
+    set((state) => ({
+      notifications: [notification, ...state.notifications],
+      unreadCount: state.unreadCount + 1,
+    }));
+  },
+
+  markAsRead: (notificationId: string) => {
+    set((state) => ({
+      notifications: state.notifications.map((n) =>
+        n.id === notificationId ? { ...n, status: 'SENT' as const } : n
+      ),
+      unreadCount: Math.max(0, state.unreadCount - 1),
+    }));
+  },
+}));
