@@ -38,7 +38,7 @@ export class StatsService {
     player2Wins: number;
     matches: Array<{
       matchId: string;
-      date: Date;
+      date: string;
       format: MatchFormat;
       score: string;
       winnerId: string;

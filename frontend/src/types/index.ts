@@ -71,8 +71,11 @@ export interface Match {
   court?: Court;
   date: string;
   format?: 'singles' | 'doubles';
-  skillLevel: 'BEGINNER' | 'INTERMEDIATE' | 'ADVANCED' | 'PRO';
+  skillLevel?: 'BEGINNER' | 'INTERMEDIATE' | 'ADVANCED' | 'PRO';
+  skillLevelMin?: number;
+  skillLevelMax?: number;
   gender: 'MALE' | 'FEMALE' | 'ANY';
+  genderFilter?: string;
   maxDistance?: number; // in meters
   surface?: 'HARD' | 'CLAY' | 'GRASS' | 'INDOOR';
   status: 'PENDING' | 'CONFIRMED' | 'COMPLETED' | 'CANCELLED';

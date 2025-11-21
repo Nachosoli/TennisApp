@@ -62,7 +62,7 @@ export class SchedulerService {
           `Don't forget to submit the score for your match`,
           {
             opponentName: applicant ? `${applicant.firstName} ${applicant.lastName}` : 'Opponent',
-            date: match.date.toLocaleDateString(),
+            date: match.date,
             matchId: match.id,
           },
         );
@@ -77,7 +77,7 @@ export class SchedulerService {
           `Don't forget to submit the score for your match`,
           {
             opponentName: creator ? `${creator.firstName} ${creator.lastName}` : 'Opponent',
-            date: match.date.toLocaleDateString(),
+            date: match.date,
             matchId: match.id,
           },
         );

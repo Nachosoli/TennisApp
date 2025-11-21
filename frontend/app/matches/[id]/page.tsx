@@ -173,6 +173,39 @@ export default function MatchDetailPage() {
 
   const isCreator = currentMatch.creatorUserId === user?.id;
 
+  // Check if current user matches match criteria
+  const userMatchesCriteria = () => {
+    if (!user) return false;
+    
+    // Check gender filter (check both gender and genderFilter fields)
+    const matchGenderFilter = currentMatch.genderFilter || currentMatch.gender;
+    if (matchGenderFilter && matchGenderFilter !== 'ANY' && matchGenderFilter.toUpperCase() !== 'ANY') {
+      const matchGender = matchGenderFilter.toLowerCase(); // MALE -> male, FEMALE -> female
+      const userGender = user.gender?.toLowerCase();
+      if (matchGender !== userGender) {
+        return false;
+      }
+    }
+    
+    // Check skill level (if match has skill level requirements)
+    if (currentMatch.skillLevelMin !== undefined || currentMatch.skillLevelMax !== undefined) {
+      const userRating = user.ratingValue;
+      if (userRating === undefined || userRating === null) {
+        return false; // User needs a rating to apply
+      }
+      if (currentMatch.skillLevelMin !== undefined && userRating < currentMatch.skillLevelMin) {
+        return false;
+      }
+      if (currentMatch.skillLevelMax !== undefined && userRating > currentMatch.skillLevelMax) {
+        return false;
+      }
+    }
+    
+    return true;
+  };
+
+  const canApply = !isCreator && userMatchesCriteria();
+
   // Helper function to format time by combining match date with time string
   const formatSlotTime = (timeString: string | undefined): string => {
     if (!timeString || !currentMatch.date) {
@@ -363,33 +396,41 @@ export default function MatchDetailPage() {
                       <p className="text-sm text-gray-600">{slot.status}</p>
                     </div>
                     {!isCreator && slot.status === 'AVAILABLE' && (
-                      <Button
-                        variant="primary"
-                        size="sm"
-                        isLoading={applyingSlotId === slot.id}
-                        onClick={async () => {
-                          try {
-                            setApplyError(null);
-                            setApplySuccess(null);
-                            setApplyingSlotId(slot.id);
-                            await applicationsApi.applyToSlot({ matchSlotId: slot.id });
-                            setApplySuccess('Application submitted successfully! The match creator will review your request.');
-                            await fetchMatchById(matchId);
-                            // Clear success message after 5 seconds
-                            setTimeout(() => setApplySuccess(null), 5000);
-                          } catch (error: any) {
-                            console.error('Failed to apply:', error);
-                            const errorMessage = error?.response?.data?.message || error?.message || 'Failed to submit application. Please try again.';
-                            setApplyError(errorMessage);
-                            // Clear error message after 5 seconds
-                            setTimeout(() => setApplyError(null), 5000);
-                          } finally {
-                            setApplyingSlotId(null);
-                          }
-                        }}
-                      >
-                        Apply
-                      </Button>
+                      <>
+                        {canApply ? (
+                          <Button
+                            variant="primary"
+                            size="sm"
+                            isLoading={applyingSlotId === slot.id}
+                            onClick={async () => {
+                              try {
+                                setApplyError(null);
+                                setApplySuccess(null);
+                                setApplyingSlotId(slot.id);
+                                await applicationsApi.applyToSlot({ matchSlotId: slot.id });
+                                setApplySuccess('Application submitted successfully! The match creator will review your request.');
+                                await fetchMatchById(matchId);
+                                // Clear success message after 5 seconds
+                                setTimeout(() => setApplySuccess(null), 5000);
+                              } catch (error: any) {
+                                console.error('Failed to apply:', error);
+                                const errorMessage = error?.response?.data?.message || error?.message || 'Failed to submit application. Please try again.';
+                                setApplyError(errorMessage);
+                                // Clear error message after 5 seconds
+                                setTimeout(() => setApplyError(null), 5000);
+                              } finally {
+                                setApplyingSlotId(null);
+                              }
+                            }}
+                          >
+                            Apply
+                          </Button>
+                        ) : (
+                          <p className="text-xs text-gray-500 italic">
+                            You don't match the match criteria
+                          </p>
+                        )}
+                      </>
                     )}
                   </div>
                 </div>

@@ -302,14 +302,96 @@ export class MatchesService {
     matchId: string,
     updateDto: UpdateMatchDto,
   ): Promise<Match> {
-    const match = await this.findById(matchId);
+    const match = await this.matchRepository.findOne({
+      where: { id: matchId },
+      relations: ['slots', 'slots.application'],
+    });
+
+    if (!match) {
+      throw new NotFoundException('Match not found');
+    }
 
     if (match.creatorUserId !== userId) {
       throw new ForbiddenException('Only match creator can update the match');
     }
 
-    Object.assign(match, updateDto);
-    const updatedMatch = await this.matchRepository.save(match);
+    // Don't allow editing if match is confirmed
+    if (match.status === MatchStatus.CONFIRMED) {
+      throw new BadRequestException('Cannot edit a confirmed match');
+    }
+
+    // Don't allow editing if any slot has confirmed applications
+    const hasConfirmedApplications = match.slots?.some(slot => 
+      slot.application?.status === ApplicationStatus.CONFIRMED
+    );
+    if (hasConfirmedApplications) {
+      throw new BadRequestException('Cannot edit match with confirmed participants');
+    }
+
+    // Normalize date if provided (same as create)
+    let normalizedDate: string | undefined;
+    if (updateDto.date) {
+      const dateString = updateDto.date.split('T')[0];
+      const [year, month, day] = dateString.split('-').map(Number);
+      
+      // Validate date is not in the past
+      const today = new Date();
+      today.setUTCHours(0, 0, 0, 0);
+      const matchDateUTC = new Date(Date.UTC(year, month - 1, day, 0, 0, 0));
+      if (matchDateUTC < today) {
+        throw new BadRequestException('Match date cannot be in the past');
+      }
+      
+      normalizedDate = dateString; // Pass as string to avoid timezone conversion
+    }
+
+    // Update match fields (excluding slots)
+    const { slots, date, ...matchUpdateData } = updateDto;
+    if (normalizedDate) {
+      // ⚠️ DO NOT CHANGE THIS LINE - CRITICAL FIX FOR DATE OFFSET BUG ⚠️
+      // Assigning string directly prevents timezone conversion that causes "one day in the past" bug
+      // TypeORM accepts YYYY-MM-DD strings for DATE columns and stores them as-is without conversion
+      // Converting to Date object reintroduces the bug. See create method (line 93) for same approach.
+      match.date = normalizedDate;
+    }
+    Object.assign(match, matchUpdateData);
+    await this.matchRepository.save(match);
+
+    // Handle slot updates if provided
+    if (slots !== undefined) {
+      // Remove existing slots that don't have applications
+      const slotsToRemove = match.slots?.filter(slot => 
+        !slot.application || slot.application.status !== ApplicationStatus.CONFIRMED
+      ) || [];
+      
+      for (const slot of slotsToRemove) {
+        // Only delete if no application or application is not confirmed
+        if (!slot.application || slot.application.status !== ApplicationStatus.CONFIRMED) {
+          await this.matchSlotRepository.remove(slot);
+        }
+      }
+
+      // Add new slots
+      const newSlots = slots.map((slotDto) =>
+        this.matchSlotRepository.create({
+          matchId: match.id,
+          startTime: slotDto.startTime,
+          endTime: slotDto.endTime,
+          status: SlotStatus.AVAILABLE,
+        }),
+      );
+      await this.matchSlotRepository.save(newSlots);
+    }
+
+    // Reload match with relations
+    const updatedMatch = await this.matchRepository.findOne({
+      where: { id: matchId },
+      relations: ['court', 'creator', 'slots'],
+    });
+
+    if (!updatedMatch) {
+      throw new Error('Failed to load updated match');
+    }
 
     // Invalidate cache
     await this.cacheManager.del(`match:${matchId}`);

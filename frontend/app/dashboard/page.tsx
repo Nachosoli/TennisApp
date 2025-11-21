@@ -403,8 +403,8 @@ export default function DashboardPage() {
                       // Determine if user can delete (creator only, not completed)
                       const canDelete = isCreator && match.status !== 'COMPLETED';
                       
-                      // Determine if user can edit (creator only, match is pending, no confirmed participants)
-                      const canEdit = isCreator && match.status === 'PENDING' && !hasConfirmedParticipants;
+                      // Determine if user can edit (creator only, match is not confirmed/accepted)
+                      const canEdit = isCreator && match.status !== 'CONFIRMED';
                       
                       // Determine if user can withdraw (participant with confirmed application, not completed)
                       const canWithdraw = !isCreator && userApplication?.status === 'CONFIRMED' && match.status !== 'COMPLETED';

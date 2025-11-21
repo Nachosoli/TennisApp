@@ -83,7 +83,7 @@ export class ChatService {
           {
             senderName,
             courtName: matchWithRelations.court?.name || 'Court',
-            date: matchWithRelations.date.toLocaleDateString(),
+            date: matchWithRelations.date,
             messagePreview: createDto.message.substring(0, 50),
             matchId: matchWithRelations.id,
           },

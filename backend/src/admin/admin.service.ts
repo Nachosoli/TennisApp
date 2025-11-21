@@ -253,7 +253,7 @@ export class AdminService {
         {
           opponentName: 'Admin Override',
           courtName: match.court?.name || 'Court',
-          date: match.date.toLocaleDateString(),
+          date: match.date,
           time: 'N/A',
         },
       );

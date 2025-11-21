@@ -52,7 +52,7 @@ export class Match {
   court: Court;
 
   @Column({ type: 'date' })
-  date: Date;
+  date: string;
 
   @Column({
     type: 'enum',

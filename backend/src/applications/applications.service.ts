@@ -91,6 +91,29 @@ export class ApplicationsService {
       throw new BadRequestException('Match is not accepting applications');
     }
 
+    // Check if user matches match criteria
+    if (slot.match.genderFilter && slot.match.genderFilter !== 'ANY') {
+      const matchGender = slot.match.genderFilter.toLowerCase();
+      const userGender = user.gender?.toLowerCase();
+      if (matchGender !== userGender) {
+        throw new BadRequestException(`This match is looking for ${slot.match.genderFilter.toLowerCase()} players only`);
+      }
+    }
+
+    // Check skill level
+    if (slot.match.skillLevelMin !== undefined || slot.match.skillLevelMax !== undefined) {
+      const userRating = user.ratingValue;
+      if (userRating === undefined || userRating === null) {
+        throw new BadRequestException('You need to set a rating in your profile to apply to this match');
+      }
+      if (slot.match.skillLevelMin !== undefined && userRating < slot.match.skillLevelMin) {
+        throw new BadRequestException(`This match requires a minimum rating of ${slot.match.skillLevelMin}`);
+      }
+      if (slot.match.skillLevelMax !== undefined && userRating > slot.match.skillLevelMax) {
+        throw new BadRequestException(`This match requires a maximum rating of ${slot.match.skillLevelMax}`);
+      }
+    }
+
     // Check for time overlap with other confirmed/pending applications
     await this.checkTimeOverlap(userId, slot.match.date, slot.startTime, slot.endTime);
 
@@ -132,7 +155,7 @@ export class ApplicationsService {
       {
         applicantName: `${user.firstName} ${user.lastName}`,
         courtName: slot.match.court?.name || 'Court',
-        date: slot.match.date.toLocaleDateString(),
+        date: slot.match.date,
         matchId: slot.match.id,
       },
     );
@@ -217,7 +240,7 @@ export class ApplicationsService {
       {
         opponentName: creator ? `${creator.firstName} ${creator.lastName}` : 'Match Creator',
         courtName: match.court?.name || 'Court',
-        date: match.date.toLocaleDateString(),
+        date: match.date,
         time: `${application.matchSlot.startTime} - ${application.matchSlot.endTime}`,
         matchId: match.id,
       },
@@ -231,7 +254,7 @@ export class ApplicationsService {
       {
         opponentName: `${application.applicant.firstName} ${application.applicant.lastName}`,
         courtName: match.court?.name || 'Court',
-        date: match.date.toLocaleDateString(),
+        date: match.date,
         time: `${application.matchSlot.startTime} - ${application.matchSlot.endTime}`,
         matchId: match.id,
       },
@@ -387,7 +410,7 @@ export class ApplicationsService {
 
   private async checkTimeOverlap(
     userId: string,
-    date: Date,
+    date: string,
     startTime: string,
     endTime: string,
   ): Promise<void> {
