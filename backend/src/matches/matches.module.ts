@@ -6,12 +6,13 @@ import { Match } from '../entities/match.entity';
 import { MatchSlot } from '../entities/match-slot.entity';
 import { Court } from '../entities/court.entity';
 import { User } from '../entities/user.entity';
+import { UserStats } from '../entities/user-stats.entity';
 import { NotificationsModule } from '../notifications/notifications.module';
 import { GatewaysModule } from '../gateways/gateways.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Match, MatchSlot, Court, User]),
+    TypeOrmModule.forFeature([Match, MatchSlot, Court, User, UserStats]),
     NotificationsModule,
     GatewaysModule,
   ],

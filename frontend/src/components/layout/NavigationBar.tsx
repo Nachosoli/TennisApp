@@ -18,7 +18,7 @@ export function NavigationBar() {
   const navLinks = [
     { href: '/dashboard', label: 'Dashboard' },
     { href: '/courts', label: 'Courts' },
-    { href: '/calendar', label: 'Calendar' },
+    { href: '/calendar', label: 'Matches' },
     { href: '/contact', label: 'Contact Us' },
     { href: '/guidelines', label: 'Guidelines' },
   ];

@@ -41,6 +41,9 @@ export class UserStats {
   @Column({ name: 'total_wins', type: 'integer', default: 0 })
   totalWins: number;
 
+  @Column({ name: 'cancelled_matches', type: 'integer', default: 0 })
+  cancelledMatches: number;
+
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
 

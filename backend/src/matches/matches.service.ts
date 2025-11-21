@@ -15,6 +15,7 @@ import { MatchSlot, SlotStatus } from '../entities/match-slot.entity';
 import { Application, ApplicationStatus } from '../entities/application.entity';
 import { Court } from '../entities/court.entity';
 import { User } from '../entities/user.entity';
+import { UserStats } from '../entities/user-stats.entity';
 import { CreateMatchDto } from './dto/create-match.dto';
 import { UpdateMatchDto } from './dto/update-match.dto';
 import { MatchUpdatesGateway } from '../gateways/match-updates.gateway';
@@ -33,6 +34,8 @@ export class MatchesService {
     private courtRepository: Repository<Court>,
     @InjectRepository(User)
     private userRepository: Repository<User>,
+    @InjectRepository(UserStats)
+    private userStatsRepository: Repository<UserStats>,
     @Inject(CACHE_MANAGER) private cacheManager: Cache,
     @Inject(forwardRef(() => MatchUpdatesGateway))
     private matchUpdatesGateway: MatchUpdatesGateway,
@@ -353,6 +356,22 @@ export class MatchesService {
       if (!user || !user.isAdmin) {
         throw new ForbiddenException('Not authorized to cancel this match');
       }
+    }
+
+    // Increment cancelledMatches counter for the creator
+    const creatorStats = await this.userStatsRepository.findOne({
+      where: { userId: match.creatorUserId },
+    });
+    if (creatorStats) {
+      creatorStats.cancelledMatches = (creatorStats.cancelledMatches || 0) + 1;
+      await this.userStatsRepository.save(creatorStats);
+    } else {
+      // Create stats if they don't exist
+      const newStats = this.userStatsRepository.create({
+        userId: match.creatorUserId,
+        cancelledMatches: 1,
+      });
+      await this.userStatsRepository.save(newStats);
     }
 
     // Delete the match from database (CASCADE will delete related slots and applications)

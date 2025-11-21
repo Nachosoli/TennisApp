@@ -43,7 +43,6 @@ export default function CompleteProfilePage() {
     formState: { errors },
     reset,
   } = useForm<CompleteProfileFormData>({
-    // @ts-expect-error - zodResolver type compatibility issue with react-hook-form
     resolver: zodResolver(completeProfileSchema),
     defaultValues: {
       bio: '',

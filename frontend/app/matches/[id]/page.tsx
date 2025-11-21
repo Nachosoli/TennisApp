@@ -12,7 +12,7 @@ import { Layout } from '@/components/layout/Layout';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { ChatWindow } from '@/components/ChatWindow';
-import { ApplicationManager } from '@/components/ApplicationManager';
+import { ApplicationsTable } from '@/components/ApplicationsTable';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { useSocket } from '@/hooks/useSocket';
@@ -346,54 +346,73 @@ export default function MatchDetailPage() {
               </div>
             )}
             <div className="space-y-3">
-              {currentMatch.slots?.map((slot) => (
-                <div
-                  key={slot.id}
-                  className={`p-3 rounded-lg border ${
-                    slot.status === 'CONFIRMED' ? 'bg-green-50 border-green-200' :
-                    slot.status === 'LOCKED' ? 'bg-yellow-50 border-yellow-200' :
-                    'bg-gray-50 border-gray-200'
-                  }`}
-                >
-                  <div className="flex justify-between items-center">
-                    <div>
-                      <p className="font-medium text-gray-900">
-                        {formatSlotTime(slot.startTime)} - {formatSlotTime(slot.endTime)}
-                      </p>
-                      <p className="text-sm text-gray-600">{slot.status}</p>
+              {currentMatch.slots && currentMatch.slots.length > 0 ? (
+                currentMatch.slots.map((slot) => {
+                  const isAvailable = slot.status?.toLowerCase() === 'available';
+                  const isConfirmed = slot.status?.toLowerCase() === 'confirmed';
+                  const isLocked = slot.status?.toLowerCase() === 'locked';
+                  
+                  return (
+                    <div
+                      key={slot.id}
+                      className={`p-3 rounded-lg border ${
+                        isConfirmed ? 'bg-green-50 border-green-200' :
+                        isLocked ? 'bg-yellow-50 border-yellow-200' :
+                        isAvailable ? 'bg-blue-50 border-blue-200' :
+                        'bg-gray-50 border-gray-200'
+                      }`}
+                    >
+                      <div className="flex justify-between items-center">
+                        <div className="flex-1">
+                          <p className="font-medium text-gray-900">
+                            {formatSlotTime(slot.startTime)} - {formatSlotTime(slot.endTime)}
+                          </p>
+                          <p className="text-sm text-gray-600 capitalize">{slot.status || 'Unknown'}</p>
+                          {isAvailable && !isCreator && (
+                            <p className="text-xs text-blue-600 mt-1">Click Apply to join this time slot</p>
+                          )}
+                        </div>
+                        {!isCreator && isAvailable && (
+                          <Button
+                            variant="primary"
+                            size="sm"
+                            isLoading={applyingSlotId === slot.id}
+                            onClick={async () => {
+                              try {
+                                setApplyError(null);
+                                setApplySuccess(null);
+                                setApplyingSlotId(slot.id);
+                                await applicationsApi.applyToSlot({ matchSlotId: slot.id });
+                                setApplySuccess('Application submitted successfully! The match creator will review your request.');
+                                await fetchMatchById(matchId);
+                                // Clear success message after 5 seconds
+                                setTimeout(() => setApplySuccess(null), 5000);
+                              } catch (error: any) {
+                                console.error('Failed to apply:', error);
+                                const errorMessage = error?.response?.data?.message || error?.message || 'Failed to submit application. Please try again.';
+                                setApplyError(errorMessage);
+                                // Clear error message after 5 seconds
+                                setTimeout(() => setApplyError(null), 5000);
+                              } finally {
+                                setApplyingSlotId(null);
+                              }
+                            }}
+                          >
+                            Apply
+                          </Button>
+                        )}
+                        {isCreator && isAvailable && (
+                          <span className="text-xs text-gray-500">Waiting for applications</span>
+                        )}
+                      </div>
                     </div>
-                    {!isCreator && slot.status === 'AVAILABLE' && (
-                      <Button
-                        variant="primary"
-                        size="sm"
-                        isLoading={applyingSlotId === slot.id}
-                        onClick={async () => {
-                          try {
-                            setApplyError(null);
-                            setApplySuccess(null);
-                            setApplyingSlotId(slot.id);
-                            await applicationsApi.applyToSlot({ matchSlotId: slot.id });
-                            setApplySuccess('Application submitted successfully! The match creator will review your request.');
-                            await fetchMatchById(matchId);
-                            // Clear success message after 5 seconds
-                            setTimeout(() => setApplySuccess(null), 5000);
-                          } catch (error: any) {
-                            console.error('Failed to apply:', error);
-                            const errorMessage = error?.response?.data?.message || error?.message || 'Failed to submit application. Please try again.';
-                            setApplyError(errorMessage);
-                            // Clear error message after 5 seconds
-                            setTimeout(() => setApplyError(null), 5000);
-                          } finally {
-                            setApplyingSlotId(null);
-                          }
-                        }}
-                      >
-                        Apply
-                      </Button>
-                    )}
-                  </div>
+                  );
+                })
+              ) : (
+                <div className="text-center py-8 text-gray-500">
+                  <p>No time slots available for this match.</p>
                 </div>
-              ))}
+              )}
             </div>
           </Card>
         </div>
@@ -406,7 +425,7 @@ export default function MatchDetailPage() {
                   <strong>As the match creator,</strong> you can review and manage applications from players who want to join this match.
                 </p>
               </div>
-              <ApplicationManager matchId={matchId} />
+              <ApplicationsTable matchId={matchId} matchFormat={currentMatch.format} />
             </Card>
           </ErrorBoundary>
         )}

@@ -35,7 +35,6 @@ function RegisterPageContent() {
     setValue,
     formState: { errors },
   } = useForm<RegisterFormData>({
-    // @ts-expect-error - zodResolver type compatibility issue with react-hook-form
     resolver: zodResolver(registerSchema),
     mode: 'onChange',
     reValidateMode: 'onChange',

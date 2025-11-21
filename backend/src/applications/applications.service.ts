@@ -377,7 +377,7 @@ export class ApplicationsService {
 
     const slots = await this.matchSlotRepository.find({
       where: { matchId },
-      relations: ['application', 'application.applicant'],
+      relations: ['application', 'application.applicant', 'application.applicant.stats'],
     });
 
     return slots

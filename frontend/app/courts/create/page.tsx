@@ -44,7 +44,6 @@ export default function CreateCourtPage() {
     watch,
     formState: { errors },
   } = useForm<CreateCourtFormData>({
-    // @ts-expect-error - zodResolver type compatibility issue with react-hook-form
     resolver: zodResolver(createCourtSchema),
     defaultValues: {
       isPublic: true,

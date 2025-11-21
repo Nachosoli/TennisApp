@@ -45,7 +45,6 @@ export default function AdminEditUserPage() {
     formState: { errors },
     reset,
   } = useForm<EditUserFormData>({
-    // @ts-expect-error - zodResolver type compatibility issue with react-hook-form
     resolver: zodResolver(editUserSchema),
   });
 

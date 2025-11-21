@@ -38,7 +38,6 @@ function ScoreEntryPageContent() {
     handleSubmit,
     formState: { errors },
   } = useForm<ScoreFormData>({
-    // @ts-expect-error - zodResolver type compatibility issue with react-hook-form
     resolver: zodResolver(scoreSchema),
   });
 

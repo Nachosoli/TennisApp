@@ -32,6 +32,7 @@ export interface UserStats {
   totalMatches: number;
   totalWins: number;
   totalLosses: number;
+  cancelledMatches?: number;
 }
 
 // Court types

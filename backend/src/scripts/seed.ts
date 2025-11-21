@@ -213,7 +213,7 @@ async function seed() {
     port: parseInt(process.env.DB_PORT || '5432', 10),
     username: process.env.DB_USER || 'postgres',
     password: process.env.DB_PASSWORD || 'postgres',
-    database: process.env.DB_NAME || 'courtmate',
+    database: process.env.DB_NAME || 'courtmate_db',
     entities: [__dirname + '/../entities/*.entity{.ts,.js}'],
     synchronize: false,
     logging: false,

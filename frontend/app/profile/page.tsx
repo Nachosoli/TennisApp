@@ -27,7 +27,7 @@ const profileSchema = z.object({
   email: z.string().email('Invalid email'),
   phone: z.string().optional(),
   bio: z.string().optional(),
-  gender: z.enum(['male', 'female', 'other']),
+  gender: z.enum(['male', 'female']),
   ratingType: z.enum(['UTR', 'USTA', 'ULTIMATE', 'CUSTOM', '']).optional(),
   ratingValue: z.number().min(0).max(12, 'Rating must be between 0 and 12').optional(),
 }).refine(
@@ -126,7 +126,6 @@ function ProfilePageContent() {
     reset,
     getValues,
   } = useForm<ProfileFormData>({
-    // @ts-expect-error - zodResolver type compatibility issue with react-hook-form
     resolver: zodResolver(profileSchema),
   });
 
@@ -156,7 +155,7 @@ function ProfilePageContent() {
         email: user.email,
         phone: user.phone || '',
         bio: user.bio || '',
-        gender: (user as any).gender || 'other', // Default to 'other' if not set
+        gender: (user as any).gender || 'male', // Default to 'male' if not set
         ratingType: user.ratingType || '',
         ratingValue: user.ratingValue ?? undefined, // Only set if ratingType is set
       });
@@ -574,7 +573,6 @@ function ProfilePageContent() {
                 <option value="">Select gender</option>
                 <option value="male">Male</option>
                 <option value="female">Female</option>
-                <option value="other">Other</option>
               </select>
               {errors.gender && (
                 <p className="mt-1 text-sm text-red-600">{errors.gender.message}</p>

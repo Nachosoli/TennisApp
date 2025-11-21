@@ -184,7 +184,6 @@ function CreateMatchPageContent() {
 
   // Initialize form with default values - hooks must be called before any returns
   const form = useForm<CreateMatchFormData>({
-    // @ts-expect-error - zodResolver type compatibility issue with react-hook-form
     resolver: zodResolver(createMatchSchema),
     mode: 'onChange',
     defaultValues: {
