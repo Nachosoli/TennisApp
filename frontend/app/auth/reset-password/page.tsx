@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, FormEvent } from 'react';
+import { useState, useEffect, FormEvent, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { authApi } from '@/lib/auth';
 import { Button } from '@/components/ui/Button';
@@ -10,7 +10,7 @@ import { ErrorBoundary } from '@/components/ErrorBoundary';
 import Link from 'next/link';
 import { getErrorMessage } from '@/lib/errors';
 
-export default function ResetPasswordPage() {
+function ResetPasswordPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [email, setEmail] = useState('');
@@ -77,8 +77,7 @@ export default function ResetPasswordPage() {
 
   if (!email || !token) {
     return (
-      <ErrorBoundary>
-        <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
           <Card className="w-full max-w-md">
             <div className="text-center">
               <div className="mb-4">
@@ -105,12 +104,10 @@ export default function ResetPasswordPage() {
             </div>
           </Card>
         </div>
-      </ErrorBoundary>
     );
   }
 
   return (
-    <ErrorBoundary>
       <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
         <Card className="w-full max-w-md">
           <div className="text-center mb-6">
@@ -184,6 +181,23 @@ export default function ResetPasswordPage() {
           )}
         </Card>
       </div>
+  );
+}
+
+export default function ResetPasswordPage() {
+  return (
+    <ErrorBoundary>
+      <Suspense fallback={
+        <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+          <Card className="w-full max-w-md">
+            <div className="text-center">
+              <p className="text-gray-600">Loading...</p>
+            </div>
+          </Card>
+        </div>
+      }>
+        <ResetPasswordPageContent />
+      </Suspense>
     </ErrorBoundary>
   );
 }

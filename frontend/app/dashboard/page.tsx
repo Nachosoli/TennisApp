@@ -15,6 +15,7 @@ import { UserStats, Match, User } from '@/types';
 import Link from 'next/link';
 import { useRequireAuth } from '@/hooks/useRequireAuth';
 import { PageLoader } from '@/components/ui/PageLoader';
+import { parseLocalDate } from '@/lib/date-utils';
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -63,7 +64,7 @@ export default function DashboardPage() {
       ]);
       setStats(userStats);
       // Filter out any cancelled matches that might still exist in database
-      const activeMatches = (matches || []).filter(match => match.status !== 'cancelled');
+      const activeMatches = (matches || []).filter(match => match.status !== 'CANCELLED');
       setRecentMatches(activeMatches.slice(0, 5));
     } catch (error) {
       console.error('Failed to load dashboard data:', error);
@@ -102,7 +103,7 @@ export default function DashboardPage() {
       // Refresh matches list
       const matches = await matchesApi.getMyMatches();
       // Filter out any cancelled matches that might still exist
-      const activeMatches = (matches || []).filter(match => match.status !== 'cancelled');
+      const activeMatches = (matches || []).filter(match => match.status !== 'CANCELLED');
       setRecentMatches(activeMatches.slice(0, 5));
       setShowDeleteConfirm(null);
     } catch (err: any) {
@@ -121,7 +122,7 @@ export default function DashboardPage() {
       // Refresh matches list
       const matches = await matchesApi.getMyMatches();
       // Filter out any cancelled matches that might still exist
-      const activeMatches = (matches || []).filter(match => match.status !== 'cancelled');
+      const activeMatches = (matches || []).filter(match => match.status !== 'CANCELLED');
       setRecentMatches(activeMatches.slice(0, 5));
       setShowWithdrawConfirm(null);
     } catch (err: any) {
@@ -366,16 +367,16 @@ export default function DashboardPage() {
                       const score = result?.score || '';
 
                       // Determine status
-                      const matchDate = new Date(match.date);
+                      const matchDate = parseLocalDate(match.date);
                       const now = new Date();
                       const isPast = matchDate < now;
-                      let statusText = match.status;
+                      let statusText: string = match.status;
                       let statusClass = 'bg-gray-100 text-gray-800';
                       
-                      if (match.status === 'completed') {
+                      if (match.status === 'COMPLETED') {
                         statusText = 'Completed';
                         statusClass = 'bg-blue-100 text-blue-800';
-                      } else if (isPast && match.status !== 'completed') {
+                      } else if (isPast) {
                         statusText = 'Report Score';
                         statusClass = 'bg-yellow-100 text-yellow-800';
                       } else {
@@ -400,13 +401,13 @@ export default function DashboardPage() {
                       const canReportScore = isPast && !score && (isCreator || userApplication?.status === 'CONFIRMED');
                       
                       // Determine if user can delete (creator only, not completed)
-                      const canDelete = isCreator && match.status !== 'completed';
+                      const canDelete = isCreator && match.status !== 'COMPLETED';
                       
                       // Determine if user can edit (creator only, match is pending, no confirmed participants)
-                      const canEdit = isCreator && match.status === 'pending' && !hasConfirmedParticipants;
+                      const canEdit = isCreator && match.status === 'PENDING' && !hasConfirmedParticipants;
                       
                       // Determine if user can withdraw (participant with confirmed application, not completed)
-                      const canWithdraw = !isCreator && userApplication?.status === 'CONFIRMED' && match.status !== 'completed';
+                      const canWithdraw = !isCreator && userApplication?.status === 'CONFIRMED' && match.status !== 'COMPLETED';
 
                       return (
                         <tr
@@ -415,7 +416,7 @@ export default function DashboardPage() {
                           onClick={() => router.push(`/matches/${match.id}`)}
                         >
                           <td className="px-4 py-3 text-sm text-gray-900">
-                            {new Date(match.date).toLocaleDateString('en-US', {
+                            {parseLocalDate(match.date).toLocaleDateString('en-US', {
                               month: 'short',
                               day: 'numeric',
                               year: 'numeric'

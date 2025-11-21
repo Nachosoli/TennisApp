@@ -105,6 +105,31 @@ export class AdminService {
   }
 
   /**
+   * Delete a user (permanently)
+   */
+  async deleteUser(adminId: string, userId: string, reason: string): Promise<void> {
+    const user = await this.userRepository.findOne({ where: { id: userId } });
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    // Prevent deleting yourself
+    if (adminId === userId) {
+      throw new BadRequestException('You cannot delete your own account');
+    }
+
+    // Log admin action before deletion
+    await this.logAdminAction(adminId, ActionType.DELETE_USER, TargetType.USER, userId, {
+      reason,
+      deletedUserEmail: user.email,
+      deletedUserName: `${user.firstName} ${user.lastName}`,
+    });
+
+    // Delete the user from database (CASCADE will delete related data)
+    await this.userRepository.remove(user);
+  }
+
+  /**
    * Delete a court
    */
   async deleteCourt(adminId: string, courtId: string, reason: string): Promise<Court> {

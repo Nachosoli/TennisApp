@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { authApi } from '@/lib/auth';
 import { Card } from '@/components/ui/Card';
@@ -104,7 +104,17 @@ function VerifyEmailPageContent() {
 export default function VerifyEmailPage() {
   return (
     <ErrorBoundary>
-      <VerifyEmailPageContent />
+      <Suspense fallback={
+        <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+          <Card className="w-full max-w-md">
+            <div className="text-center">
+              <p className="text-gray-600">Loading...</p>
+            </div>
+          </Card>
+        </div>
+      }>
+        <VerifyEmailPageContent />
+      </Suspense>
     </ErrorBoundary>
   );
 }

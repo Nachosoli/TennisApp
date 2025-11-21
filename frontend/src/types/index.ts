@@ -19,6 +19,7 @@ export interface User {
   isActive?: boolean;
   createdAt?: string;
   updatedAt?: string;
+  stats?: UserStats;
 }
 
 export interface UserStats {
@@ -69,6 +70,7 @@ export interface Match {
   courtId: string;
   court?: Court;
   date: string;
+  format?: 'singles' | 'doubles';
   skillLevel: 'BEGINNER' | 'INTERMEDIATE' | 'ADVANCED' | 'PRO';
   gender: 'MALE' | 'FEMALE' | 'ANY';
   maxDistance?: number; // in meters

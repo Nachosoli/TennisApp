@@ -13,6 +13,7 @@ export enum ActionType {
   SUSPEND_USER = 'suspend_user',
   BAN_USER = 'ban_user',
   EDIT_USER = 'edit_user',
+  DELETE_USER = 'delete_user',
   DELETE_COURT = 'delete_court',
   EDIT_COURT = 'edit_court',
   RESOLVE_DISPUTE = 'resolve_dispute',

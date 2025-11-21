@@ -30,6 +30,10 @@ export const adminApi = {
     return response.data;
   },
 
+  async deleteUser(userId: string, reason: string) {
+    await apiClient.delete(`/admin/users/${userId}`, { data: { reason } });
+  },
+
   // Court Management
   async getAllCourts(page: number = 1, limit: number = 50) {
     const response = await apiClient.get<{ courts: Court[]; total: number }>('/admin/courts', {

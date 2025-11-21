@@ -3,11 +3,12 @@
 import { useState, useEffect } from 'react';
 import { matchesApi } from '@/lib/matches';
 import { Match } from '@/types';
-import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, isSameMonth } from 'date-fns';
+import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, isSameMonth, startOfDay } from 'date-fns';
 import { Card } from './ui/Card';
 import { Button } from './ui/Button';
 import Link from 'next/link';
 import { useAuthStore } from '@/stores/auth-store';
+import { parseLocalDate } from '@/lib/date-utils';
 
 interface CalendarViewProps {
   filters?: {
@@ -53,9 +54,9 @@ export const CalendarView = ({ filters, onDateSelect }: CalendarViewProps) => {
       ...filters,
     })
       .then((matches) => {
-        // Filter out cancelled matches and user's own matches
+        // Filter out cancelled matches and user's own matches (backend stores as lowercase 'cancelled')
         const filtered = matches.filter(match => {
-          if (match.status === 'cancelled') return false;
+          if (match.status === 'CANCELLED' || (match.status as string).toUpperCase() === 'CANCELLED') return false;
           if (user && match.creatorUserId === user.id) return false;
           return true;
         });
@@ -74,7 +75,11 @@ export const CalendarView = ({ filters, onDateSelect }: CalendarViewProps) => {
   const emptyDays = Array(firstDayOfWeek).fill(null);
 
   const getMatchesForDay = (day: Date) => {
-    return matches.filter(match => isSameDay(new Date(match.date), day));
+    const dayStart = startOfDay(day);
+    return matches.filter(match => {
+      const matchDate = startOfDay(parseLocalDate(match.date));
+      return isSameDay(matchDate, dayStart);
+    });
   };
 
   const goToPreviousMonth = () => {
@@ -262,8 +267,13 @@ export const CalendarView = ({ filters, onDateSelect }: CalendarViewProps) => {
                     <div className="flex items-center justify-between mt-3 pt-3 border-t border-current border-opacity-20">
                       <div className="text-sm opacity-80 space-y-1">
                         <div>
-                          <span>Gender: {creator?.gender ? (creator.gender === 'male' ? 'Man' : creator.gender === 'female' ? 'Woman' : creator.gender) : 'Any'}</span>
+                          <span>Gender: {match.gender === 'MALE' ? 'Male' : match.gender === 'FEMALE' ? 'Female' : 'Any'}</span>
                         </div>
+                        {match.format && (
+                          <div>
+                            <span>Format: {match.format === 'singles' ? 'Singles' : match.format === 'doubles' ? 'Doubles' : match.format || 'N/A'}</span>
+                          </div>
+                        )}
                         {match.slots && match.slots.length > 0 && (
                           <div>
                             <span>{match.slots.length} time slot{match.slots.length !== 1 ? 's' : ''} available</span>
