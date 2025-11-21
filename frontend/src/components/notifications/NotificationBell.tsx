@@ -24,7 +24,7 @@ export const NotificationBell = () => {
     fetchNotifications();
   }, [user?.id, fetchNotifications]);
 
-  const unreadNotifications = notifications.filter((n) => n.status === 'PENDING');
+  const unreadNotifications = notifications.filter((n) => n.status?.toLowerCase() === 'pending');
 
   return (
     <div className="relative">
@@ -82,10 +82,10 @@ export const NotificationBell = () => {
                   <div
                     key={notification.id}
                     className={`p-4 cursor-pointer hover:bg-gray-50 ${
-                      notification.status === 'PENDING' ? 'bg-blue-50' : ''
+                      notification.status?.toLowerCase() === 'pending' ? 'bg-blue-50' : ''
                     }`}
                     onClick={() => {
-                      if (notification.status === 'PENDING') {
+                      if (notification.status?.toLowerCase() === 'pending') {
                         markAsRead(notification.id);
                       }
                     }}
@@ -102,7 +102,7 @@ export const NotificationBell = () => {
                           {format(new Date(notification.createdAt), 'MMM dd, h:mm a')}
                         </p>
                       </div>
-                      {notification.status === 'PENDING' && (
+                      {notification.status?.toLowerCase() === 'pending' && (
                         <div className="h-2 w-2 bg-blue-600 rounded-full mt-1" />
                       )}
                     </div>

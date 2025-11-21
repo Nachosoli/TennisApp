@@ -64,7 +64,7 @@ export default function DashboardPage() {
       ]);
       setStats(userStats);
       // Filter out any cancelled matches that might still exist in database
-      const activeMatches = (matches || []).filter(match => match.status !== 'CANCELLED');
+      const activeMatches = (matches || []).filter(match => match.status?.toLowerCase() !== 'cancelled');
       setRecentMatches(activeMatches.slice(0, 5));
     } catch (error) {
       console.error('Failed to load dashboard data:', error);
@@ -103,7 +103,7 @@ export default function DashboardPage() {
       // Refresh matches list
       const matches = await matchesApi.getMyMatches();
       // Filter out any cancelled matches that might still exist
-      const activeMatches = (matches || []).filter(match => match.status !== 'CANCELLED');
+      const activeMatches = (matches || []).filter(match => match.status?.toLowerCase() !== 'cancelled');
       setRecentMatches(activeMatches.slice(0, 5));
       setShowDeleteConfirm(null);
     } catch (err: any) {
@@ -122,7 +122,7 @@ export default function DashboardPage() {
       // Refresh matches list
       const matches = await matchesApi.getMyMatches();
       // Filter out any cancelled matches that might still exist
-      const activeMatches = (matches || []).filter(match => match.status !== 'CANCELLED');
+      const activeMatches = (matches || []).filter(match => match.status?.toLowerCase() !== 'cancelled');
       setRecentMatches(activeMatches.slice(0, 5));
       setShowWithdrawConfirm(null);
     } catch (err: any) {
@@ -345,7 +345,7 @@ export default function DashboardPage() {
                       if (isCreator) {
                         // User is creator, find applicant from confirmed slot
                         const confirmedSlot = match.slots?.find(slot => 
-                          slot.application?.status === 'CONFIRMED'
+                          slot.application?.status?.toLowerCase() === 'confirmed'
                         );
                         if (confirmedSlot?.application?.applicant) {
                           opponent = confirmedSlot.application.applicant;
@@ -373,7 +373,7 @@ export default function DashboardPage() {
                       let statusText: string = match.status;
                       let statusClass = 'bg-gray-100 text-gray-800';
                       
-                      if (match.status === 'COMPLETED') {
+                      if (match.status?.toLowerCase() === 'completed') {
                         statusText = 'Completed';
                         statusClass = 'bg-blue-100 text-blue-800';
                       } else if (isPast) {
@@ -393,21 +393,22 @@ export default function DashboardPage() {
                       )?.application;
 
                       // Check if match has confirmed participants
+                      // Check both application status and slot status (slot becomes 'confirmed' when application is confirmed)
                       const hasConfirmedParticipants = match.slots?.some(slot => 
-                        slot.application?.status === 'CONFIRMED'
+                        slot.application?.status?.toLowerCase() === 'confirmed' || slot.status?.toLowerCase() === 'confirmed'
                       ) || false;
 
                       // Determine if user can report score
-                      const canReportScore = isPast && !score && (isCreator || userApplication?.status === 'CONFIRMED');
+                      const canReportScore = isPast && !score && (isCreator || userApplication?.status?.toLowerCase() === 'confirmed');
                       
                       // Determine if user can delete (creator only, not completed)
-                      const canDelete = isCreator && match.status !== 'COMPLETED';
+                      const canDelete = isCreator && match.status?.toLowerCase() !== 'completed';
                       
                       // Determine if user can edit (creator only, match is pending, no confirmed participants)
-                      const canEdit = isCreator && match.status === 'PENDING' && !hasConfirmedParticipants;
+                      const canEdit = isCreator && match.status?.toLowerCase() === 'pending' && !hasConfirmedParticipants;
                       
                       // Determine if user can withdraw (participant with confirmed application, not completed)
-                      const canWithdraw = !isCreator && userApplication?.status === 'CONFIRMED' && match.status !== 'COMPLETED';
+                      const canWithdraw = !isCreator && userApplication?.status?.toLowerCase() === 'confirmed' && match.status?.toLowerCase() !== 'completed';
 
                       return (
                         <tr
@@ -512,7 +513,7 @@ export default function DashboardPage() {
             {(() => {
               const match = recentMatches.find(m => m.id === showDeleteConfirm);
               const hasConfirmed = match?.slots?.some(slot => 
-                slot.application?.status === 'CONFIRMED'
+                slot.application?.status?.toLowerCase() === 'confirmed'
               ) || false;
               return hasConfirmed && (
                 <div className="bg-yellow-50 border border-yellow-200 text-yellow-800 px-4 py-3 rounded mb-4">

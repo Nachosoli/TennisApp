@@ -56,7 +56,7 @@ export const CalendarView = ({ filters, onDateSelect }: CalendarViewProps) => {
       .then((matches) => {
         // Filter out cancelled matches and user's own matches (backend stores as lowercase 'cancelled')
         const filtered = matches.filter(match => {
-          if (match.status === 'CANCELLED' || (match.status as string).toUpperCase() === 'CANCELLED') return false;
+          if (match.status?.toLowerCase() === 'cancelled') return false;
           if (user && match.creatorUserId === user.id) return false;
           return true;
         });
@@ -267,7 +267,7 @@ export const CalendarView = ({ filters, onDateSelect }: CalendarViewProps) => {
                     <div className="flex items-center justify-between mt-3 pt-3 border-t border-current border-opacity-20">
                       <div className="text-sm opacity-80 space-y-1">
                         <div>
-                          <span>Gender: {match.gender === 'MALE' ? 'Male' : match.gender === 'FEMALE' ? 'Female' : 'Any'}</span>
+                          <span>Gender: {match.gender?.toLowerCase() === 'male' ? 'Male' : match.gender?.toLowerCase() === 'female' ? 'Female' : 'Any'}</span>
                         </div>
                         {match.format && (
                           <div>

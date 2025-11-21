@@ -221,8 +221,8 @@ export default function MatchDetailPage() {
             <p className="text-gray-600 mt-1">{currentMatch.court?.address}</p>
           </div>
           <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-            currentMatch.status === 'CONFIRMED' ? 'bg-green-100 text-green-800' :
-            currentMatch.status === 'PENDING' ? 'bg-yellow-100 text-yellow-800' :
+            currentMatch.status?.toLowerCase() === 'confirmed' ? 'bg-green-100 text-green-800' :
+            currentMatch.status?.toLowerCase() === 'pending' ? 'bg-yellow-100 text-yellow-800' :
             'bg-gray-100 text-gray-800'
           }`}>
             {currentMatch.status}
@@ -266,7 +266,7 @@ export default function MatchDetailPage() {
               <div>
                 <span className="font-medium text-gray-700">Looking for Gender:</span>{' '}
                 <span className="text-gray-900">
-                  {currentMatch.gender === 'MALE' ? 'Male' : currentMatch.gender === 'FEMALE' ? 'Female' : 'Any'}
+                  {currentMatch.gender?.toLowerCase() === 'male' ? 'Male' : currentMatch.gender?.toLowerCase() === 'female' ? 'Female' : 'Any'}
                 </span>
               </div>
               <div>
@@ -351,6 +351,7 @@ export default function MatchDetailPage() {
                   const isAvailable = slot.status?.toLowerCase() === 'available';
                   const isConfirmed = slot.status?.toLowerCase() === 'confirmed';
                   const isLocked = slot.status?.toLowerCase() === 'locked';
+                  const isMatchPending = currentMatch.status?.toLowerCase() === 'pending';
                   
                   return (
                     <div
@@ -372,7 +373,7 @@ export default function MatchDetailPage() {
                             <p className="text-xs text-blue-600 mt-1">Click Apply to join this time slot</p>
                           )}
                         </div>
-                        {!isCreator && isAvailable && (
+                        {!isCreator && isAvailable && isMatchPending && (
                           <Button
                             variant="primary"
                             size="sm"
@@ -431,13 +432,13 @@ export default function MatchDetailPage() {
         )}
 
         {/* Chat Section - Only show for confirmed matches */}
-        {currentMatch.status === 'CONFIRMED' && (
+        {currentMatch.status?.toLowerCase() === 'confirmed' && (
           <Card title="Match Chat">
             <ChatWindow matchId={matchId} />
           </Card>
         )}
 
-        {currentMatch.status === 'CONFIRMED' && (
+        {currentMatch.status?.toLowerCase() === 'confirmed' && (
           <Card title="Match Actions">
             <Link href={`/matches/${matchId}/score`}>
               <Button variant="primary" className="w-full">Enter Score</Button>

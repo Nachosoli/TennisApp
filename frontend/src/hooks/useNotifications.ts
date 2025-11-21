@@ -33,7 +33,7 @@ export const useNotifications = () => {
     try {
       const response = await apiClient.get<Notification[]>('/notifications');
       setNotifications(response.data);
-      setUnreadCount(response.data.filter((n) => n.status === 'PENDING').length);
+      setUnreadCount(response.data.filter((n) => n.status?.toLowerCase() === 'pending').length);
     } catch (error) {
       console.error('Failed to load notifications:', error);
     }
@@ -43,7 +43,7 @@ export const useNotifications = () => {
     try {
       await apiClient.put(`/notifications/${notificationId}/read`);
       setNotifications((prev) =>
-        prev.map((n) => (n.id === notificationId ? { ...n, status: 'SENT' as const } : n))
+        prev.map((n) => (n.id === notificationId ? { ...n, status: 'sent' as const } : n))
       );
       setUnreadCount((prev) => Math.max(0, prev - 1));
     } catch (error) {

@@ -41,7 +41,7 @@ export default function ApplicationsPage() {
     try {
       await applicationsApi.confirm(id);
       setApplications((apps) =>
-        apps.map((app) => (app.id === id ? { ...app, status: 'CONFIRMED' as const } : app))
+        apps.map((app) => (app.id === id ? { ...app, status: 'confirmed' as const } : app))
       );
     } catch (error) {
       console.error('Failed to confirm:', error);
@@ -52,7 +52,7 @@ export default function ApplicationsPage() {
     try {
       await applicationsApi.reject(id);
       setApplications((apps) =>
-        apps.map((app) => (app.id === id ? { ...app, status: 'REJECTED' as const } : app))
+        apps.map((app) => (app.id === id ? { ...app, status: 'rejected' as const } : app))
       );
     } catch (error) {
       console.error('Failed to reject:', error);
@@ -86,9 +86,9 @@ export default function ApplicationsPage() {
                         {application.matchSlot?.match?.court?.name || 'Match'}
                       </h3>
                       <span className={`px-2 py-1 text-xs rounded ${
-                        application.status === 'CONFIRMED' ? 'bg-green-100 text-green-800' :
-                        application.status === 'REJECTED' ? 'bg-red-100 text-red-800' :
-                        application.status === 'EXPIRED' ? 'bg-gray-100 text-gray-800' :
+                        application.status?.toLowerCase() === 'confirmed' ? 'bg-green-100 text-green-800' :
+                        application.status?.toLowerCase() === 'rejected' ? 'bg-red-100 text-red-800' :
+                        application.status?.toLowerCase() === 'expired' ? 'bg-gray-100 text-gray-800' :
                         'bg-yellow-100 text-yellow-800'
                       }`}>
                         {application.status}
@@ -124,7 +124,7 @@ export default function ApplicationsPage() {
                         <Button variant="outline" size="sm">View Match</Button>
                       </Link>
                     )}
-                    {application.status === 'PENDING' && application.matchSlot?.match?.creatorUserId && (
+                    {application.status?.toLowerCase() === 'pending' && application.matchSlot?.match?.creatorUserId && (
                       <>
                         <Button
                           variant="primary"

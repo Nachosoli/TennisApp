@@ -194,15 +194,15 @@ export const ApplicationsTable = ({ matchId, matchFormat = 'singles' }: Applicat
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
                   <span className={`px-2 py-1 text-xs font-medium rounded-full ${
-                    application.status === 'CONFIRMED' ? 'bg-green-100 text-green-800' :
-                    application.status === 'REJECTED' ? 'bg-red-100 text-red-800' :
+                    application.status?.toLowerCase() === 'confirmed' ? 'bg-green-100 text-green-800' :
+                    application.status?.toLowerCase() === 'rejected' ? 'bg-red-100 text-red-800' :
                     'bg-yellow-100 text-yellow-800'
                   }`}>
                     {application.status}
                   </span>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                  {application.status === 'PENDING' && (
+                  {application.status?.toLowerCase() === 'pending' && (
                     <div className="flex gap-2">
                       <Button
                         variant="primary"
@@ -220,7 +220,7 @@ export const ApplicationsTable = ({ matchId, matchFormat = 'singles' }: Applicat
                       </Button>
                     </div>
                   )}
-                  {application.status !== 'PENDING' && (
+                  {application.status?.toLowerCase() !== 'pending' && (
                     <span className="text-gray-400 text-xs">-</span>
                   )}
                 </td>

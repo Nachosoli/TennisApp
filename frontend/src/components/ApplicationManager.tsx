@@ -116,8 +116,8 @@ export const ApplicationManager = ({ matchId }: ApplicationManagerProps) => {
                   {application.user?.firstName} {application.user?.lastName}
                 </span>
                 <span className={`px-2 py-1 text-xs rounded ${
-                  application.status === 'CONFIRMED' ? 'bg-green-100 text-green-800' :
-                  application.status === 'REJECTED' ? 'bg-red-100 text-red-800' :
+                  application.status?.toLowerCase() === 'confirmed' ? 'bg-green-100 text-green-800' :
+                  application.status?.toLowerCase() === 'rejected' ? 'bg-red-100 text-red-800' :
                   'bg-yellow-100 text-yellow-800'
                 }`}>
                   {application.status}
@@ -137,7 +137,7 @@ export const ApplicationManager = ({ matchId }: ApplicationManagerProps) => {
                 </p>
               )}
             </div>
-            {application.status === 'PENDING' && (
+            {application.status?.toLowerCase() === 'pending' && (
               <div className="flex gap-2 ml-4">
                 <Button
                   variant="primary"

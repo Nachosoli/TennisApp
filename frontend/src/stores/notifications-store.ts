@@ -34,7 +34,7 @@ export const useNotificationsStore = create<NotificationsState>((set, get) => ({
     set({ isLoading: true });
     try {
       const notifications = await notificationsApi.getMyNotifications();
-      const unreadCount = notifications.filter((n) => n.status === 'SENT').length;
+      const unreadCount = notifications.filter((n) => n.status?.toLowerCase() === 'pending').length;
       set({ notifications, unreadCount, isLoading: false });
     } catch (error) {
       set({ isLoading: false });
@@ -71,7 +71,7 @@ export const useNotificationsStore = create<NotificationsState>((set, get) => ({
   markAsRead: (notificationId: string) => {
     set((state) => ({
       notifications: state.notifications.map((n) =>
-        n.id === notificationId ? { ...n, status: 'SENT' as const } : n
+        n.id === notificationId ? { ...n, status: 'sent' as const } : n
       ),
       unreadCount: Math.max(0, state.unreadCount - 1),
     }));

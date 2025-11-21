@@ -11,7 +11,7 @@ export interface User {
   role: 'user' | 'admin' | 'USER' | 'ADMIN'; // Backend returns lowercase
   ratingType?: 'UTR' | 'USTA' | 'ULTIMATE' | 'CUSTOM';
   ratingValue?: number;
-  gender?: 'male' | 'female' | 'other';
+  gender?: 'male' | 'female';
   homeCourtId?: string;
   homeCourt?: Court; // Home court relation
   bio?: string;
@@ -57,7 +57,7 @@ export interface MatchSlot {
   matchId: string;
   startTime: string;
   endTime: string;
-  status: 'AVAILABLE' | 'LOCKED' | 'CONFIRMED' | 'COMPLETED' | 'CANCELLED';
+  status: 'available' | 'locked' | 'confirmed' | 'completed' | 'cancelled';
   lockedByUserId?: string;
   lockedAt?: string;
   expiresAt?: string;
@@ -73,10 +73,10 @@ export interface Match {
   date: string;
   format?: 'singles' | 'doubles';
   skillLevel: 'BEGINNER' | 'INTERMEDIATE' | 'ADVANCED' | 'PRO';
-  gender: 'MALE' | 'FEMALE' | 'ANY';
+  gender: 'male' | 'female' | 'any';
   maxDistance?: number; // in meters
   surface?: 'HARD' | 'CLAY' | 'GRASS' | 'INDOOR';
-  status: 'PENDING' | 'CONFIRMED' | 'COMPLETED' | 'CANCELLED';
+  status: 'pending' | 'confirmed' | 'completed' | 'cancelled';
   slots?: MatchSlot[];
   results?: Result[];
   createdAt: string;
@@ -94,7 +94,7 @@ export interface Application {
   matchSlot?: MatchSlot & {
     match?: Match;
   };
-  status: 'PENDING' | 'CONFIRMED' | 'REJECTED' | 'EXPIRED';
+  status: 'pending' | 'confirmed' | 'rejected' | 'expired';
   guestPartnerName?: string;
   createdAt: string;
   updatedAt: string;
@@ -121,10 +121,10 @@ export interface Result {
 export interface Notification {
   id: string;
   userId: string;
-  type: 'MATCH_CREATED' | 'MATCH_ACCEPTED' | 'MATCH_CONFIRMED' | 'COURT_CHANGES' | 'SCORE_REMINDER' | 'NEW_CHAT';
-  channel: 'EMAIL' | 'SMS' | 'PUSH';
+  type: 'match_created' | 'match_accepted' | 'match_confirmed' | 'court_changes' | 'score_reminder' | 'new_chat';
+  channel: 'email' | 'sms' | 'push';
   content: string;
-  status: 'PENDING' | 'SENT' | 'FAILED';
+  status: 'pending' | 'sent' | 'failed';
   createdAt: string;
   read?: boolean;
 }

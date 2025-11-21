@@ -34,7 +34,7 @@ export default function CalendarPage() {
     matchesApi.getAll().then((matches) => {
       // Filter out cancelled matches and user's own matches (backend stores as lowercase 'cancelled')
       const filtered = matches.filter(match => {
-        if (match.status === 'CANCELLED' || (match.status as string).toUpperCase() === 'CANCELLED') return false;
+        if (match.status?.toLowerCase() === 'cancelled') return false;
         if (user && match.creatorUserId === user.id) return false;
         return true;
       });

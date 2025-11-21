@@ -149,13 +149,17 @@ function ProfilePageContent() {
   useEffect(() => {
     if (user) {
       console.log('Profile: Resetting form with user data:', { phone: user.phone, user });
+      // Normalize gender: only allow 'male' or 'female', default to 'male' for invalid values
+      const userGender = (user as any).gender?.toLowerCase();
+      const normalizedGender = (userGender === 'male' || userGender === 'female') ? userGender : 'male';
+      
       reset({
         firstName: user.firstName,
         lastName: user.lastName,
         email: user.email,
         phone: user.phone || '',
         bio: user.bio || '',
-        gender: (user as any).gender || 'male', // Default to 'male' if not set
+        gender: normalizedGender,
         ratingType: user.ratingType || '',
         ratingValue: user.ratingValue ?? undefined, // Only set if ratingType is set
       });
@@ -408,7 +412,7 @@ function ProfilePageContent() {
         email: data.email,
         phone: data.phone || undefined,
         bio: data.bio || undefined,
-        gender: data.gender as 'male' | 'female' | 'other',
+        gender: data.gender as 'male' | 'female',
         ratingType: (data.ratingType && String(data.ratingType) !== '') ? (data.ratingType as 'UTR' | 'USTA' | 'ULTIMATE' | 'CUSTOM') : undefined,
         ratingValue: (data.ratingType && String(data.ratingType) !== '') ? data.ratingValue : undefined,
       };

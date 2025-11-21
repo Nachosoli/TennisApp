@@ -25,12 +25,13 @@ export default function NotificationsPage() {
   }
 
   const getNotificationLink = (notification: any) => {
-    switch (notification.type) {
-      case 'MATCH_CONFIRMED':
-      case 'MATCH_ACCEPTED':
-      case 'MATCH_CREATED':
+    const type = notification.type?.toLowerCase();
+    switch (type) {
+      case 'match_confirmed':
+      case 'match_accepted':
+      case 'match_created':
         return '/matches';
-      case 'NEW_CHAT':
+      case 'new_chat':
         return '/matches';
       default:
         return '/';
@@ -52,7 +53,7 @@ export default function NotificationsPage() {
               <Card
                 key={notification.id}
                 className={`cursor-pointer hover:shadow-md transition-shadow ${
-                  notification.status === 'PENDING' ? 'bg-blue-50' : ''
+                  notification.status?.toLowerCase() === 'pending' ? 'bg-blue-50' : ''
                 }`}
               >
                 <Link
@@ -63,14 +64,14 @@ export default function NotificationsPage() {
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-2">
                         <span className={`px-2 py-1 text-xs rounded ${
-                          notification.type === 'MATCH_CONFIRMED' ? 'bg-green-100 text-green-800' :
-                          notification.type === 'MATCH_ACCEPTED' ? 'bg-blue-100 text-blue-800' :
-                          notification.type === 'NEW_CHAT' ? 'bg-purple-100 text-purple-800' :
+                          notification.type?.toLowerCase() === 'match_confirmed' ? 'bg-green-100 text-green-800' :
+                          notification.type?.toLowerCase() === 'match_accepted' ? 'bg-blue-100 text-blue-800' :
+                          notification.type?.toLowerCase() === 'new_chat' ? 'bg-purple-100 text-purple-800' :
                           'bg-gray-100 text-gray-800'
                         }`}>
-                          {notification.type.replace('_', ' ')}
+                          {notification.type?.replace('_', ' ') || notification.type}
                         </span>
-                        {notification.status === 'PENDING' && (
+                        {notification.status?.toLowerCase() === 'pending' && (
                           <span className="h-2 w-2 bg-blue-500 rounded-full"></span>
                         )}
                       </div>
