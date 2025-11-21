@@ -100,9 +100,9 @@ function CourtDetailPageContent() {
               <div>
                 <span className="font-medium text-gray-700">Surface:</span>{' '}
                 <span className={`px-2 py-1 rounded text-sm ${
-                  court.surface === 'HARD' ? 'bg-blue-100 text-blue-800' :
-                  court.surface === 'CLAY' ? 'bg-orange-100 text-orange-800' :
-                  court.surface === 'GRASS' ? 'bg-green-100 text-green-800' :
+                  court.surface?.toLowerCase() === 'hard' ? 'bg-blue-100 text-blue-800' :
+                  court.surface?.toLowerCase() === 'clay' ? 'bg-orange-100 text-orange-800' :
+                  court.surface?.toLowerCase() === 'grass' ? 'bg-green-100 text-green-800' :
                   'bg-gray-100 text-gray-800'
                 }`}>
                   {court.surface}

@@ -1,29 +1,13 @@
 import { apiClient } from './api';
 import { Court } from '@/types';
 
-// Helper function to map backend surfaceType to frontend surface
-function mapSurfaceTypeToSurface(surfaceType: string): 'HARD' | 'CLAY' | 'GRASS' | 'INDOOR' {
-  const map: Record<string, 'HARD' | 'CLAY' | 'GRASS' | 'INDOOR'> = {
-    'Hard': 'HARD',
-    'Clay': 'CLAY',
-    'Grass': 'GRASS',
-    'Indoor': 'INDOOR',
-    // Also handle if already uppercase (defensive)
-    'HARD': 'HARD',
-    'CLAY': 'CLAY',
-    'GRASS': 'GRASS',
-    'INDOOR': 'INDOOR',
-  };
-  return map[surfaceType] || 'HARD';
-}
-
 export const courtsApi = {
   async getAll(): Promise<Court[]> {
     const response = await apiClient.get<any[]>('/courts');
-    // Map backend surfaceType to frontend surface
+    // Backend returns surfaceType in lowercase, map to frontend surface field
     return response.data.map(court => ({
       ...court,
-      surface: court.surfaceType ? mapSurfaceTypeToSurface(court.surfaceType) : 'HARD' as const,
+      surface: (court.surfaceType || 'hard').toLowerCase() as 'hard' | 'clay' | 'grass' | 'indoor',
       location: court.coordinates ? {
         type: 'Point' as const,
         coordinates: court.coordinates.coordinates || [0, 0],
@@ -41,10 +25,10 @@ export const courtsApi = {
 
   async getById(id: string): Promise<Court> {
     const response = await apiClient.get<any>(`/courts/${id}`);
-    // Map backend surfaceType to frontend surface
+    // Backend returns surfaceType in lowercase, map to frontend surface field
     return {
       ...response.data,
-      surface: response.data.surfaceType ? mapSurfaceTypeToSurface(response.data.surfaceType) : 'HARD' as const,
+      surface: (response.data.surfaceType || 'hard').toLowerCase() as 'hard' | 'clay' | 'grass' | 'indoor',
       location: response.data.coordinates ? {
         type: 'Point' as const,
         coordinates: response.data.coordinates.coordinates || [0, 0],
@@ -67,22 +51,15 @@ export const courtsApi = {
     address: string;
     lat?: number;
     lng?: number;
-    surface: 'HARD' | 'CLAY' | 'GRASS' | 'INDOOR';
+    surface: 'hard' | 'clay' | 'grass' | 'indoor';
     isPublic: boolean;
   }): Promise<Court> {
-    // Map frontend enum keys to backend enum string values
-    const surfaceTypeMap: Record<'HARD' | 'CLAY' | 'GRASS' | 'INDOOR', 'Hard' | 'Clay' | 'Grass' | 'Indoor'> = {
-      HARD: 'Hard',
-      CLAY: 'Clay',
-      GRASS: 'Grass',
-      INDOOR: 'Indoor',
-    };
-    
     // Map frontend 'surface' to backend 'surfaceType' and 'lat/lng' to 'latitude/longitude'
+    // Backend now expects lowercase values
     const requestData = {
       name: data.name,
       address: data.address,
-      surfaceType: surfaceTypeMap[data.surface],
+      surfaceType: data.surface, // Already lowercase
       isPublic: data.isPublic,
       ...(data.lat !== undefined && { latitude: data.lat }),
       ...(data.lng !== undefined && { longitude: data.lng }),

@@ -22,7 +22,7 @@ const createCourtSchema = z.object({
   address: z.string().min(1, 'Address is required'),
   lat: z.number().optional(),
   lng: z.number().optional(),
-  surface: z.enum(['HARD', 'CLAY', 'GRASS', 'INDOOR']),
+  surface: z.enum(['hard', 'clay', 'grass', 'indoor']),
   isPublic: z.boolean(),
 });
 
@@ -205,10 +205,10 @@ export default function CreateCourtPage() {
                 {...register('surface')}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
-                <option value="HARD">Hard</option>
-                <option value="CLAY">Clay</option>
-                <option value="GRASS">Grass</option>
-                <option value="INDOOR">Indoor</option>
+                <option value="hard">Hard</option>
+                <option value="clay">Clay</option>
+                <option value="grass">Grass</option>
+                <option value="indoor">Indoor</option>
               </select>
               {errors.surface && (
                 <p className="mt-1 text-sm text-red-600">{errors.surface.message}</p>

@@ -28,7 +28,7 @@ const profileSchema = z.object({
   phone: z.string().optional(),
   bio: z.string().optional(),
   gender: z.enum(['male', 'female']),
-  ratingType: z.enum(['UTR', 'USTA', 'ULTIMATE', 'CUSTOM', '']).optional(),
+  ratingType: z.enum(['utr', 'usta', 'ultimate', 'custom', '']).optional(),
   ratingValue: z.number().min(0).max(12, 'Rating must be between 0 and 12').optional(),
 }).refine(
   (data) => {
@@ -72,7 +72,7 @@ function ProfilePageContent() {
   const [showFacilityResults, setShowFacilityResults] = useState(false);
   const [showNewFacilityForm, setShowNewFacilityForm] = useState(false);
   const [newFacilityAddress, setNewFacilityAddress] = useState('');
-  const [newFacilitySurfaceType, setNewFacilitySurfaceType] = useState<'HARD' | 'CLAY' | 'GRASS' | 'INDOOR'>('HARD');
+  const [newFacilitySurfaceType, setNewFacilitySurfaceType] = useState<'hard' | 'clay' | 'grass' | 'indoor'>('hard');
   const [selectedGooglePlace, setSelectedGooglePlace] = useState<google.maps.places.PlaceResult | null>(null);
   const [isCreatingFacility, setIsCreatingFacility] = useState(false);
   const addressInputRef = useRef<HTMLInputElement>(null);
@@ -413,7 +413,7 @@ function ProfilePageContent() {
         phone: data.phone || undefined,
         bio: data.bio || undefined,
         gender: data.gender as 'male' | 'female',
-        ratingType: (data.ratingType && String(data.ratingType) !== '') ? (data.ratingType as 'UTR' | 'USTA' | 'ULTIMATE' | 'CUSTOM') : undefined,
+        ratingType: (data.ratingType && String(data.ratingType) !== '') ? (data.ratingType as 'utr' | 'usta' | 'ultimate' | 'custom') : undefined,
         ratingValue: (data.ratingType && String(data.ratingType) !== '') ? data.ratingValue : undefined,
       };
 
@@ -748,10 +748,10 @@ function ProfilePageContent() {
                           className="w-full px-4 py-2 border border-gray-300 rounded-lg text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                           required
                         >
-                          <option value="HARD">Hard</option>
-                          <option value="CLAY">Clay</option>
-                          <option value="GRASS">Grass</option>
-                          <option value="INDOOR">Indoor</option>
+                          <option value="hard">Hard</option>
+                          <option value="clay">Clay</option>
+                          <option value="grass">Grass</option>
+                          <option value="indoor">Indoor</option>
                         </select>
                       </div>
 
@@ -780,10 +780,10 @@ function ProfilePageContent() {
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 >
                   <option value="">Select rating type</option>
-                  <option value="UTR">UTR</option>
-                  <option value="USTA">USTA</option>
-                  <option value="ULTIMATE">Ultimate</option>
-                  <option value="CUSTOM">Custom</option>
+                  <option value="utr">UTR</option>
+                  <option value="usta">USTA</option>
+                  <option value="ultimate">Ultimate</option>
+                  <option value="custom">Custom</option>
                 </select>
               </div>
               <div>

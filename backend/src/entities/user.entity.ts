@@ -24,10 +24,10 @@ import { AdminAction } from './admin-action.entity';
 import { PaymentMethod } from './payment-method.entity';
 
 export enum RatingType {
-  UTR = 'UTR',
-  USTA = 'USTA',
-  ULTIMATE = 'ULTIMATE',
-  CUSTOM = 'CUSTOM',
+  UTR = 'utr',
+  USTA = 'usta',
+  ULTIMATE = 'ultimate',
+  CUSTOM = 'custom',
 }
 
 export enum UserRole {
@@ -42,10 +42,10 @@ export enum Gender {
 }
 
 export enum SubscriptionStatus {
-  FREE = 'FREE',
-  ACTIVE = 'ACTIVE',
-  EXPIRED = 'EXPIRED',
-  CANCELLED = 'CANCELLED',
+  FREE = 'free',
+  ACTIVE = 'active',
+  EXPIRED = 'expired',
+  CANCELLED = 'cancelled',
 }
 
 @Entity('users')

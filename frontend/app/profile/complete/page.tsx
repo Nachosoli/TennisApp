@@ -19,7 +19,7 @@ import { Court, User } from '@/types';
 
 const completeProfileSchema = z.object({
   bio: z.string().max(500, 'Bio must be 500 characters or less').optional(),
-  ratingType: z.enum(['UTR', 'USTA', 'ULTIMATE', 'CUSTOM', '']).optional(),
+  ratingType: z.enum(['utr', 'usta', 'ultimate', 'custom', '']).optional(),
   ratingValue: z.number().min(0).max(12, 'Rating must be between 0 and 12'),
 });
 
@@ -193,10 +193,10 @@ export default function CompleteProfilePage() {
                   className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 bg-white"
                 >
                   <option value="">Select rating type</option>
-                  <option value="UTR">UTR</option>
-                  <option value="USTA">USTA</option>
-                  <option value="ULTIMATE">Ultimate</option>
-                  <option value="CUSTOM">Custom</option>
+                  <option value="utr">UTR</option>
+                  <option value="usta">USTA</option>
+                  <option value="ultimate">Ultimate</option>
+                  <option value="custom">Custom</option>
                 </select>
               </div>
 

@@ -108,7 +108,7 @@ async function seedJacksonvilleMatches() {
         'Baymeadows Tennis Center',
       ];
 
-      const surfaces = ['Hard', 'Clay', 'Grass', 'Indoor'] as any[];
+      const surfaces = ['hard', 'clay', 'grass', 'indoor'] as any[];
       const adminUser = users.find(u => u.role === 'admin') || users[0];
 
       for (let i = 0; i < courtNames.length; i++) {

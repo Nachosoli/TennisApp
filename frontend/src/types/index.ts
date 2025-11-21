@@ -9,7 +9,7 @@ export interface User {
   phoneVerified?: boolean; // Keep for backward compatibility
   emailVerified?: boolean; // Email verification status
   role: 'user' | 'admin' | 'USER' | 'ADMIN'; // Backend returns lowercase
-  ratingType?: 'UTR' | 'USTA' | 'ULTIMATE' | 'CUSTOM';
+  ratingType?: 'utr' | 'usta' | 'ultimate' | 'custom';
   ratingValue?: number;
   gender?: 'male' | 'female';
   homeCourtId?: string;
@@ -44,7 +44,7 @@ export interface Court {
     type: 'Point';
     coordinates: [number, number]; // [lng, lat]
   };
-  surface: 'HARD' | 'CLAY' | 'GRASS' | 'INDOOR';
+  surface: 'hard' | 'clay' | 'grass' | 'indoor';
   isPublic: boolean;
   createdByUserId?: string;
   createdAt: string;
@@ -75,7 +75,7 @@ export interface Match {
   skillLevel: 'BEGINNER' | 'INTERMEDIATE' | 'ADVANCED' | 'PRO';
   gender: 'male' | 'female' | 'any';
   maxDistance?: number; // in meters
-  surface?: 'HARD' | 'CLAY' | 'GRASS' | 'INDOOR';
+  surface?: 'hard' | 'clay' | 'grass' | 'indoor';
   status: 'pending' | 'confirmed' | 'completed' | 'cancelled';
   slots?: MatchSlot[];
   results?: Result[];
@@ -203,7 +203,7 @@ export interface CreateMatchDto {
   skillLevelMax?: number;
   genderFilter?: 'male' | 'female';
   maxDistance?: number;
-  surfaceFilter?: 'HARD' | 'CLAY' | 'GRASS' | 'INDOOR';
+  surfaceFilter?: 'hard' | 'clay' | 'grass' | 'indoor';
   slots: {
     startTime: string;
     endTime: string;

@@ -26,7 +26,7 @@ const createMatchSchema = z.object({
   skillLevelMax: z.number().min(0).max(10).optional(),
   genderFilter: z.union([z.enum(['male', 'female']), z.literal('')]).optional(),
   maxDistance: z.number().optional(),
-  surfaceFilter: z.enum(['HARD', 'CLAY', 'GRASS', 'INDOOR']).optional(),
+  surfaceFilter: z.enum(['hard', 'clay', 'grass', 'indoor']).optional(),
   slots: z.array(z.object({
     startTime: z.string().min(1, 'Start time is required'),
     endTime: z.string().min(1, 'End time is required'),
@@ -242,22 +242,11 @@ function CreateMatchPageContent() {
         setHomeCourtError(null);
         
         // Set default surface to home court's surface
-        // Backend returns surfaceType ('Hard', 'Clay', etc.), frontend uses surface ('HARD', 'CLAY', etc.)
+        // Backend returns surface in lowercase
         if (userCourt.surface) {
-          // Map backend surface to frontend format
-          const surfaceMap: Record<string, 'HARD' | 'CLAY' | 'GRASS' | 'INDOOR'> = {
-            'Hard': 'HARD',
-            'Clay': 'CLAY',
-            'Grass': 'GRASS',
-            'Indoor': 'INDOOR',
-            // Also handle if it's already in uppercase (defensive)
-            'HARD': 'HARD',
-            'CLAY': 'CLAY',
-            'GRASS': 'GRASS',
-            'INDOOR': 'INDOOR',
-          };
-          const mappedSurface = surfaceMap[userCourt.surface];
-          if (mappedSurface) {
+          // Backend and frontend now both use lowercase
+          const mappedSurface = userCourt.surface.toLowerCase() as 'hard' | 'clay' | 'grass' | 'indoor';
+          if (mappedSurface && ['hard', 'clay', 'grass', 'indoor'].includes(mappedSurface)) {
             setValue('surfaceFilter', mappedSurface);
           }
         }
@@ -384,14 +373,8 @@ function CreateMatchPageContent() {
         requestData.genderFilter = data.genderFilter;
       }
       if (data.surfaceFilter) {
-        // Map frontend enum format (HARD, CLAY, etc.) to backend format (Hard, Clay, etc.)
-        const surfaceMap: Record<string, string> = {
-          'HARD': 'Hard',
-          'CLAY': 'Clay',
-          'GRASS': 'Grass',
-          'INDOOR': 'Indoor',
-        };
-        requestData.surfaceFilter = surfaceMap[data.surfaceFilter] || data.surfaceFilter;
+        // Backend and frontend now both use lowercase
+        requestData.surfaceFilter = data.surfaceFilter;
       }
       
       if (data.maxDistance) requestData.maxDistance = data.maxDistance;

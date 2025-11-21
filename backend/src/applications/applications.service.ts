@@ -91,28 +91,21 @@ export class ApplicationsService {
       throw new BadRequestException('Match is not accepting applications');
     }
 
-    // Check for time overlap with other confirmed/pending applications
-    await this.checkTimeOverlap(userId, slot.match.date, slot.startTime, slot.endTime);
+    // Check if user already has a pending application for this match
+    const existingApplication = await this.applicationRepository.findOne({
+      where: {
+        applicantUserId: userId,
+        status: ApplicationStatus.PENDING,
+      },
+      relations: ['matchSlot', 'matchSlot.match'],
+    });
 
-    // Check if slot is already locked
-    const lockKey = `slot_lock:${slot.id}`;
-    const existingLock = await this.cacheManager.get<string>(lockKey);
-    if (existingLock && existingLock !== userId) {
-      throw new BadRequestException('Slot is currently locked by another user');
+    if (existingApplication && existingApplication.matchSlot.match.id === slot.match.id) {
+      throw new BadRequestException('You already have a pending application for this match');
     }
 
-    // Lock the slot
-    const expirationTime = new Date();
-    expirationTime.setHours(expirationTime.getHours() + this.lockExpirationHours);
-
-    await this.cacheManager.set(lockKey, userId, this.lockExpirationHours * 60 * 60 * 1000);
-
-    // Update slot status
-    slot.status = SlotStatus.LOCKED;
-    slot.lockedByUserId = userId;
-    slot.lockedAt = new Date();
-    slot.expiresAt = expirationTime;
-    await this.matchSlotRepository.save(slot);
+    // Check for time overlap with confirmed matches only (allow pending overlaps)
+    await this.checkTimeOverlap(userId, slot.match.date, slot.startTime, slot.endTime);
 
     // Create application
     const application = this.applicationRepository.create({
@@ -125,6 +118,10 @@ export class ApplicationsService {
     const savedApplication = await this.applicationRepository.save(application);
 
     // Notify match creator about new application
+    const matchDate = slot.match.date instanceof Date 
+      ? slot.match.date.toLocaleDateString() 
+      : new Date(slot.match.date).toLocaleDateString();
+    
     await this.notificationsService.createNotification(
       slot.match.creatorUserId,
       NotificationType.MATCH_ACCEPTED,
@@ -132,7 +129,7 @@ export class ApplicationsService {
       {
         applicantName: `${user.firstName} ${user.lastName}`,
         courtName: slot.match.court?.name || 'Court',
-        date: slot.match.date.toLocaleDateString(),
+        date: matchDate,
         matchId: slot.match.id,
       },
     );
@@ -181,13 +178,6 @@ export class ApplicationsService {
       throw new BadRequestException('Application is not pending');
     }
 
-    // Check if slot lock is still valid
-    const lockKey = `slot_lock:${application.matchSlotId}`;
-    const lockUserId = await this.cacheManager.get<string>(lockKey);
-    if (lockUserId !== application.applicantUserId) {
-      throw new BadRequestException('Slot lock has expired or been released');
-    }
-
     // Confirm application
     application.status = ApplicationStatus.CONFIRMED;
     await this.applicationRepository.save(application);
@@ -201,8 +191,81 @@ export class ApplicationsService {
     application.matchSlot.match.status = MatchStatus.CONFIRMED;
     await this.matchRepository.save(application.matchSlot.match);
 
-    // Remove lock from Redis
-    await this.cacheManager.del(lockKey);
+    // Auto-reject all other pending applications for this match
+    const matchOtherApplications = await this.applicationRepository
+      .createQueryBuilder('app')
+      .innerJoin('app.matchSlot', 'slot')
+      .innerJoin('slot.match', 'match')
+      .where('match.id = :matchId', { matchId: application.matchSlot.match.id })
+      .andWhere('app.id != :applicationId', { applicationId: application.id })
+      .andWhere('app.status = :pending', { pending: ApplicationStatus.PENDING })
+      .getMany();
+
+    for (const otherApp of matchOtherApplications) {
+      otherApp.status = ApplicationStatus.REJECTED;
+      await this.applicationRepository.save(otherApp);
+      
+      // Notify rejected applicant
+      await this.notificationsService.createNotification(
+        otherApp.applicantUserId,
+        NotificationType.MATCH_ACCEPTED,
+        `Your application was not selected for this match`,
+        {
+          matchId: application.matchSlot.match.id,
+        },
+      );
+    }
+
+    // Auto-remove overlapping applications from the confirmed applicant (±2 hours)
+    const confirmedSlot = application.matchSlot;
+    const confirmedDate = application.matchSlot.match.date;
+    const confirmedStartTime = confirmedSlot.startTime;
+    const confirmedEndTime = confirmedSlot.endTime;
+
+    // Find all other pending applications from the same applicant
+    const applicantOtherApplications = await this.applicationRepository.find({
+      where: {
+        applicantUserId: application.applicantUserId,
+        status: ApplicationStatus.PENDING,
+      },
+      relations: ['matchSlot', 'matchSlot.match'],
+    });
+
+    // Filter applications that overlap with confirmed slot (±2 hours)
+    const overlappingApplications = applicantOtherApplications.filter((app) => {
+      if (app.id === application.id) return false; // Skip the confirmed one
+      
+      // Check if same date
+      const appDate = app.matchSlot.match.date;
+      const appDateStr = appDate instanceof Date ? appDate.toISOString().split('T')[0] : appDate;
+      const confirmedDateStr = confirmedDate instanceof Date ? confirmedDate.toISOString().split('T')[0] : confirmedDate;
+      if (appDateStr !== confirmedDateStr) return false;
+
+      // Check time overlap with ±2 hour buffer
+      return this.checkTimeOverlapWithBuffer(
+        confirmedStartTime,
+        confirmedEndTime,
+        app.matchSlot.startTime,
+        app.matchSlot.endTime,
+        2, // 2 hours buffer
+      );
+    });
+
+    // Remove overlapping applications
+    for (const overlappingApp of overlappingApplications) {
+      overlappingApp.status = ApplicationStatus.REJECTED;
+      await this.applicationRepository.save(overlappingApp);
+      
+      // Notify applicant about removed application
+      await this.notificationsService.createNotification(
+        overlappingApp.applicantUserId,
+        NotificationType.MATCH_ACCEPTED,
+        `Your application was automatically removed due to time conflict with a confirmed match`,
+        {
+          matchId: overlappingApp.matchSlot.match.id,
+        },
+      );
+    }
 
     // Notify applicant about match confirmation
     const match = application.matchSlot.match;
@@ -277,17 +340,6 @@ export class ApplicationsService {
     application.status = ApplicationStatus.REJECTED;
     await this.applicationRepository.save(application);
 
-    // Release slot lock
-    const lockKey = `slot_lock:${application.matchSlotId}`;
-    await this.cacheManager.del(lockKey);
-
-    // Reset slot status
-    application.matchSlot.status = SlotStatus.AVAILABLE;
-    (application.matchSlot as any).lockedByUserId = null;
-    (application.matchSlot as any).lockedAt = null;
-    (application.matchSlot as any).expiresAt = null;
-    await this.matchSlotRepository.save(application.matchSlot);
-
     // Emit real-time update
     try {
       const updatedMatch = await this.matchRepository.findOne({
@@ -325,18 +377,7 @@ export class ApplicationsService {
       throw new BadRequestException('Cannot withdraw from a completed match');
     }
 
-    // Release slot lock
-    const lockKey = `slot_lock:${application.matchSlotId}`;
-    await this.cacheManager.del(lockKey);
-
-    // Reset slot status
-    application.matchSlot.status = SlotStatus.AVAILABLE;
-    (application.matchSlot as any).lockedByUserId = null;
-    (application.matchSlot as any).lockedAt = null;
-    (application.matchSlot as any).expiresAt = null;
-    await this.matchSlotRepository.save(application.matchSlot);
-
-    // Delete the application
+    // Delete the application (no need to release lock or reset slot status)
     await this.applicationRepository.remove(application);
 
     // Emit real-time update
@@ -377,12 +418,40 @@ export class ApplicationsService {
 
     const slots = await this.matchSlotRepository.find({
       where: { matchId },
-      relations: ['application', 'application.applicant', 'application.applicant.stats'],
+      relations: ['application', 'application.applicant', 'application.applicant.stats', 'application.matchSlot'],
     });
 
     return slots
       .map((slot) => slot.application)
       .filter((app) => app !== null) as Application[];
+  }
+
+  /**
+   * Check if two time slots overlap with a buffer (in hours)
+   * Times are in format "HH:MM:SS" or "HH:MM"
+   */
+  private checkTimeOverlapWithBuffer(
+    startTime1: string,
+    endTime1: string,
+    startTime2: string,
+    endTime2: string,
+    bufferHours: number,
+  ): boolean {
+    // Convert time strings to minutes since midnight
+    const timeToMinutes = (timeStr: string): number => {
+      const parts = timeStr.split(':');
+      const hours = parseInt(parts[0], 10);
+      const minutes = parseInt(parts[1] || '0', 10);
+      return hours * 60 + minutes;
+    };
+
+    const start1 = timeToMinutes(startTime1) - bufferHours * 60; // Subtract buffer from start
+    const end1 = timeToMinutes(endTime1) + bufferHours * 60; // Add buffer to end
+    const start2 = timeToMinutes(startTime2);
+    const end2 = timeToMinutes(endTime2);
+
+    // Check if intervals overlap: (start1 <= end2) && (end1 >= start2)
+    return start1 <= end2 && end1 >= start2;
   }
 
   private async checkTimeOverlap(
@@ -392,10 +461,11 @@ export class ApplicationsService {
     endTime: string,
   ): Promise<void> {
     // Find all confirmed matches for this user on this date
+    // Only prevent if there's a confirmed match at the same time
     const confirmedMatches = await this.matchRepository
       .createQueryBuilder('match')
       .innerJoin('match.slots', 'slot')
-      .where('slot.status = :confirmed', { confirmed: SlotStatus.CONFIRMED })
+      .where('slot.status = :slotConfirmed', { slotConfirmed: SlotStatus.CONFIRMED })
       .andWhere('match.date = :date', { date })
       .andWhere(
         `(slot.startTime <= :endTime AND slot.endTime >= :startTime)`,
@@ -406,33 +476,18 @@ export class ApplicationsService {
           SELECT 1 FROM applications app 
           WHERE app.match_slot_id = slot.id 
           AND app.applicant_user_id = :userId 
-          AND app.status = :confirmed
+          AND app.status = :appConfirmed
         ))`,
-        { userId, confirmed: ApplicationStatus.CONFIRMED },
+        { userId, appConfirmed: ApplicationStatus.CONFIRMED },
       )
       .getMany();
 
     if (confirmedMatches.length > 0) {
-      throw new BadRequestException('You already have a match at this time');
+      throw new BadRequestException('You already have a confirmed match at this time');
     }
 
-    // Check pending applications
-    const pendingApplications = await this.applicationRepository
-      .createQueryBuilder('app')
-      .innerJoin('app.matchSlot', 'slot')
-      .innerJoin('slot.match', 'match')
-      .where('app.applicantUserId = :userId', { userId })
-      .andWhere('app.status = :pending', { pending: ApplicationStatus.PENDING })
-      .andWhere('match.date = :date', { date })
-      .andWhere(
-        `(slot.startTime <= :endTime AND slot.endTime >= :startTime)`,
-        { startTime, endTime },
-      )
-      .getMany();
-
-    if (pendingApplications.length > 0) {
-      throw new BadRequestException('You already have a pending application at this time');
-    }
+    // Note: We allow pending applications to overlap (users can apply to multiple matches)
+    // Overlapping pending applications will be auto-removed when one is confirmed
   }
 
   async expireLocks(): Promise<void> {

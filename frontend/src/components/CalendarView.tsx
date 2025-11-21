@@ -29,14 +29,15 @@ export const CalendarView = ({ filters, onDateSelect }: CalendarViewProps) => {
   
   // Helper function to get surface color
   const getSurfaceColor = (surface?: string): string => {
-    switch (surface) {
-      case 'CLAY':
+    const surfaceLower = surface?.toLowerCase();
+    switch (surfaceLower) {
+      case 'clay':
         return 'bg-green-100 border-green-300 text-green-900'; // Green for clay (US)
-      case 'HARD':
+      case 'hard':
         return 'bg-blue-100 border-blue-300 text-blue-900'; // Blue for hard
-      case 'GRASS':
+      case 'grass':
         return 'bg-emerald-100 border-emerald-300 text-emerald-900'; // Green for grass
-      case 'INDOOR':
+      case 'indoor':
         return 'bg-purple-100 border-purple-300 text-purple-900'; // Purple for indoor
       default:
         return 'bg-gray-100 border-gray-300 text-gray-900';

@@ -7,7 +7,7 @@ type CreateCourtData = {
   address: string;
   lat?: number;
   lng?: number;
-  surface: 'HARD' | 'CLAY' | 'GRASS' | 'INDOOR';
+  surface: 'hard' | 'clay' | 'grass' | 'indoor';
   isPublic: boolean;
 };
 

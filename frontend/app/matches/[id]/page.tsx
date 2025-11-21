@@ -350,15 +350,21 @@ export default function MatchDetailPage() {
                 currentMatch.slots.map((slot) => {
                   const isAvailable = slot.status?.toLowerCase() === 'available';
                   const isConfirmed = slot.status?.toLowerCase() === 'confirmed';
-                  const isLocked = slot.status?.toLowerCase() === 'locked';
                   const isMatchPending = currentMatch.status?.toLowerCase() === 'pending';
+                  
+                  // Check if current user already has a pending application for this match
+                  const hasPendingApplication = currentMatch.slots?.some(s => 
+                    s.application?.applicantUserId === user?.id || s.application?.userId === user?.id
+                  ) && currentMatch.slots?.some(s => 
+                    (s.application?.applicantUserId === user?.id || s.application?.userId === user?.id) &&
+                    s.application?.status?.toLowerCase() === 'pending'
+                  );
                   
                   return (
                     <div
                       key={slot.id}
                       className={`p-3 rounded-lg border ${
                         isConfirmed ? 'bg-green-50 border-green-200' :
-                        isLocked ? 'bg-yellow-50 border-yellow-200' :
                         isAvailable ? 'bg-blue-50 border-blue-200' :
                         'bg-gray-50 border-gray-200'
                       }`}
@@ -368,39 +374,52 @@ export default function MatchDetailPage() {
                           <p className="font-medium text-gray-900">
                             {formatSlotTime(slot.startTime)} - {formatSlotTime(slot.endTime)}
                           </p>
-                          <p className="text-sm text-gray-600 capitalize">{slot.status || 'Unknown'}</p>
-                          {isAvailable && !isCreator && (
+                          <p className="text-sm text-gray-600 capitalize">
+                            {isConfirmed ? 'Confirmed' : isAvailable ? 'Available' : slot.status || 'Unknown'}
+                          </p>
+                          {isAvailable && !isCreator && !hasPendingApplication && (
                             <p className="text-xs text-blue-600 mt-1">Click Apply to join this time slot</p>
                           )}
                         </div>
                         {!isCreator && isAvailable && isMatchPending && (
-                          <Button
-                            variant="primary"
-                            size="sm"
-                            isLoading={applyingSlotId === slot.id}
-                            onClick={async () => {
-                              try {
-                                setApplyError(null);
-                                setApplySuccess(null);
-                                setApplyingSlotId(slot.id);
-                                await applicationsApi.applyToSlot({ matchSlotId: slot.id });
-                                setApplySuccess('Application submitted successfully! The match creator will review your request.');
-                                await fetchMatchById(matchId);
-                                // Clear success message after 5 seconds
-                                setTimeout(() => setApplySuccess(null), 5000);
-                              } catch (error: any) {
-                                console.error('Failed to apply:', error);
-                                const errorMessage = error?.response?.data?.message || error?.message || 'Failed to submit application. Please try again.';
-                                setApplyError(errorMessage);
-                                // Clear error message after 5 seconds
-                                setTimeout(() => setApplyError(null), 5000);
-                              } finally {
-                                setApplyingSlotId(null);
-                              }
-                            }}
-                          >
-                            Apply
-                          </Button>
+                          hasPendingApplication ? (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              disabled
+                              className="opacity-50 cursor-not-allowed"
+                            >
+                              Applied
+                            </Button>
+                          ) : (
+                            <Button
+                              variant="primary"
+                              size="sm"
+                              isLoading={applyingSlotId === slot.id}
+                              onClick={async () => {
+                                try {
+                                  setApplyError(null);
+                                  setApplySuccess(null);
+                                  setApplyingSlotId(slot.id);
+                                  await applicationsApi.applyToSlot({ matchSlotId: slot.id });
+                                  setApplySuccess('Application submitted successfully! The match creator will review your request.');
+                                  await fetchMatchById(matchId);
+                                  // Clear success message after 5 seconds
+                                  setTimeout(() => setApplySuccess(null), 5000);
+                                } catch (error: any) {
+                                  console.error('Failed to apply:', error);
+                                  const errorMessage = error?.response?.data?.message || error?.message || 'Failed to submit application. Please try again.';
+                                  setApplyError(errorMessage);
+                                  // Clear error message after 5 seconds
+                                  setTimeout(() => setApplyError(null), 5000);
+                                } finally {
+                                  setApplyingSlotId(null);
+                                }
+                              }}
+                            >
+                              Apply
+                            </Button>
+                          )
                         )}
                         {isCreator && isAvailable && (
                           <span className="text-xs text-gray-500">Waiting for applications</span>

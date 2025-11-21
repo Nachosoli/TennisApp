@@ -15,10 +15,10 @@ import { User } from './user.entity';
 import { Match } from './match.entity';
 
 export enum SurfaceType {
-  HARD = 'Hard',
-  CLAY = 'Clay',
-  GRASS = 'Grass',
-  INDOOR = 'Indoor',
+  HARD = 'hard',
+  CLAY = 'clay',
+  GRASS = 'grass',
+  INDOOR = 'indoor',
 }
 
 @Entity('courts')

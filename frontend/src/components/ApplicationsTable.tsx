@@ -100,6 +100,20 @@ export const ApplicationsTable = ({ matchId, matchFormat = 'singles' }: Applicat
     return `${cancellationRate.toFixed(1)}%`;
   };
 
+  const formatSlotTime = (timeString: string | undefined): string => {
+    if (!timeString) return 'N/A';
+    try {
+      const [hours, minutes] = timeString.split(':');
+      const hour = parseInt(hours, 10);
+      const minute = minutes ? parseInt(minutes, 10) : 0;
+      const period = hour >= 12 ? 'PM' : 'AM';
+      const displayHour = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
+      return `${displayHour}:${minute.toString().padStart(2, '0')} ${period}`;
+    } catch {
+      return timeString;
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="overflow-x-auto">
@@ -108,6 +122,7 @@ export const ApplicationsTable = ({ matchId, matchFormat = 'singles' }: Applicat
             <tr>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Last Name</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Time Slot</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Rating</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Elo</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Win Rate</th>
@@ -121,6 +136,7 @@ export const ApplicationsTable = ({ matchId, matchFormat = 'singles' }: Applicat
               <tr key={index}>
                 <td className="px-6 py-4 whitespace-nowrap"><Skeleton variant="rectangular" height={16} width="60%" /></td>
                 <td className="px-6 py-4 whitespace-nowrap"><Skeleton variant="rectangular" height={16} width="60%" /></td>
+                <td className="px-6 py-4 whitespace-nowrap"><Skeleton variant="rectangular" height={16} width="50%" /></td>
                 <td className="px-6 py-4 whitespace-nowrap"><Skeleton variant="rectangular" height={16} width="40%" /></td>
                 <td className="px-6 py-4 whitespace-nowrap"><Skeleton variant="rectangular" height={16} width="40%" /></td>
                 <td className="px-6 py-4 whitespace-nowrap"><Skeleton variant="rectangular" height={16} width="40%" /></td>
@@ -159,6 +175,7 @@ export const ApplicationsTable = ({ matchId, matchFormat = 'singles' }: Applicat
           <tr>
             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Last Name</th>
+            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Time Slot</th>
             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Rating</th>
             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Elo</th>
             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Win Rate</th>
@@ -179,6 +196,11 @@ export const ApplicationsTable = ({ matchId, matchFormat = 'singles' }: Applicat
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                   {user.lastName || 'N/A'}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  {application.matchSlot 
+                    ? `${formatSlotTime(application.matchSlot.startTime)} - ${formatSlotTime(application.matchSlot.endTime)}`
+                    : 'N/A'}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                   {formatRating(user)}

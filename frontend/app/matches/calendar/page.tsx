@@ -93,10 +93,10 @@ export default function CalendarPage() {
                 onChange={(e) => setFilters({ ...filters, surface: e.target.value || undefined })}
               >
                 <option value="">All Surfaces</option>
-                <option value="HARD">Hard</option>
-                <option value="CLAY">Clay</option>
-                <option value="GRASS">Grass</option>
-                <option value="INDOOR">Indoor</option>
+                <option value="hard">Hard</option>
+                <option value="clay">Clay</option>
+                <option value="grass">Grass</option>
+                <option value="indoor">Indoor</option>
               </select>
             </div>
 

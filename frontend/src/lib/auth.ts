@@ -96,7 +96,7 @@ export const authApi = {
     phone?: string;
     bio?: string;
     homeCourtId?: string;
-    ratingType?: 'UTR' | 'USTA' | 'ULTIMATE' | 'CUSTOM';
+    ratingType?: 'utr' | 'usta' | 'ultimate' | 'custom';
     ratingValue?: number;
   }): Promise<User> {
     const response = await apiClient.put<User>('/users/me', data, { timeout: 30000 });
