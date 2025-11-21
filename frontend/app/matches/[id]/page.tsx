@@ -18,6 +18,7 @@ import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { useSocket } from '@/hooks/useSocket';
 import { format } from 'date-fns';
 import { Match } from '@/types';
+import { parseLocalDate } from '@/lib/date-utils';
 
 export default function MatchDetailPage() {
   const params = useParams();
@@ -180,7 +181,7 @@ export default function MatchDetailPage() {
 
     try {
       // Normalize the date - ensure it's in YYYY-MM-DD format
-      const matchDate = new Date(currentMatch.date);
+      const matchDate = parseLocalDate(currentMatch.date);
       if (isNaN(matchDate.getTime())) {
         // If date is invalid, try to parse it as a string
         const dateStr = String(currentMatch.date).split('T')[0]; // Get YYYY-MM-DD part
@@ -236,7 +237,7 @@ export default function MatchDetailPage() {
                 <span className="text-gray-900">
                   {(() => {
                     try {
-                      const matchDate = new Date(currentMatch.date);
+                      const matchDate = parseLocalDate(currentMatch.date);
                       if (isNaN(matchDate.getTime())) {
                         return currentMatch.date || 'N/A';
                       }
@@ -254,12 +255,66 @@ export default function MatchDetailPage() {
                   <span className="text-gray-900">{currentMatch.surface}</span>
                 </div>
               )}
+              {currentMatch.format && (
+                <div>
+                  <span className="font-medium text-gray-700">Format:</span>{' '}
+                  <span className="text-gray-900">
+                    {currentMatch.format === 'singles' ? 'Singles' : currentMatch.format === 'doubles' ? 'Doubles' : currentMatch.format}
+                  </span>
+                </div>
+              )}
+              <div>
+                <span className="font-medium text-gray-700">Looking for Gender:</span>{' '}
+                <span className="text-gray-900">
+                  {currentMatch.gender === 'MALE' ? 'Male' : currentMatch.gender === 'FEMALE' ? 'Female' : 'Any'}
+                </span>
+              </div>
               <div>
                 <span className="font-medium text-gray-700">Created by:</span>{' '}
                 <span className="text-gray-900">
                   {currentMatch.creator?.firstName} {currentMatch.creator?.lastName}
                 </span>
               </div>
+              
+              {/* Creator's Information Section */}
+              {currentMatch.creator && (
+                <div className="mt-4 pt-4 border-t border-gray-200">
+                  <h4 className="font-semibold text-gray-900 mb-2">Creator's Information</h4>
+                  <div className="space-y-2 text-sm">
+                    {currentMatch.creator.ratingValue && (
+                      <div>
+                        <span className="font-medium text-gray-700">Rating: </span>
+                        <span className="text-gray-900">
+                          {currentMatch.creator.ratingValue}
+                          {currentMatch.creator.ratingType && ` (${currentMatch.creator.ratingType})`}
+                        </span>
+                      </div>
+                    )}
+                    {currentMatch.creator.stats?.singlesElo && (
+                      <div>
+                        <span className="font-medium text-gray-700">ELO: </span>
+                        <span className="text-gray-900">{Math.round(currentMatch.creator.stats.singlesElo)}</span>
+                      </div>
+                    )}
+                    {currentMatch.creator.gender && (
+                      <div>
+                        <span className="font-medium text-gray-700">Gender: </span>
+                        <span className="text-gray-900">
+                          {currentMatch.creator.gender === 'male' ? 'Man' : currentMatch.creator.gender === 'female' ? 'Woman' : currentMatch.creator.gender}
+                        </span>
+                      </div>
+                    )}
+                    {currentMatch.creator.stats && currentMatch.creator.stats.totalMatches > 0 && (
+                      <div>
+                        <span className="font-medium text-gray-700">Win Rate: </span>
+                        <span className="text-gray-900">
+                          {((currentMatch.creator.stats.totalWins / currentMatch.creator.stats.totalMatches) * 100).toFixed(1)}%
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
           </Card>
 
@@ -295,8 +350,8 @@ export default function MatchDetailPage() {
                 <div
                   key={slot.id}
                   className={`p-3 rounded-lg border ${
-                    slot.status === 'confirmed' ? 'bg-green-50 border-green-200' :
-                    slot.status === 'locked' ? 'bg-yellow-50 border-yellow-200' :
+                    slot.status === 'CONFIRMED' ? 'bg-green-50 border-green-200' :
+                    slot.status === 'LOCKED' ? 'bg-yellow-50 border-yellow-200' :
                     'bg-gray-50 border-gray-200'
                   }`}
                 >
@@ -307,7 +362,7 @@ export default function MatchDetailPage() {
                       </p>
                       <p className="text-sm text-gray-600">{slot.status}</p>
                     </div>
-                    {!isCreator && slot.status === 'available' && (
+                    {!isCreator && slot.status === 'AVAILABLE' && (
                       <Button
                         variant="primary"
                         size="sm"
@@ -372,7 +427,7 @@ export default function MatchDetailPage() {
         )}
 
         <div className="flex gap-4">
-          <Button variant="outline" onClick={() => router.back()}>
+          <Button variant="outline" onClick={() => router.push('/dashboard')}>
             Back
           </Button>
         </div>

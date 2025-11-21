@@ -72,11 +72,17 @@ export class MatchesService {
       throw new BadRequestException('At least one time slot is required');
     }
 
+    // Normalize date to avoid timezone issues
+    // Extract YYYY-MM-DD from the date string
+    // Pass as string to TypeORM to avoid timezone conversion
+    const dateString = createDto.date.split('T')[0]; // Get YYYY-MM-DD part (e.g., "2025-11-24")
+    const [year, month, day] = dateString.split('-').map(Number);
+
     // Validate date is not in the past
-    const matchDate = new Date(createDto.date);
     const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    if (matchDate < today) {
+    today.setUTCHours(0, 0, 0, 0);
+    const matchDateUTC = new Date(Date.UTC(year, month - 1, day, 0, 0, 0));
+    if (matchDateUTC < today) {
       throw new BadRequestException('Match date cannot be in the past');
     }
 
@@ -84,7 +90,7 @@ export class MatchesService {
     const matchData: any = {
       creatorUserId: userId,
       courtId: createDto.courtId,
-      date: matchDate,
+      date: dateString, // Pass as string (YYYY-MM-DD) to avoid timezone conversion
       format: createDto.format,
       skillLevelMin: createDto.skillLevelMin,
       skillLevelMax: createDto.skillLevelMax,

@@ -7,6 +7,7 @@ import { Card } from './ui/Card';
 import { Button } from './ui/Button';
 import Link from 'next/link';
 import { format } from 'date-fns';
+import { parseLocalDate } from '@/lib/date-utils';
 
 const GOOGLE_MAPS_LIBRARIES: ("places" | "geometry")[] = ["places", "geometry"];
 
@@ -48,8 +49,8 @@ export const MatchesMap = ({ matches, onMapLoad, homeCourt, currentUserId }: Mat
     const map = new Map<string, { court: any; matches: Match[] }>();
     
     matches.forEach((match) => {
-      // Exclude cancelled matches
-      if (match.status === 'CANCELLED') return;
+      // Exclude cancelled matches (backend stores as lowercase 'cancelled')
+      if (match.status === 'CANCELLED' || (match.status as string).toUpperCase() === 'CANCELLED') return;
       // Exclude matches created by the current user
       if (currentUserId && match.creatorUserId === currentUserId) return;
       
@@ -263,7 +264,7 @@ export const MatchesMap = ({ matches, onMapLoad, homeCourt, currentUserId }: Mat
                 
                 {courtMatchesMap.get(selectedCourt)!.matches.slice(0, 3).map((match) => (
                   <div key={match.id} className="text-xs text-gray-600 border-l-2 border-blue-500 pl-2">
-                    <div className="font-medium">{format(new Date(match.date), 'MMM d, yyyy')}</div>
+                    <div className="font-medium">{format(parseLocalDate(match.date), 'MMM d, yyyy')}</div>
                     <div>{match.skillLevel} • {match.gender}</div>
                   </div>
                 ))}

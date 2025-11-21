@@ -57,6 +57,16 @@ export class AdminController {
     return this.adminService.editUser(adminId, userId, editDto);
   }
 
+  @Delete('users/:userId')
+  @ApiOperation({ summary: 'Delete a user' })
+  async deleteUser(
+    @Param('userId') userId: string,
+    @Body('reason') reason: string,
+    @CurrentUser('id') adminId: string,
+  ) {
+    await this.adminService.deleteUser(adminId, userId, reason);
+  }
+
   // Court Management
   @Delete('courts/:courtId')
   @ApiOperation({ summary: 'Delete a court' })
