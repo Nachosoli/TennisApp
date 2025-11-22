@@ -229,7 +229,7 @@ export class AdminService {
   async overrideConfirmation(adminId: string, matchId: string, reason: string): Promise<Match> {
     const match = await this.matchRepository.findOne({
       where: { id: matchId },
-      relations: ['creator', 'slots', 'slots.application'],
+      relations: ['creator', 'slots', 'slots.applications'],
     });
 
     if (!match) {
@@ -311,7 +311,7 @@ export class AdminService {
   async forceCancelMatch(adminId: string, matchId: string, reason: string): Promise<void> {
     const match = await this.matchRepository.findOne({
       where: { id: matchId },
-      relations: ['creator', 'slots', 'slots.application'],
+      relations: ['creator', 'slots', 'slots.applications'],
     });
 
     if (!match) {

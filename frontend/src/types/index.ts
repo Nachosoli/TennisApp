@@ -61,7 +61,7 @@ export interface MatchSlot {
   lockedByUserId?: string;
   lockedAt?: string;
   expiresAt?: string;
-  application?: Application;
+  applications?: Application[]; // Changed from application (singular) to applications (array)
 }
 
 export interface Match {

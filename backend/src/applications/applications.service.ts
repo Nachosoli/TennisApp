@@ -105,7 +105,16 @@ export class ApplicationsService {
     }
 
     // Check for time overlap with confirmed matches only (allow pending overlaps)
-    await this.checkTimeOverlap(userId, slot.match.date, slot.startTime, slot.endTime);
+    // Normalize date to string (YYYY-MM-DD) format for database comparison
+    // slot.match.date is stored as string in DB to avoid timezone issues, but TypeScript types it as Date
+    const dateValue = slot.match.date as any;  // Type assertion to handle runtime string vs TypeScript Date type
+    const dateStr = typeof dateValue === 'string' 
+      ? dateValue.split('T')[0]  // Extract YYYY-MM-DD if it has time component
+      : dateValue instanceof Date
+        ? dateValue.toISOString().split('T')[0]  // Convert Date to YYYY-MM-DD
+        : String(dateValue).split('T')[0];  // Fallback: convert to string and extract date part
+    
+    await this.checkTimeOverlap(userId, dateStr, slot.startTime, slot.endTime);
 
     // Create application
     const application = this.applicationRepository.create({
@@ -273,6 +282,11 @@ export class ApplicationsService {
       where: { id: creatorUserId },
     });
     
+    // Handle date conversion (match.date is stored as string to avoid timezone issues)
+    const matchDate = match.date instanceof Date 
+      ? match.date.toLocaleDateString() 
+      : new Date(match.date).toLocaleDateString();
+    
     await this.notificationsService.createNotification(
       application.applicantUserId,
       NotificationType.MATCH_CONFIRMED,
@@ -280,7 +294,7 @@ export class ApplicationsService {
       {
         opponentName: creator ? `${creator.firstName} ${creator.lastName}` : 'Match Creator',
         courtName: match.court?.name || 'Court',
-        date: match.date.toLocaleDateString(),
+        date: matchDate,
         time: `${application.matchSlot.startTime} - ${application.matchSlot.endTime}`,
         matchId: match.id,
       },
@@ -294,7 +308,7 @@ export class ApplicationsService {
       {
         opponentName: `${application.applicant.firstName} ${application.applicant.lastName}`,
         courtName: match.court?.name || 'Court',
-        date: match.date.toLocaleDateString(),
+        date: matchDate,
         time: `${application.matchSlot.startTime} - ${application.matchSlot.endTime}`,
         matchId: match.id,
       },
@@ -416,14 +430,19 @@ export class ApplicationsService {
       throw new ForbiddenException('Only match creator can view applications');
     }
 
-    const slots = await this.matchSlotRepository.find({
-      where: { matchId },
-      relations: ['application', 'application.applicant', 'application.applicant.stats', 'application.matchSlot'],
-    });
+    // Query applications directly - more efficient and scalable
+    // This uses the index on match_slot_id and can be easily extended with pagination/filtering
+    const applications = await this.applicationRepository
+      .createQueryBuilder('application')
+      .innerJoin('application.matchSlot', 'slot')
+      .where('slot.matchId = :matchId', { matchId })
+      .leftJoinAndSelect('application.applicant', 'applicant')
+      .leftJoinAndSelect('applicant.stats', 'stats')
+      .leftJoinAndSelect('application.matchSlot', 'matchSlot')
+      .orderBy('application.createdAt', 'DESC')
+      .getMany();
 
-    return slots
-      .map((slot) => slot.application)
-      .filter((app) => app !== null) as Application[];
+    return applications;
   }
 
   /**
@@ -456,17 +475,20 @@ export class ApplicationsService {
 
   private async checkTimeOverlap(
     userId: string,
-    date: Date,
+    date: string,  // Accept string (YYYY-MM-DD format) to match database storage and avoid timezone issues
     startTime: string,
     endTime: string,
   ): Promise<void> {
+    // Ensure date is in YYYY-MM-DD format (already should be, but normalize just in case)
+    const dateStr = date.split('T')[0];  // Extract YYYY-MM-DD if it has time component
+
     // Find all confirmed matches for this user on this date
     // Only prevent if there's a confirmed match at the same time
     const confirmedMatches = await this.matchRepository
       .createQueryBuilder('match')
       .innerJoin('match.slots', 'slot')
       .where('slot.status = :slotConfirmed', { slotConfirmed: SlotStatus.CONFIRMED })
-      .andWhere('match.date = :date', { date })
+      .andWhere('match.date = :date', { date: dateStr })  // Compare as string (YYYY-MM-DD) to match database storage
       .andWhere(
         `(slot.startTime <= :endTime AND slot.endTime >= :startTime)`,
         { startTime, endTime },

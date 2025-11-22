@@ -32,13 +32,13 @@ export const CalendarView = ({ filters, onDateSelect }: CalendarViewProps) => {
     const surfaceLower = surface?.toLowerCase();
     switch (surfaceLower) {
       case 'clay':
-        return 'bg-green-100 border-green-300 text-green-900'; // Green for clay (US)
+        return 'bg-green-100 border-green-300 text-green-900'; // Green for clay
       case 'hard':
         return 'bg-blue-100 border-blue-300 text-blue-900'; // Blue for hard
       case 'grass':
-        return 'bg-emerald-100 border-emerald-300 text-emerald-900'; // Green for grass
+        return 'bg-emerald-100 border-emerald-300 text-emerald-900'; // Emerald green for grass
       case 'indoor':
-        return 'bg-purple-100 border-purple-300 text-purple-900'; // Purple for indoor
+        return 'bg-amber-700 border-amber-800 text-white'; // Brown/amber for indoor
       default:
         return 'bg-gray-100 border-gray-300 text-gray-900';
     }
@@ -55,10 +55,12 @@ export const CalendarView = ({ filters, onDateSelect }: CalendarViewProps) => {
       ...filters,
     })
       .then((matches) => {
-        // Filter out cancelled matches and user's own matches (backend stores as lowercase 'cancelled')
+        // Filter out cancelled matches, confirmed matches (for non-creators), and user's own matches
         const filtered = matches.filter(match => {
           if (match.status?.toLowerCase() === 'cancelled') return false;
           if (user && match.creatorUserId === user.id) return false;
+          // Hide confirmed matches from other users (they can't apply anymore)
+          if (match.status?.toLowerCase() === 'confirmed' && user && match.creatorUserId !== user.id) return false;
           return true;
         });
         setMatches(filtered);
@@ -206,7 +208,28 @@ export const CalendarView = ({ filters, onDateSelect }: CalendarViewProps) => {
               {selectedDayMatches.map((match) => {
                 const creator = match.creator;
                 const creatorStats = creator?.stats;
-                const surfaceColor = getSurfaceColor(match.surface);
+                // Use match.surface or fallback to court surface
+                const surface = match.surface || match.court?.surface;
+                const surfaceColor = getSurfaceColor(surface);
+                
+                // Check if current user has applied to this match
+                const hasUserApplied = user && match.slots?.some(s => 
+                  s.applications?.some(app => 
+                    (app.applicantUserId === user.id || app.userId === user.id) &&
+                    app.status?.toLowerCase() === 'pending'
+                  )
+                ) || false;
+                
+                // Determine status badge
+                const statusBadge = hasUserApplied ? (
+                  <span className="px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                    Applied
+                  </span>
+                ) : (
+                  <span className="px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                    Pending
+                  </span>
+                );
                 
                 return (
                   <div 
@@ -215,7 +238,10 @@ export const CalendarView = ({ filters, onDateSelect }: CalendarViewProps) => {
                   >
                     <div className="flex justify-between items-start mb-3">
                       <div className="flex-1">
-                        <h4 className="font-bold text-lg mb-1">{match.court?.name || 'Court TBD'}</h4>
+                        <div className="flex items-center gap-2 mb-1">
+                          <h4 className="font-bold text-lg">{match.court?.name || 'Court TBD'}</h4>
+                          {statusBadge}
+                        </div>
                         <p className="text-sm opacity-80 mb-2">{match.court?.address}</p>
                         
                         {/* Creator Info */}
@@ -257,9 +283,9 @@ export const CalendarView = ({ filters, onDateSelect }: CalendarViewProps) => {
                         <span className="text-xs font-medium px-2 py-1 rounded bg-white bg-opacity-70">
                           {match.skillLevel}
                         </span>
-                        {match.surface && (
+                        {surface && (
                           <span className="text-xs font-medium px-2 py-1 rounded bg-white bg-opacity-70">
-                            {match.surface}
+                            {surface}
                           </span>
                         )}
                       </div>

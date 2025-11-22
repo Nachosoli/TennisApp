@@ -4,9 +4,9 @@ import {
   Column,
   CreateDateColumn,
   ManyToOne,
-  OneToOne,
   JoinColumn,
   Index,
+  Unique,
 } from 'typeorm';
 import { MatchSlot } from './match-slot.entity';
 import { User } from './user.entity';
@@ -22,14 +22,15 @@ export enum ApplicationStatus {
 @Index(['matchSlotId'])
 @Index(['applicantUserId'])
 @Index(['status'])
+@Unique(['matchSlotId', 'applicantUserId']) // Prevent same user from applying twice to same slot, but allow multiple users per slot
 export class Application {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ name: 'match_slot_id', unique: true })
+  @Column({ name: 'match_slot_id' })
   matchSlotId: string;
 
-  @OneToOne(() => MatchSlot, (slot) => slot.application, { onDelete: 'CASCADE' })
+  @ManyToOne(() => MatchSlot, (slot) => slot.applications, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'match_slot_id' })
   matchSlot: MatchSlot;
 

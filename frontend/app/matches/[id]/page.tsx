@@ -354,11 +354,11 @@ export default function MatchDetailPage() {
                   
                   // Check if current user already has a pending application for this match
                   const hasPendingApplication = currentMatch.slots?.some(s => 
-                    s.application?.applicantUserId === user?.id || s.application?.userId === user?.id
-                  ) && currentMatch.slots?.some(s => 
-                    (s.application?.applicantUserId === user?.id || s.application?.userId === user?.id) &&
-                    s.application?.status?.toLowerCase() === 'pending'
-                  );
+                    s.applications?.some(app => 
+                      (app.applicantUserId === user?.id || app.userId === user?.id) &&
+                      app.status?.toLowerCase() === 'pending'
+                    )
+                  ) || false;
                   
                   return (
                     <div

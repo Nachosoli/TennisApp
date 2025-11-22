@@ -32,10 +32,12 @@ export default function CalendarPage() {
   // Load all matches to calculate counts by distance
   useEffect(() => {
     matchesApi.getAll().then((matches) => {
-      // Filter out cancelled matches and user's own matches (backend stores as lowercase 'cancelled')
+      // Filter out cancelled matches, confirmed matches (for non-creators), and user's own matches
       const filtered = matches.filter(match => {
         if (match.status?.toLowerCase() === 'cancelled') return false;
         if (user && match.creatorUserId === user.id) return false;
+        // Hide confirmed matches from other users (they can't apply anymore)
+        if (match.status?.toLowerCase() === 'confirmed' && user && match.creatorUserId !== user.id) return false;
         return true;
       });
       setAllMatches(filtered);

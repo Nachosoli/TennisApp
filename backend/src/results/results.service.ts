@@ -10,7 +10,7 @@ import { Result } from '../entities/result.entity';
 import { Match, MatchFormat, MatchStatus } from '../entities/match.entity';
 import { UserStats } from '../entities/user-stats.entity';
 import { ELOLog, MatchType } from '../entities/elo-log.entity';
-import { Application } from '../entities/application.entity';
+import { Application, ApplicationStatus } from '../entities/application.entity';
 import { MatchSlot, SlotStatus } from '../entities/match-slot.entity';
 import { CreateResultDto } from './dto/create-result.dto';
 import { EloService } from '../elo/elo.service';
@@ -37,7 +37,7 @@ export class ResultsService {
   async submitScore(userId: string, createDto: CreateResultDto): Promise<Result> {
     const match = await this.matchRepository.findOne({
       where: { id: createDto.matchId },
-      relations: ['slots', 'slots.application', 'slots.application.applicant'],
+      relations: ['slots', 'slots.applications', 'slots.applications.applicant'],
     });
 
     if (!match) {
@@ -64,13 +64,19 @@ export class ResultsService {
       throw new ForbiddenException('You are not a participant in this match');
     }
 
-    // Get confirmed slot and application
+    // Get confirmed slot and find confirmed application
     const confirmedSlot = match.slots.find((slot) => slot.status === SlotStatus.CONFIRMED);
-    if (!confirmedSlot || !confirmedSlot.application) {
+    if (!confirmedSlot || !confirmedSlot.applications || confirmedSlot.applications.length === 0) {
       throw new BadRequestException('Match does not have a confirmed application');
     }
 
-    const application = confirmedSlot.application;
+    // Find the confirmed application (should only be one)
+    const application = confirmedSlot.applications.find(
+      (app) => app.status === ApplicationStatus.CONFIRMED,
+    );
+    if (!application) {
+      throw new BadRequestException('Match does not have a confirmed application');
+    }
 
     // Determine players based on match format
     let player1UserId: string | null = null;
@@ -160,7 +166,7 @@ export class ResultsService {
     }
 
     const hasApplication = match.slots.some(
-      (slot) => slot.application?.applicantUserId === userId,
+      (slot) => slot.applications?.some((app) => app.applicantUserId === userId),
     );
 
     return hasApplication;

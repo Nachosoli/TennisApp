@@ -345,14 +345,19 @@ export default function DashboardPage() {
                       if (isCreator) {
                         // User is creator, find applicant from confirmed slot
                         const confirmedSlot = match.slots?.find(slot => 
-                          slot.application?.status?.toLowerCase() === 'confirmed'
+                          slot.status?.toLowerCase() === 'confirmed'
                         );
-                        if (confirmedSlot?.application?.applicant) {
-                          opponent = confirmedSlot.application.applicant;
-                          opponentName = `${opponent.firstName} ${opponent.lastName}`;
-                        } else if (confirmedSlot?.application?.user) {
-                          opponent = confirmedSlot.application.user;
-                          opponentName = `${opponent.firstName} ${opponent.lastName}`;
+                        if (confirmedSlot?.applications) {
+                          const confirmedApplication = confirmedSlot.applications.find(app => 
+                            app.status?.toLowerCase() === 'confirmed'
+                          );
+                          if (confirmedApplication?.applicant) {
+                            opponent = confirmedApplication.applicant;
+                            opponentName = `${opponent.firstName} ${opponent.lastName}`;
+                          } else if (confirmedApplication?.user) {
+                            opponent = confirmedApplication.user;
+                            opponentName = `${opponent.firstName} ${opponent.lastName}`;
+                          }
                         }
                       } else {
                         // User is applicant, opponent is creator
@@ -376,8 +381,14 @@ export default function DashboardPage() {
                       if (match.status?.toLowerCase() === 'completed') {
                         statusText = 'Completed';
                         statusClass = 'bg-blue-100 text-blue-800';
+                      } else if (match.status?.toLowerCase() === 'confirmed') {
+                        statusText = 'Confirmed';
+                        statusClass = 'bg-green-100 text-green-800';
                       } else if (isPast) {
                         statusText = 'Report Score';
+                        statusClass = 'bg-yellow-100 text-yellow-800';
+                      } else if (match.status?.toLowerCase() === 'pending') {
+                        statusText = 'Pending';
                         statusClass = 'bg-yellow-100 text-yellow-800';
                       } else {
                         statusText = 'Upcoming';
@@ -388,14 +399,21 @@ export default function DashboardPage() {
                       const isHomeCourt = match.courtId === user?.homeCourtId;
 
                       // Find user's application if they're a participant
-                      const userApplication = match.slots?.find(slot => 
-                        slot.application?.applicantUserId === user?.id || slot.application?.userId === user?.id
-                      )?.application;
+                      let userApplication = null;
+                      for (const slot of match.slots || []) {
+                        if (slot.applications) {
+                          userApplication = slot.applications.find(app => 
+                            app.applicantUserId === user?.id
+                          );
+                          if (userApplication) break;
+                        }
+                      }
 
                       // Check if match has confirmed participants
                       // Check both application status and slot status (slot becomes 'confirmed' when application is confirmed)
                       const hasConfirmedParticipants = match.slots?.some(slot => 
-                        slot.application?.status?.toLowerCase() === 'confirmed' || slot.status?.toLowerCase() === 'confirmed'
+                        slot.applications?.some(app => app.status?.toLowerCase() === 'confirmed') || 
+                        slot.status?.toLowerCase() === 'confirmed'
                       ) || false;
 
                       // Determine if user can report score
@@ -432,7 +450,21 @@ export default function DashboardPage() {
                             {opponentName}
                           </td>
                           <td className="px-4 py-3 text-sm text-gray-900">
-                            {score || '-'}
+                            {score ? (
+                              score
+                            ) : (
+                              canReportScore ? (
+                                <Link 
+                                  href={`/matches/${match.id}/score`}
+                                  onClick={(e) => e.stopPropagation()}
+                                  className="text-blue-600 hover:text-blue-800 hover:underline"
+                                >
+                                  -
+                                </Link>
+                              ) : (
+                                '-'
+                              )
+                            )}
                           </td>
                           <td className="px-4 py-3 text-sm">
                             <div className="flex items-center">
@@ -492,6 +524,17 @@ export default function DashboardPage() {
                                   Remove Myself
                                 </Button>
                               )}
+                              {/* Chat button for confirmed matches */}
+                              {(isCreator || userApplication?.status?.toLowerCase() === 'confirmed') && match.status?.toLowerCase() === 'confirmed' && (
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => router.push(`/matches/${match.id}`)}
+                                >
+                                  Chat
+                                </Button>
+                              )}
                             </div>
                           </td>
                         </tr>
@@ -513,7 +556,7 @@ export default function DashboardPage() {
             {(() => {
               const match = recentMatches.find(m => m.id === showDeleteConfirm);
               const hasConfirmed = match?.slots?.some(slot => 
-                slot.application?.status?.toLowerCase() === 'confirmed'
+                slot.applications?.some(app => app.status?.toLowerCase() === 'confirmed')
               ) || false;
               return hasConfirmed && (
                 <div className="bg-yellow-50 border border-yellow-200 text-yellow-800 px-4 py-3 rounded mb-4">

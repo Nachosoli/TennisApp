@@ -51,7 +51,7 @@ export class ChatService {
     // Get match participants and notify them (except sender)
     const matchWithRelations = await this.matchRepository.findOne({
       where: { id: createDto.matchId },
-      relations: ['creator', 'court', 'slots', 'slots.application', 'slots.application.applicant'],
+      relations: ['creator', 'court', 'slots', 'slots.applications', 'slots.applications.applicant'],
     });
 
     if (matchWithRelations) {
@@ -62,12 +62,16 @@ export class ChatService {
         participants.push(matchWithRelations.creatorUserId);
       }
 
-      // Add applicants
+      // Add applicants (handle multiple applications per slot)
       matchWithRelations.slots.forEach((slot) => {
-        if (slot.application?.applicantUserId && slot.application.applicantUserId !== userId) {
-          if (!participants.includes(slot.application.applicantUserId)) {
-            participants.push(slot.application.applicantUserId);
-          }
+        if (slot.applications && slot.applications.length > 0) {
+          slot.applications.forEach((application) => {
+            if (application.applicantUserId && application.applicantUserId !== userId) {
+              if (!participants.includes(application.applicantUserId)) {
+                participants.push(application.applicantUserId);
+              }
+            }
+          });
         }
       });
 
@@ -97,7 +101,7 @@ export class ChatService {
   async verifyMatchAccess(userId: string, matchId: string): Promise<boolean> {
     const match = await this.matchRepository.findOne({
       where: { id: matchId },
-      relations: ['slots', 'slots.application'],
+      relations: ['slots', 'slots.applications'],
     });
 
     if (!match) {
@@ -111,7 +115,7 @@ export class ChatService {
 
     // Check if user has an application for any slot in this match
     const hasApplication = match.slots.some(
-      (slot) => slot.application?.applicantUserId === userId,
+      (slot) => slot.applications?.some((app) => app.applicantUserId === userId),
     );
 
     return hasApplication;

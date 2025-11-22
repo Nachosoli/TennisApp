@@ -4,7 +4,7 @@ import {
   Column,
   CreateDateColumn,
   ManyToOne,
-  OneToOne,
+  OneToMany,
   JoinColumn,
   Index,
 } from 'typeorm';
@@ -66,8 +66,8 @@ export class MatchSlot {
   createdAt: Date;
 
   // Relations
-  @OneToOne(() => Application, (application) => application.matchSlot)
-  application: Application;
+  @OneToMany(() => Application, (application) => application.matchSlot)
+  applications: Application[];
 
   // Helper methods
   get isAvailable(): boolean {

@@ -285,9 +285,10 @@ export class MatchesService {
     }
 
     // Full match details with all relations (for match detail page)
+    // Note: Applications are loaded separately via getMatchApplications endpoint
     const match = await this.matchRepository.findOne({
       where: { id },
-      relations: ['court', 'creator', 'slots', 'slots.lockedBy', 'slots.application', 'slots.application.applicant', 'results', 'results.player1', 'results.player2'],
+      relations: ['court', 'creator', 'slots', 'slots.lockedBy', 'results', 'results.player1', 'results.player2'],
     });
 
     if (!match) {
@@ -414,8 +415,8 @@ export class MatchesService {
       .leftJoinAndSelect('match.court', 'court')
       .leftJoinAndSelect('match.creator', 'creator')
       .leftJoinAndSelect('match.slots', 'slots')
-      .leftJoinAndSelect('slots.application', 'application')
-      .leftJoinAndSelect('application.applicant', 'applicant')
+      .leftJoinAndSelect('slots.applications', 'applications')
+      .leftJoinAndSelect('applications.applicant', 'applicant')
       .leftJoinAndSelect('match.results', 'results')
       .leftJoinAndSelect('results.player1', 'player1')
       .leftJoinAndSelect('results.player2', 'player2')

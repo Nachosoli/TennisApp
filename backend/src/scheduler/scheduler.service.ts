@@ -4,6 +4,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Match, MatchStatus } from '../entities/match.entity';
 import { SlotStatus } from '../entities/match-slot.entity';
+import { ApplicationStatus } from '../entities/application.entity';
 import { Result } from '../entities/result.entity';
 import { NotificationsService } from '../notifications/notifications.service';
 import { NotificationType } from '../entities/notification.entity';
@@ -41,17 +42,23 @@ export class SchedulerService {
       .andWhere('result.id IS NULL')
       .leftJoinAndSelect('match.creator', 'creator')
       .leftJoinAndSelect('match.slots', 'slots')
-      .leftJoinAndSelect('slots.application', 'application')
-      .leftJoinAndSelect('application.applicant', 'applicant')
+      .leftJoinAndSelect('slots.applications', 'applications')
+      .leftJoinAndSelect('applications.applicant', 'applicant')
       .getMany();
 
     let reminderCount = 0;
 
     for (const match of matches) {
       const confirmedSlot = match.slots.find((slot) => slot.status === SlotStatus.CONFIRMED);
-      if (!confirmedSlot?.application) continue;
+      if (!confirmedSlot?.applications || confirmedSlot.applications.length === 0) continue;
 
-      const applicant = confirmedSlot.application.applicant;
+      // Find the confirmed application (should only be one)
+      const confirmedApplication = confirmedSlot.applications.find(
+        (app) => app.status === ApplicationStatus.CONFIRMED,
+      );
+      if (!confirmedApplication) continue;
+
+      const applicant = confirmedApplication.applicant;
       const creator = match.creator;
 
       // Notify creator
