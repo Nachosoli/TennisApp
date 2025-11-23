@@ -15,6 +15,7 @@ export enum ApplicationStatus {
   PENDING = 'pending',
   CONFIRMED = 'confirmed',
   REJECTED = 'rejected',
+  WAITLISTED = 'waitlisted',
   EXPIRED = 'expired',
 }
 
@@ -65,6 +66,10 @@ export class Application {
 
   get isRejected(): boolean {
     return this.status === ApplicationStatus.REJECTED;
+  }
+
+  get isWaitlisted(): boolean {
+    return this.status === ApplicationStatus.WAITLISTED;
   }
 }
 

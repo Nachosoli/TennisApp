@@ -200,25 +200,29 @@ export class ApplicationsService {
     application.matchSlot.match.status = MatchStatus.CONFIRMED;
     await this.matchRepository.save(application.matchSlot.match);
 
-    // Auto-reject all other pending applications for this match
+    // Auto-waitlist all other pending and rejected applications for this match
+    // This includes both new pending applications and previously rejected ones (from before waitlist feature)
     const matchOtherApplications = await this.applicationRepository
       .createQueryBuilder('app')
       .innerJoin('app.matchSlot', 'slot')
       .innerJoin('slot.match', 'match')
       .where('match.id = :matchId', { matchId: application.matchSlot.match.id })
       .andWhere('app.id != :applicationId', { applicationId: application.id })
-      .andWhere('app.status = :pending', { pending: ApplicationStatus.PENDING })
+      .andWhere('(app.status = :pending OR app.status = :rejected)', { 
+        pending: ApplicationStatus.PENDING,
+        rejected: ApplicationStatus.REJECTED 
+      })
       .getMany();
 
     for (const otherApp of matchOtherApplications) {
-      otherApp.status = ApplicationStatus.REJECTED;
+      otherApp.status = ApplicationStatus.WAITLISTED;
       await this.applicationRepository.save(otherApp);
       
-      // Notify rejected applicant
+      // Notify waitlisted applicant
       await this.notificationsService.createNotification(
         otherApp.applicantUserId,
         NotificationType.MATCH_ACCEPTED,
-        `Your application was not selected for this match`,
+        `Your application has been waitlisted for this match. You may be selected if the confirmed participant withdraws.`,
         {
           matchId: application.matchSlot.match.id,
         },
@@ -372,9 +376,10 @@ export class ApplicationsService {
   }
 
   async withdrawApplication(userId: string, applicationId: string): Promise<void> {
+    // Load application with full relations including match slots and applications
     const application = await this.applicationRepository.findOne({
       where: { id: applicationId },
-      relations: ['matchSlot', 'matchSlot.match'],
+      relations: ['matchSlot', 'matchSlot.match', 'matchSlot.match.slots', 'matchSlot.match.slots.applications'],
     });
 
     if (!application) {
@@ -391,20 +396,58 @@ export class ApplicationsService {
       throw new BadRequestException('Cannot withdraw from a completed match');
     }
 
-    // Delete the application (no need to release lock or reset slot status)
+    // Store status and references BEFORE deletion
+    const wasConfirmed = application.status === ApplicationStatus.CONFIRMED;
+    const match = application.matchSlot.match;
+    const slot = application.matchSlot;
+    const matchId = match.id;
+
+    // Delete the application
     await this.applicationRepository.remove(application);
 
-    // Emit real-time update
+    // If this was a confirmed application, check if we need to revert match status
+    if (wasConfirmed) {
+      // Reload match to get current state after deletion
+      const updatedMatch = await this.matchRepository.findOne({
+        where: { id: matchId },
+        relations: ['slots', 'slots.applications'],
+      });
+
+      // Check if there are any other confirmed applications for this match
+      const hasOtherConfirmedApplications = updatedMatch?.slots?.some(s => 
+        s.applications?.some(app => 
+          app.status === ApplicationStatus.CONFIRMED
+        )
+      ) || false;
+
+      // If no other confirmed applications, revert match and slot status
+      if (!hasOtherConfirmedApplications && updatedMatch) {
+        updatedMatch.status = MatchStatus.PENDING;
+        await this.matchRepository.save(updatedMatch);
+
+        // Revert slot status
+        const updatedSlot = await this.matchSlotRepository.findOne({
+          where: { id: slot.id },
+        });
+        if (updatedSlot) {
+          updatedSlot.status = SlotStatus.AVAILABLE;
+          updatedSlot.confirmedAt = null as any;
+          await this.matchSlotRepository.save(updatedSlot);
+        }
+      }
+    }
+
+    // Emit real-time update with full relations
     try {
       const updatedMatch = await this.matchRepository.findOne({
-        where: { id: application.matchSlot.match.id },
-        relations: ['court', 'creator', 'slots'],
+        where: { id: matchId },
+        relations: ['court', 'creator', 'slots', 'slots.applications'],
       });
       if (updatedMatch) {
-        this.matchUpdatesGateway.emitMatchUpdate(application.matchSlot.match.id, updatedMatch);
+        this.matchUpdatesGateway.emitMatchUpdate(matchId, updatedMatch);
         this.matchUpdatesGateway.emitToUser(application.applicantUserId, 'application_withdrawn', {
           applicationId,
-          matchId: application.matchSlot.match.id,
+          matchId: matchId,
         });
       }
     } catch (error) {

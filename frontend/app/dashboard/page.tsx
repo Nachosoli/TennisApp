@@ -371,30 +371,6 @@ export default function DashboardPage() {
                       const result = match.results?.[0];
                       const score = result?.score || '';
 
-                      // Determine status
-                      const matchDate = parseLocalDate(match.date);
-                      const now = new Date();
-                      const isPast = matchDate < now;
-                      let statusText: string = match.status;
-                      let statusClass = 'bg-gray-100 text-gray-800';
-                      
-                      if (match.status?.toLowerCase() === 'completed') {
-                        statusText = 'Completed';
-                        statusClass = 'bg-blue-100 text-blue-800';
-                      } else if (match.status?.toLowerCase() === 'confirmed') {
-                        statusText = 'Confirmed';
-                        statusClass = 'bg-green-100 text-green-800';
-                      } else if (isPast) {
-                        statusText = 'Report Score';
-                        statusClass = 'bg-yellow-100 text-yellow-800';
-                      } else if (match.status?.toLowerCase() === 'pending') {
-                        statusText = 'Pending';
-                        statusClass = 'bg-yellow-100 text-yellow-800';
-                      } else {
-                        statusText = 'Upcoming';
-                        statusClass = 'bg-green-100 text-green-800';
-                      }
-
                       // Check if facility is user's home court
                       const isHomeCourt = match.courtId === user?.homeCourtId;
 
@@ -407,6 +383,36 @@ export default function DashboardPage() {
                           );
                           if (userApplication) break;
                         }
+                      }
+
+                      // Check if user has waitlisted application (needed for status display)
+                      const hasWaitlistedApplication = userApplication?.status?.toLowerCase() === 'waitlisted';
+
+                      // Determine status
+                      const matchDate = parseLocalDate(match.date);
+                      const now = new Date();
+                      const isPast = matchDate < now;
+                      let statusText: string = match.status;
+                      let statusClass = 'bg-gray-100 text-gray-800';
+                      
+                      if (match.status?.toLowerCase() === 'completed') {
+                        statusText = 'Completed';
+                        statusClass = 'bg-blue-100 text-blue-800';
+                      } else if (hasWaitlistedApplication) {
+                        statusText = 'Waitlisted';
+                        statusClass = 'bg-orange-100 text-orange-800';
+                      } else if (match.status?.toLowerCase() === 'confirmed') {
+                        statusText = 'Confirmed';
+                        statusClass = 'bg-green-100 text-green-800';
+                      } else if (isPast) {
+                        statusText = 'Report Score';
+                        statusClass = 'bg-yellow-100 text-yellow-800';
+                      } else if (match.status?.toLowerCase() === 'pending') {
+                        statusText = 'Pending';
+                        statusClass = 'bg-yellow-100 text-yellow-800';
+                      } else {
+                        statusText = 'Upcoming';
+                        statusClass = 'bg-green-100 text-green-800';
                       }
 
                       // Check if match has confirmed participants

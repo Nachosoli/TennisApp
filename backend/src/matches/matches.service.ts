@@ -408,7 +408,7 @@ export class MatchesService {
   }
 
   async findUserMatches(userId: string): Promise<Match[]> {
-    // Find matches where user is creator OR has a confirmed application
+    // Find matches where user is creator OR has a confirmed OR waitlisted application
     // Optimized query with only essential relations for dashboard display
     const query = this.matchRepository
       .createQueryBuilder('match')
@@ -421,10 +421,11 @@ export class MatchesService {
       .leftJoinAndSelect('results.player1', 'player1')
       .leftJoinAndSelect('results.player2', 'player2')
       .where(
-        '(match.creatorUserId = :userId OR EXISTS (SELECT 1 FROM applications app INNER JOIN match_slots ms ON app.match_slot_id = ms.id WHERE ms.match_id = match.id AND app.applicant_user_id = :userId AND app.status = :confirmedStatus))',
+        '(match.creatorUserId = :userId OR EXISTS (SELECT 1 FROM applications app INNER JOIN match_slots ms ON app.match_slot_id = ms.id WHERE ms.match_id = match.id AND app.applicant_user_id = :userId AND (app.status = :confirmedStatus OR app.status = :waitlistedStatus)))',
         {
           userId,
           confirmedStatus: ApplicationStatus.CONFIRMED,
+          waitlistedStatus: ApplicationStatus.WAITLISTED,
         },
       )
       .orderBy('match.date', 'DESC')

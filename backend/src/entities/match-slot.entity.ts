@@ -59,7 +59,7 @@ export class MatchSlot {
   @Column({ name: 'expires_at', nullable: true })
   expiresAt: Date;
 
-  @Column({ name: 'confirmed_at', nullable: true })
+  @Column({ name: 'confirmed_at', type: 'timestamp', nullable: true })
   confirmedAt: Date;
 
   @CreateDateColumn({ name: 'created_at' })

@@ -94,7 +94,7 @@ export interface Application {
   matchSlot?: MatchSlot & {
     match?: Match;
   };
-  status: 'pending' | 'confirmed' | 'rejected' | 'expired';
+  status: 'pending' | 'confirmed' | 'rejected' | 'waitlisted' | 'expired';
   guestPartnerName?: string;
   createdAt: string;
   updatedAt: string;

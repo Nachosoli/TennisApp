@@ -36,8 +36,17 @@ export default function CalendarPage() {
       const filtered = matches.filter(match => {
         if (match.status?.toLowerCase() === 'cancelled') return false;
         if (user && match.creatorUserId === user.id) return false;
-        // Hide confirmed matches from other users (they can't apply anymore)
-        if (match.status?.toLowerCase() === 'confirmed' && user && match.creatorUserId !== user.id) return false;
+        
+        // Check if user has a waitlisted application for this match
+        const hasWaitlistedApplication = user && match.slots?.some(slot =>
+          slot.applications?.some(app =>
+            (app.applicantUserId === user.id || app.userId === user.id) &&
+            app.status?.toLowerCase() === 'waitlisted'
+          )
+        );
+        
+        // Hide confirmed matches from other users UNLESS they have a waitlisted application
+        if (match.status?.toLowerCase() === 'confirmed' && user && match.creatorUserId !== user.id && !hasWaitlistedApplication) return false;
         return true;
       });
       setAllMatches(filtered);

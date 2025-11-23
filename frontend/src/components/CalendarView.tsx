@@ -59,8 +59,17 @@ export const CalendarView = ({ filters, onDateSelect }: CalendarViewProps) => {
         const filtered = matches.filter(match => {
           if (match.status?.toLowerCase() === 'cancelled') return false;
           if (user && match.creatorUserId === user.id) return false;
-          // Hide confirmed matches from other users (they can't apply anymore)
-          if (match.status?.toLowerCase() === 'confirmed' && user && match.creatorUserId !== user.id) return false;
+          
+          // Check if user has a waitlisted application for this match
+          const hasWaitlistedApplication = user && match.slots?.some(slot =>
+            slot.applications?.some(app =>
+              (app.applicantUserId === user.id || app.userId === user.id) &&
+              app.status?.toLowerCase() === 'waitlisted'
+            )
+          );
+          
+          // Hide confirmed matches from other users UNLESS they have a waitlisted application
+          if (match.status?.toLowerCase() === 'confirmed' && user && match.creatorUserId !== user.id && !hasWaitlistedApplication) return false;
           return true;
         });
         setMatches(filtered);
@@ -212,7 +221,7 @@ export const CalendarView = ({ filters, onDateSelect }: CalendarViewProps) => {
                 const surface = match.surface || match.court?.surface;
                 const surfaceColor = getSurfaceColor(surface);
                 
-                // Check if current user has applied to this match
+                // Check if current user has applied to this match (pending)
                 const hasUserApplied = user && match.slots?.some(s => 
                   s.applications?.some(app => 
                     (app.applicantUserId === user.id || app.userId === user.id) &&
@@ -220,8 +229,20 @@ export const CalendarView = ({ filters, onDateSelect }: CalendarViewProps) => {
                   )
                 ) || false;
                 
+                // Check if current user has waitlisted application
+                const hasUserWaitlisted = user && match.slots?.some(s => 
+                  s.applications?.some(app => 
+                    (app.applicantUserId === user.id || app.userId === user.id) &&
+                    app.status?.toLowerCase() === 'waitlisted'
+                  )
+                ) || false;
+                
                 // Determine status badge
-                const statusBadge = hasUserApplied ? (
+                const statusBadge = hasUserWaitlisted ? (
+                  <span className="px-2 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
+                    Waitlisted
+                  </span>
+                ) : hasUserApplied ? (
                   <span className="px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
                     Applied
                   </span>
