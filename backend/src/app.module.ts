@@ -55,6 +55,7 @@ import { TimeoutMiddleware } from './common/middleware/timeout.middleware';
             socket: {
               host: redis.host,
               port: redis.port,
+              tls: redis.tls || false,
             },
             password: redis.password || undefined,
           });
