@@ -36,7 +36,8 @@
     "typeorm": "typeorm-ts-node-commonjs",
     "migration:generate": "typeorm-ts-node-commonjs migration:generate -d src/config/data-source.ts",
     "migration:run": "typeorm-ts-node-commonjs migration:run -d src/config/data-source.ts",
-    "migration:revert": "typeorm-ts-node-commonjs migration:revert -d src/config/data-source.ts"
+    "migration:revert": "typeorm-ts-node-commonjs migration:revert -d src/config/data-source.ts",
+    "db:setup": "ts-node -r tsconfig-paths/register src/scripts/setup-database.ts"
   },
   "dependencies": {
     "@googlemaps/google-maps-services-js": "^3.3.48",
