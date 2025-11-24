@@ -27,10 +27,13 @@ export default registerAs('redis', () => {
   };
 
   if (redisUrl) {
+    console.log('Using REDIS_URL for Redis connection');
     const parsed = parseRedisUrl(redisUrl);
     if (parsed) {
       redisConfig = parsed;
+      console.log(`Redis config: host=${redisConfig.host}, port=${redisConfig.port}, tls=${redisConfig.tls || false}`);
     } else {
+      console.warn('Failed to parse REDIS_URL, falling back to individual env vars');
       // Fall back to individual env vars if REDIS_URL is invalid
       redisConfig = {
         host: process.env.REDIS_HOST || 'localhost',
@@ -39,12 +42,14 @@ export default registerAs('redis', () => {
       };
     }
   } else {
+    console.log('REDIS_URL not found, using individual environment variables');
     // Use individual environment variables
     redisConfig = {
       host: process.env.REDIS_HOST || 'localhost',
       port: parseInt(process.env.REDIS_PORT || '6379', 10),
       password: process.env.REDIS_PASSWORD || undefined,
     };
+    console.log(`Redis config: host=${redisConfig.host}, port=${redisConfig.port}`);
   }
 
   return {

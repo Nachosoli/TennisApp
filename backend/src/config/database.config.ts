@@ -32,10 +32,13 @@ export default registerAs(
     };
 
     if (databaseUrl) {
+      console.log('Using DATABASE_URL for database connection');
       const parsed = parseDatabaseUrl(databaseUrl);
       if (parsed) {
         dbConfig = parsed;
+        console.log(`Database config: host=${dbConfig.host}, port=${dbConfig.port}, database=${dbConfig.database}, user=${dbConfig.username}`);
       } else {
+        console.warn('Failed to parse DATABASE_URL, falling back to individual env vars');
         // Fall back to individual env vars if DATABASE_URL is invalid
         dbConfig = {
           host: process.env.DB_HOST || 'localhost',
@@ -46,6 +49,7 @@ export default registerAs(
         };
       }
     } else {
+      console.log('DATABASE_URL not found, using individual environment variables');
       // Use individual environment variables
       dbConfig = {
         host: process.env.DB_HOST || 'localhost',
@@ -54,6 +58,7 @@ export default registerAs(
         password: process.env.DB_PASSWORD || 'courtmate123',
         database: process.env.DB_NAME || 'courtmate_db',
       };
+      console.log(`Database config: host=${dbConfig.host}, port=${dbConfig.port}, database=${dbConfig.database}, user=${dbConfig.username}`);
     }
 
     return {
