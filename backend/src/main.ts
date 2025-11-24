@@ -21,6 +21,11 @@ async function bootstrap() {
   // Log database connection info (without sensitive data)
   console.log('=== Database Configuration Check ===');
   console.log('DATABASE_URL:', process.env.DATABASE_URL ? 'SET' : 'NOT SET');
+  console.log('PGDATABASE (Railway):', process.env.PGDATABASE || 'NOT SET');
+  console.log('PGHOST (Railway):', process.env.PGHOST || 'NOT SET');
+  console.log('PGPORT (Railway):', process.env.PGPORT || 'NOT SET');
+  console.log('PGUSER (Railway):', process.env.PGUSER || 'NOT SET');
+  console.log('PGPASSWORD (Railway):', process.env.PGPASSWORD ? 'SET' : 'NOT SET');
   console.log('DB_HOST:', process.env.DB_HOST || 'NOT SET (default: localhost)');
   console.log('DB_PORT:', process.env.DB_PORT || 'NOT SET (default: 5432)');
   console.log('DB_USER:', process.env.DB_USER || 'NOT SET (default: courtmate)');

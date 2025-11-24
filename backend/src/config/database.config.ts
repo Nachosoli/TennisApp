@@ -41,24 +41,39 @@ export default registerAs(
         console.warn('Failed to parse DATABASE_URL, falling back to individual env vars');
         // Fall back to individual env vars if DATABASE_URL is invalid
         dbConfig = {
+          host: process.env.DB_HOST || process.env.PGHOST || 'localhost',
+          port: parseInt(process.env.DB_PORT || process.env.PGPORT || '5432', 10),
+          username: process.env.DB_USER || process.env.PGUSER || 'courtmate',
+          password: process.env.DB_PASSWORD || process.env.PGPASSWORD || 'courtmate123',
+          database: process.env.DB_NAME || process.env.PGDATABASE || 'courtmate_db',
+        };
+      }
+    } else {
+      // Check for Railway's PostgreSQL variables (PGDATABASE, PGHOST, etc.)
+      const hasRailwayPgVars = process.env.PGDATABASE || process.env.PGHOST;
+      
+      if (hasRailwayPgVars) {
+        console.log('Using Railway PostgreSQL environment variables (PG*)');
+        dbConfig = {
+          host: process.env.PGHOST || process.env.DB_HOST || 'localhost',
+          port: parseInt(process.env.PGPORT || process.env.DB_PORT || '5432', 10),
+          username: process.env.PGUSER || process.env.DB_USER || 'courtmate',
+          password: process.env.PGPASSWORD || process.env.DB_PASSWORD || 'courtmate123',
+          database: process.env.PGDATABASE || process.env.DB_NAME || 'courtmate_db',
+        };
+        console.log(`Database config: host=${dbConfig.host}, port=${dbConfig.port}, database=${dbConfig.database}, user=${dbConfig.username}`);
+      } else {
+        console.log('Using individual environment variables (DB_*)');
+        // Use individual environment variables
+        dbConfig = {
           host: process.env.DB_HOST || 'localhost',
           port: parseInt(process.env.DB_PORT || '5432', 10),
           username: process.env.DB_USER || 'courtmate',
           password: process.env.DB_PASSWORD || 'courtmate123',
           database: process.env.DB_NAME || 'courtmate_db',
         };
+        console.log(`Database config: host=${dbConfig.host}, port=${dbConfig.port}, database=${dbConfig.database}, user=${dbConfig.username}`);
       }
-    } else {
-      console.log('DATABASE_URL not found, using individual environment variables');
-      // Use individual environment variables
-      dbConfig = {
-        host: process.env.DB_HOST || 'localhost',
-        port: parseInt(process.env.DB_PORT || '5432', 10),
-        username: process.env.DB_USER || 'courtmate',
-        password: process.env.DB_PASSWORD || 'courtmate123',
-        database: process.env.DB_NAME || 'courtmate_db',
-      };
-      console.log(`Database config: host=${dbConfig.host}, port=${dbConfig.port}, database=${dbConfig.database}, user=${dbConfig.username}`);
     }
 
     return {
@@ -82,7 +97,7 @@ export default registerAs(
         connectionTimeoutMillis: 10000, // Timeout when acquiring a connection
         acquireTimeoutMillis: 60000, // Maximum time to wait for a connection from the pool
         // SSL configuration for Railway/cloud databases
-        ssl: process.env.DATABASE_URL ? {
+        ssl: (process.env.DATABASE_URL || process.env.PGDATABASE || process.env.PGHOST) ? {
           rejectUnauthorized: false,
         } : false,
       },

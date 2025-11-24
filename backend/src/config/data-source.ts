@@ -36,6 +36,22 @@ function getDatabaseConfig() {
     }
   }
   
+  // Check for Railway's PostgreSQL variables (PGDATABASE, PGHOST, etc.)
+  const hasRailwayPgVars = process.env.PGDATABASE || process.env.PGHOST;
+  
+  if (hasRailwayPgVars) {
+    return {
+      host: process.env.PGHOST || process.env.DB_HOST || 'localhost',
+      port: parseInt(process.env.PGPORT || process.env.DB_PORT || '5432', 10),
+      username: process.env.PGUSER || process.env.DB_USER || 'courtmate',
+      password: process.env.PGPASSWORD || process.env.DB_PASSWORD || 'courtmate123',
+      database: process.env.PGDATABASE || process.env.DB_NAME || 'courtmate_db',
+      ssl: {
+        rejectUnauthorized: false,
+      },
+    };
+  }
+  
   // Fall back to individual environment variables
   return {
     host: process.env.DB_HOST || 'localhost',
