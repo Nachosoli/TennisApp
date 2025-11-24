@@ -49,8 +49,9 @@ export default registerAs(
         };
       }
     } else {
-      // Check for Railway's PostgreSQL variables (PGDATABASE, PGHOST, etc.)
-      const hasRailwayPgVars = process.env.PGDATABASE || process.env.PGHOST;
+      // Check for Railway's PostgreSQL variables (PGDATABASE/PGDAT, PGHOST, etc.)
+      // Railway uses shortened names: PGDAT instead of PGDATABASE, PGPASS instead of PGPASSWORD
+      const hasRailwayPgVars = process.env.PGDATABASE || process.env.PGDAT || process.env.PGHOST;
       
       if (hasRailwayPgVars) {
         console.log('Using Railway PostgreSQL environment variables (PG*)');
@@ -58,8 +59,8 @@ export default registerAs(
           host: process.env.PGHOST || process.env.DB_HOST || 'localhost',
           port: parseInt(process.env.PGPORT || process.env.DB_PORT || '5432', 10),
           username: process.env.PGUSER || process.env.DB_USER || 'courtmate',
-          password: process.env.PGPASSWORD || process.env.DB_PASSWORD || 'courtmate123',
-          database: process.env.PGDATABASE || process.env.DB_NAME || 'courtmate_db',
+          password: process.env.PGPASSWORD || process.env.PGPASS || process.env.DB_PASSWORD || 'courtmate123',
+          database: process.env.PGDATABASE || process.env.PGDAT || process.env.DB_NAME || 'courtmate_db',
         };
         console.log(`Database config: host=${dbConfig.host}, port=${dbConfig.port}, database=${dbConfig.database}, user=${dbConfig.username}`);
       } else {
@@ -97,7 +98,7 @@ export default registerAs(
         connectionTimeoutMillis: 10000, // Timeout when acquiring a connection
         acquireTimeoutMillis: 60000, // Maximum time to wait for a connection from the pool
         // SSL configuration for Railway/cloud databases
-        ssl: (process.env.DATABASE_URL || process.env.PGDATABASE || process.env.PGHOST) ? {
+        ssl: (process.env.DATABASE_URL || process.env.PGDATABASE || process.env.PGDAT || process.env.PGHOST) ? {
           rejectUnauthorized: false,
         } : false,
       },
