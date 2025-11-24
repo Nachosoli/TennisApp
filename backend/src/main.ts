@@ -18,6 +18,21 @@ import { join } from 'path';
 import * as Sentry from '@sentry/node';
 
 async function bootstrap() {
+  // Log database connection info (without sensitive data)
+  console.log('=== Database Configuration Check ===');
+  console.log('DATABASE_URL:', process.env.DATABASE_URL ? 'SET' : 'NOT SET');
+  console.log('DB_HOST:', process.env.DB_HOST || 'NOT SET (default: localhost)');
+  console.log('DB_PORT:', process.env.DB_PORT || 'NOT SET (default: 5432)');
+  console.log('DB_USER:', process.env.DB_USER || 'NOT SET (default: courtmate)');
+  console.log('DB_NAME:', process.env.DB_NAME || 'NOT SET (default: courtmate_db)');
+  console.log('DB_PASSWORD:', process.env.DB_PASSWORD ? 'SET' : 'NOT SET');
+  console.log('=== Redis Configuration Check ===');
+  console.log('REDIS_URL:', process.env.REDIS_URL ? 'SET' : 'NOT SET');
+  console.log('REDIS_HOST:', process.env.REDIS_HOST || 'NOT SET (default: localhost)');
+  console.log('REDIS_PORT:', process.env.REDIS_PORT || 'NOT SET (default: 6379)');
+  console.log('REDIS_PASSWORD:', process.env.REDIS_PASSWORD ? 'SET' : 'NOT SET');
+  console.log('===================================');
+
   // Initialize Sentry if DSN is provided
   if (process.env.SENTRY_DSN) {
     Sentry.init({

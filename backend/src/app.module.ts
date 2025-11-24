@@ -41,6 +41,13 @@ import { TimeoutMiddleware } from './common/middleware/timeout.middleware';
         if (!dbConfig) {
           throw new Error('Database configuration not found');
         }
+        console.log('TypeORM connecting to:', {
+          host: dbConfig.host,
+          port: dbConfig.port,
+          database: dbConfig.database,
+          username: dbConfig.username,
+          ssl: dbConfig.extra?.ssl || false,
+        });
         return dbConfig;
       },
       inject: [ConfigService],
