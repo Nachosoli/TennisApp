@@ -1,3 +1,10 @@
+// Polyfill for crypto in Node.js 18+ environments (Railway, etc.)
+// This ensures crypto is available globally before TypeORM initializes
+import * as crypto from 'crypto';
+if (typeof globalThis.crypto === 'undefined') {
+  globalThis.crypto = crypto as any;
+}
+
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
