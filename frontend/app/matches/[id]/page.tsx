@@ -352,12 +352,12 @@ export default function MatchDetailPage() {
                   const isConfirmed = slot.status?.toLowerCase() === 'confirmed';
                   const isMatchPending = currentMatch.status?.toLowerCase() === 'pending';
                   
-                  // Check if current user already has a pending application for this match
-                  const hasPendingApplication = currentMatch.slots?.some(s => 
-                    s.applications?.some(app => 
-                      (app.applicantUserId === user?.id || app.userId === user?.id) &&
-                      app.status?.toLowerCase() === 'pending'
-                    )
+                  // Check if current user already has an application for THIS SPECIFIC SLOT
+                  const hasApplicationForSlot = slot.applications?.some(app => 
+                    (app.applicantUserId === user?.id || app.userId === user?.id) &&
+                    (app.status?.toLowerCase() === 'pending' || 
+                     app.status?.toLowerCase() === 'waitlisted' || 
+                     app.status?.toLowerCase() === 'confirmed')
                   ) || false;
                   
                   return (
@@ -377,12 +377,12 @@ export default function MatchDetailPage() {
                           <p className="text-sm text-gray-600 capitalize">
                             {isConfirmed ? 'Confirmed' : isAvailable ? 'Available' : slot.status || 'Unknown'}
                           </p>
-                          {isAvailable && !isCreator && !hasPendingApplication && (
+                          {isAvailable && !isCreator && !hasApplicationForSlot && (
                             <p className="text-xs text-blue-600 mt-1">Click Apply to join this time slot</p>
                           )}
                         </div>
                         {!isCreator && isAvailable && isMatchPending && (
-                          hasPendingApplication ? (
+                          hasApplicationForSlot ? (
                             <Button
                               variant="outline"
                               size="sm"
@@ -445,7 +445,11 @@ export default function MatchDetailPage() {
                   <strong>As the match creator,</strong> you can review and manage applications from players who want to join this match.
                 </p>
               </div>
-              <ApplicationsTable matchId={matchId} matchFormat={currentMatch.format} />
+              <ApplicationsTable 
+                matchId={matchId} 
+                matchFormat={currentMatch.format}
+                onApplicationConfirmed={() => fetchMatchById(matchId)}
+              />
             </Card>
           </ErrorBoundary>
         )}

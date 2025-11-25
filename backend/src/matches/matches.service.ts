@@ -438,11 +438,12 @@ export class MatchesService {
       .leftJoinAndSelect('results.player1', 'player1')
       .leftJoinAndSelect('results.player2', 'player2')
       .where(
-        '(match.creatorUserId = :userId OR EXISTS (SELECT 1 FROM applications app INNER JOIN match_slots ms ON app.match_slot_id = ms.id WHERE ms.match_id = match.id AND app.applicant_user_id = :userId AND (app.status = :confirmedStatus OR app.status = :waitlistedStatus)))',
+        '(match.creatorUserId = :userId OR EXISTS (SELECT 1 FROM applications app INNER JOIN match_slots ms ON app.match_slot_id = ms.id WHERE ms.match_id = match.id AND app.applicant_user_id = :userId AND (app.status = :confirmedStatus OR app.status = :waitlistedStatus OR app.status = :pendingStatus)))',
         {
           userId,
           confirmedStatus: ApplicationStatus.CONFIRMED,
           waitlistedStatus: ApplicationStatus.WAITLISTED,
+          pendingStatus: ApplicationStatus.PENDING,
         },
       )
       .orderBy('match.date', 'DESC')

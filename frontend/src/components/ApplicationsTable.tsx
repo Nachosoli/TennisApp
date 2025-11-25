@@ -12,9 +12,10 @@ import { format } from 'date-fns';
 interface ApplicationsTableProps {
   matchId: string;
   matchFormat?: 'singles' | 'doubles';
+  onApplicationConfirmed?: () => void;
 }
 
-export const ApplicationsTable = ({ matchId, matchFormat = 'singles' }: ApplicationsTableProps) => {
+export const ApplicationsTable = ({ matchId, matchFormat = 'singles', onApplicationConfirmed }: ApplicationsTableProps) => {
   const [applications, setApplications] = useState<Application[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -53,6 +54,7 @@ export const ApplicationsTable = ({ matchId, matchFormat = 'singles' }: Applicat
       setError(null);
       await applicationsApi.confirm(applicationId);
       await loadApplications();
+      onApplicationConfirmed?.(); // Refresh match data to show chat box
     } catch (err: any) {
       setError(err.response?.data?.message || 'Failed to confirm application');
       console.error('Failed to confirm application:', err);
