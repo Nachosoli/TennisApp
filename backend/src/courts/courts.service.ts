@@ -60,6 +60,19 @@ export class CourtsService {
       throw new BadRequestException('Valid address or coordinates required');
     }
 
+    // Check for duplicate court by address (case-insensitive, trimmed)
+    const existingCourt = await this.courtRepository
+      .createQueryBuilder('court')
+      .where('court.deletedAt IS NULL')
+      .andWhere('LOWER(TRIM(court.address)) = LOWER(TRIM(:address))', {
+        address: formattedAddress,
+      })
+      .getOne();
+
+    if (existingCourt) {
+      throw new BadRequestException('A court with this address already exists');
+    }
+
     // Create Point geometry
     const coordinates: Point = {
       type: 'Point',
@@ -87,15 +100,17 @@ export class CourtsService {
       throw new NotFoundException('User not found');
     }
 
-    // Check if a court with the same placeId already exists
-    if (createDto.placeId) {
-      // Note: We don't have a placeId column yet, but we can check by address
-      const existingCourt = await this.courtRepository.findOne({
-        where: { address: createDto.address },
-      });
-      if (existingCourt) {
-        return existingCourt;
-      }
+    // Check for duplicate court by address (case-insensitive, trimmed)
+    const existingCourt = await this.courtRepository
+      .createQueryBuilder('court')
+      .where('court.deletedAt IS NULL')
+      .andWhere('LOWER(TRIM(court.address)) = LOWER(TRIM(:address))', {
+        address: createDto.address,
+      })
+      .getOne();
+
+    if (existingCourt) {
+      throw new BadRequestException('A court with this address already exists');
     }
 
     // Create Point geometry
