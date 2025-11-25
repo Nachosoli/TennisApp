@@ -28,6 +28,7 @@ import { NotificationsModule } from '../notifications/notifications.module';
   ],
   providers: [ChatGateway, ChatService],
   controllers: [ChatController],
+  exports: [ChatService], // Export ChatService so it can be used in other modules
 })
 export class ChatModule {}
 

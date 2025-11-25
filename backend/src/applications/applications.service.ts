@@ -19,6 +19,7 @@ import { ConfigService } from '@nestjs/config';
 import { NotificationsService } from '../notifications/notifications.service';
 import { NotificationType } from '../entities/notification.entity';
 import { MatchUpdatesGateway } from '../gateways/match-updates.gateway';
+import { ChatService } from '../chat/chat.service';
 
 @Injectable()
 export class ApplicationsService {
@@ -38,6 +39,7 @@ export class ApplicationsService {
     private notificationsService: NotificationsService,
     @Inject(forwardRef(() => MatchUpdatesGateway))
     private matchUpdatesGateway: MatchUpdatesGateway,
+    private chatService: ChatService,
   ) {
     // Get lock expiration from config (default 2 hours)
     this.lockExpirationHours = parseInt(
@@ -323,6 +325,26 @@ export class ApplicationsService {
         matchId: match.id,
       },
     );
+
+    // Create automatic contact information messages for both participants
+    try {
+      // Message from applicant to creator (showing applicant's contact info)
+      await this.chatService.createContactInfoMessage(
+        match.id,
+        creatorUserId, // Creator will see this message
+        application.applicantUserId, // Applicant's contact info is shared
+      );
+
+      // Message from creator to applicant (showing creator's contact info)
+      await this.chatService.createContactInfoMessage(
+        match.id,
+        application.applicantUserId, // Applicant will see this message
+        creatorUserId, // Creator's contact info is shared
+      );
+    } catch (error) {
+      // Log error but don't fail confirmation if contact message creation fails
+      console.warn('Failed to create contact information messages:', error);
+    }
 
     // Emit real-time updates
     try {

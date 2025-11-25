@@ -134,5 +134,66 @@ export class ChatService {
       order: { createdAt: 'ASC' },
     });
   }
+
+  /**
+   * Create an automatic contact information message when a match is confirmed
+   * @param matchId The match ID
+   * @param fromUserId The user ID who will see this message (recipient)
+   * @param toUserId The user ID whose contact info will be shared (sender of the info)
+   * @returns The created message, or null if no contact information is available
+   */
+  async createContactInfoMessage(
+    matchId: string,
+    fromUserId: string,
+    toUserId: string,
+  ): Promise<ChatMessage | null> {
+    // Verify match exists
+    const match = await this.matchRepository.findOne({
+      where: { id: matchId },
+    });
+
+    if (!match) {
+      throw new NotFoundException('Match not found');
+    }
+
+    // Get the user whose contact info will be shared
+    const contactUser = await this.userRepository.findOne({
+      where: { id: toUserId },
+    });
+
+    if (!contactUser) {
+      throw new NotFoundException('User not found');
+    }
+
+    // Build contact information message
+    const contactInfoParts: string[] = ['Contact Information:'];
+    
+    if (contactUser.phone) {
+      contactInfoParts.push(`Phone: ${contactUser.phone}`);
+    }
+    
+    if (contactUser.email) {
+      contactInfoParts.push(`Email: ${contactUser.email}`);
+    }
+
+    // If no contact info available, don't create message
+    if (contactInfoParts.length === 1) {
+      // Only has "Contact Information:" header, no actual info
+      return null;
+    }
+
+    const messageText = contactInfoParts.join('\n');
+
+    // Create the message (fromUserId is the recipient, toUserId's info is shared)
+    const message = this.chatMessageRepository.create({
+      matchId,
+      userId: toUserId, // The person whose contact info is being shared
+      message: messageText,
+    });
+
+    const savedMessage = await this.chatMessageRepository.save(message);
+
+    return savedMessage;
+  }
 }
 

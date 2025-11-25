@@ -12,7 +12,8 @@ class SocketService {
       return this.socket;
     }
 
-    this.socket = io(SOCKET_URL, {
+    // Connect to /chat namespace for chat functionality
+    this.socket = io(`${SOCKET_URL}/chat`, {
       auth: token ? { token } : undefined,
       transports: ['websocket', 'polling'],
       reconnection: true,
@@ -56,13 +57,13 @@ class SocketService {
   // Chat methods
   joinMatchRoom(matchId: string): void {
     if (this.socket) {
-      this.socket.emit('join_match', matchId);
+      this.socket.emit('join_match', { matchId });
     }
   }
 
   leaveMatchRoom(matchId: string): void {
     if (this.socket) {
-      this.socket.emit('leave_match', matchId);
+      this.socket.emit('leave_match', { matchId });
     }
   }
 
