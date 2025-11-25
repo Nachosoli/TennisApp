@@ -58,8 +58,14 @@ export class User {
   @Column({ unique: true })
   email: string;
 
-  @Column({ name: 'password_hash' })
+  @Column({ name: 'password_hash', nullable: true })
   passwordHash: string;
+
+  @Column({ nullable: true })
+  provider: string; // 'google', 'facebook', etc. or null for email/password
+
+  @Column({ name: 'provider_id', nullable: true })
+  providerId: string; // OAuth provider's user ID
 
   @Column({ nullable: true })
   phone: string;

@@ -11,6 +11,7 @@ import { EmailVerificationService } from './services/email-verification.service'
 import { PasswordResetService } from './services/password-reset.service';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { JwtRefreshStrategy } from './strategies/jwt-refresh.strategy';
+import { GoogleStrategy } from './strategies/google.strategy';
 import { User } from '../entities/user.entity';
 import { UserStats } from '../entities/user-stats.entity';
 import { NotificationsModule } from '../notifications/notifications.module';
@@ -47,6 +48,7 @@ import { NotificationsModule } from '../notifications/notifications.module';
     PasswordResetService,
     JwtStrategy,
     JwtRefreshStrategy,
+    GoogleStrategy,
   ],
   exports: [AuthService, PasswordService],
 })

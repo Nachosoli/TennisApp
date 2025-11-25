@@ -1,0 +1,92 @@
+import { Injectable } from '@nestjs/common';
+import { PassportStrategy } from '@nestjs/passport';
+import { Strategy, VerifyCallback } from 'passport-google-oauth20';
+import { ConfigService } from '@nestjs/config';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { User } from '../../entities/user.entity';
+import { UserStats } from '../../entities/user-stats.entity';
+
+@Injectable()
+export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
+  constructor(
+    private configService: ConfigService,
+    @InjectRepository(User)
+    private userRepository: Repository<User>,
+    @InjectRepository(UserStats)
+    private userStatsRepository: Repository<UserStats>,
+  ) {
+    const backendUrl = configService.get<string>('BACKEND_URL') || 'http://localhost:3001';
+    const callbackUrl = configService.get<string>('GOOGLE_CALLBACK_URL') || `${backendUrl}/api/v1/auth/google/callback`;
+    
+    super({
+      clientID: configService.get<string>('GOOGLE_CLIENT_ID'),
+      clientSecret: configService.get<string>('GOOGLE_CLIENT_SECRET'),
+      callbackURL: callbackUrl,
+      scope: ['email', 'profile'],
+    });
+  }
+
+  async validate(
+    accessToken: string,
+    refreshToken: string,
+    profile: any,
+    done: VerifyCallback,
+  ): Promise<any> {
+    const { id, name, emails, photos } = profile;
+    const email = emails?.[0]?.value;
+    const firstName = name?.givenName || '';
+    const lastName = name?.familyName || '';
+    const photoUrl = photos?.[0]?.value || null;
+
+    if (!email) {
+      return done(new Error('No email found in Google profile'), null);
+    }
+
+    // Try to find existing user by email or provider ID
+    let user = await this.userRepository.findOne({
+      where: [
+        { email },
+        { provider: 'google', providerId: id },
+      ],
+    });
+
+    if (user) {
+      // Update user if they're logging in with Google for the first time
+      if (!user.provider || user.provider !== 'google') {
+        user.provider = 'google';
+        user.providerId = id;
+        if (photoUrl && !user.photoUrl) {
+          user.photoUrl = photoUrl;
+        }
+        await this.userRepository.save(user);
+      }
+    } else {
+      // Create new user
+      user = this.userRepository.create({
+        email,
+        firstName,
+        lastName,
+        provider: 'google',
+        providerId: id,
+        photoUrl,
+        passwordHash: null, // OAuth users don't have passwords
+        emailVerified: true, // Google emails are verified
+        phoneVerified: false, // Still need phone verification
+        role: 'user' as any,
+      });
+      user = await this.userRepository.save(user);
+      
+      // Create user stats for new user
+      const userStats = this.userStatsRepository.create({
+        userId: user.id,
+        singlesElo: 1500,
+        doublesElo: 1500,
+      });
+      await this.userStatsRepository.save(userStats);
+    }
+
+    return done(null, user);
+  }
+}
+

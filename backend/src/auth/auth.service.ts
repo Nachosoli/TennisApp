@@ -52,10 +52,10 @@ export class AuthService {
       throw new ConflictException('User with this email already exists');
     }
 
-    // Hash password
-    const passwordHash = await this.passwordService.hashPassword(
-      registerDto.password,
-    );
+    // Hash password (only if provided - OAuth users don't have passwords)
+    const passwordHash = registerDto.password
+      ? await this.passwordService.hashPassword(registerDto.password)
+      : null;
 
     // Create user
     const user = this.userRepository.create({
@@ -139,6 +139,13 @@ export class AuthService {
 
     if (!user) {
       throw new UnauthorizedException('Invalid credentials');
+    }
+
+    // Check if user is OAuth-only (no password hash)
+    if (!user.passwordHash) {
+      throw new UnauthorizedException(
+        'This account uses OAuth authentication. Please sign in with Google.',
+      );
     }
 
     const isPasswordValid = await this.passwordService.comparePassword(
@@ -290,7 +297,7 @@ export class AuthService {
     return this.generateTokens(user);
   }
 
-  private async generateTokens(user: User): Promise<{
+  async generateTokens(user: User): Promise<{
     accessToken: string;
     refreshToken: string;
   }> {
