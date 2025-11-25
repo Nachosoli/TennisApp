@@ -206,7 +206,7 @@ export const MatchesMap = ({ matches, onMapLoad, onBoundsChanged, homeCourt, sea
 
     const handleBoundsChanged = () => {
       const bounds = map.getBounds();
-      onBoundsChanged(bounds);
+      onBoundsChanged(bounds || null);
     };
 
     // Listen to 'idle' event which fires after pan/zoom operations complete
