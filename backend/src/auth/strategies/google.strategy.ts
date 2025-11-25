@@ -4,7 +4,7 @@ import { Strategy, VerifyCallback } from 'passport-google-oauth20';
 import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { User } from '../../entities/user.entity';
+import { User, Gender } from '../../entities/user.entity';
 import { UserStats } from '../../entities/user-stats.entity';
 
 @Injectable()
@@ -103,6 +103,7 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
         passwordHash: null, // OAuth users don't have passwords
         emailVerified: true, // Google emails are verified
         phoneVerified: false, // Still need phone verification
+        gender: Gender.OTHER, // Default to 'other' during registration, user can update on profile page
         role: 'user' as any,
       });
       user = await this.userRepository.save(user);
