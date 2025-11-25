@@ -1,6 +1,6 @@
 {
-  "name": "CourtMate - Tennis Match Scheduling",
-  "short_name": "CourtMate",
+  "name": "CourtBuddy - Tennis Match Scheduling",
+  "short_name": "CourtBuddy",
   "description": "Find and schedule tennis matches with players in your area",
   "start_url": "/",
   "display": "standalone",

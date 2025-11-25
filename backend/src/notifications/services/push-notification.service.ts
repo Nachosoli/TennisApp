@@ -85,7 +85,7 @@ export class PushNotificationService {
       [NotificationType.SCORE_REMINDER]: 'Score Reminder',
       [NotificationType.NEW_CHAT]: 'New Message',
     };
-    return titles[type] || 'CourtMate Notification';
+    return titles[type] || 'CourtBuddy Notification';
   }
 
   generatePushBody(type: NotificationType, metadata: Record<string, any>): string {
@@ -95,7 +95,7 @@ export class PushNotificationService {
       case NotificationType.MATCH_ACCEPTED:
         return `${metadata.applicantName || 'Someone'} applied to your match. Confirm now!`;
       default:
-        return 'You have a new notification in CourtMate';
+        return 'You have a new notification in CourtBuddy';
     }
   }
 }

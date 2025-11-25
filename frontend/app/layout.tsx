@@ -17,13 +17,13 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "CourtMate - Tennis Match Scheduling",
+  title: "CourtBuddy - Tennis Match Scheduling",
   description: "Find and schedule tennis matches with players in your area",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "CourtMate",
+    title: "CourtBuddy",
   },
 };
 

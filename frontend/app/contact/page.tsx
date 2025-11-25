@@ -42,10 +42,10 @@ export default function ContactPage() {
                   For general inquiries, support, or feedback, please email us at:
                 </p>
                 <a
-                  href="mailto:support@courtmate.com"
+                  href="mailto:support@courtbuddyapp.com"
                   className="text-blue-600 hover:text-blue-800 underline"
                 >
-                  support@courtmate.com
+                  support@courtbuddyapp.com
                 </a>
               </div>
 
@@ -56,10 +56,10 @@ export default function ContactPage() {
                   please contact us immediately.
                 </p>
                 <a
-                  href="mailto:report@courtmate.com"
+                  href="mailto:report@courtbuddyapp.com"
                   className="text-blue-600 hover:text-blue-800 underline"
                 >
-                  report@courtmate.com
+                  report@courtbuddyapp.com
                 </a>
               </div>
 

@@ -288,14 +288,14 @@ export class NotificationsService {
 
   private getEmailSubject(type: NotificationType): string {
     const subjects = {
-      [NotificationType.MATCH_CREATED]: 'New Match Created - CourtMate',
-      [NotificationType.MATCH_ACCEPTED]: 'Match Application Received - CourtMate',
-      [NotificationType.MATCH_CONFIRMED]: 'Match Confirmed! - CourtMate',
-      [NotificationType.COURT_CHANGES]: 'Court Changes - CourtMate',
-      [NotificationType.SCORE_REMINDER]: 'Score Reminder - CourtMate',
-      [NotificationType.NEW_CHAT]: 'New Chat Message - CourtMate',
+      [NotificationType.MATCH_CREATED]: 'New Match Created - CourtBuddy',
+      [NotificationType.MATCH_ACCEPTED]: 'Match Application Received - CourtBuddy',
+      [NotificationType.MATCH_CONFIRMED]: 'Match Confirmed! - CourtBuddy',
+      [NotificationType.COURT_CHANGES]: 'Court Changes - CourtBuddy',
+      [NotificationType.SCORE_REMINDER]: 'Score Reminder - CourtBuddy',
+      [NotificationType.NEW_CHAT]: 'New Chat Message - CourtBuddy',
     };
-    return subjects[type] || 'Notification from CourtMate';
+    return subjects[type] || 'Notification from CourtBuddy';
   }
 
   /**

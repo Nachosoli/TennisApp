@@ -28,9 +28,9 @@ export default function GuidelinesPage() {
         <Card>
           <div className="p-6 space-y-8">
             <div>
-              <h2 className="text-2xl font-semibold text-gray-900 mb-4">Welcome to CourtMate</h2>
+              <h2 className="text-2xl font-semibold text-gray-900 mb-4">Welcome to CourtBuddy</h2>
               <p className="text-gray-600">
-                CourtMate is a community platform designed to help tennis players find matches and connect 
+                CourtBuddy is a community platform designed to help tennis players find matches and connect 
                 with fellow players. To ensure a positive experience for everyone, we ask that all members 
                 follow these guidelines.
               </p>

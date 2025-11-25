@@ -138,8 +138,8 @@ async function bootstrap() {
 
   // Swagger/OpenAPI documentation
   const config = new DocumentBuilder()
-    .setTitle('CourtMate API')
-    .setDescription('CourtMate Tennis App API Documentation')
+    .setTitle('CourtBuddy API')
+    .setDescription('CourtBuddy Tennis App API Documentation')
     .setVersion('1.0')
     .addBearerAuth()
     .addTag('auth', 'Authentication endpoints')

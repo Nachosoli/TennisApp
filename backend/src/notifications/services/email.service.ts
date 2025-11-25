@@ -10,7 +10,7 @@ export class EmailService {
 
   constructor(private configService: ConfigService) {
     this.sendGridApiKey = this.configService.get<string>('SENDGRID_API_KEY') || '';
-    this.fromEmail = this.configService.get<string>('SENDGRID_FROM_EMAIL') || 'noreply@courtmate.com';
+    this.fromEmail = this.configService.get<string>('SENDGRID_FROM_EMAIL') || 'noreply@courtbuddyapp.com';
 
     if (this.sendGridApiKey) {
       sgMail.setApiKey(this.sendGridApiKey);
@@ -57,7 +57,7 @@ export class EmailService {
             <li><strong>Date:</strong> ${matchDetails.date}</li>
             <li><strong>Time:</strong> ${matchDetails.time}</li>
           </ul>
-          <p>Check it out in the CourtMate app!</p>
+          <p>Check it out in the CourtBuddy app!</p>
         </body>
       </html>
     `;
@@ -149,14 +149,14 @@ export class EmailService {
           <div style="background-color: #f8f9fa; padding: 30px; border-radius: 8px;">
             <h2 style="color: #2563eb; margin-top: 0;">Verify Your Email Address</h2>
             <p>Hello ${firstName},</p>
-            <p>Thank you for signing up for CourtMate! Please verify your email address by clicking the button below:</p>
+            <p>Thank you for signing up for CourtBuddy! Please verify your email address by clicking the button below:</p>
             <div style="text-align: center; margin: 30px 0;">
               <a href="${verificationLink}" style="background-color: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block; font-weight: bold;">Verify Email Address</a>
             </div>
             <p>Or copy and paste this link into your browser:</p>
             <p style="color: #6b7280; word-break: break-all; font-size: 14px;">${verificationLink}</p>
             <p style="color: #6b7280; font-size: 14px; margin-top: 30px;">This link will expire in 24 hours.</p>
-            <p style="color: #6b7280; font-size: 14px;">If you didn't create an account with CourtMate, you can safely ignore this email.</p>
+            <p style="color: #6b7280; font-size: 14px;">If you didn't create an account with CourtBuddy, you can safely ignore this email.</p>
           </div>
         </body>
       </html>
@@ -170,7 +170,7 @@ export class EmailService {
           <div style="background-color: #f8f9fa; padding: 30px; border-radius: 8px;">
             <h2 style="color: #2563eb; margin-top: 0;">Reset Your Password</h2>
             <p>Hello ${firstName},</p>
-            <p>We received a request to reset your password for your CourtMate account. Click the button below to reset your password:</p>
+            <p>We received a request to reset your password for your CourtBuddy account. Click the button below to reset your password:</p>
             <div style="text-align: center; margin: 30px 0;">
               <a href="${resetLink}" style="background-color: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block; font-weight: bold;">Reset Password</a>
             </div>

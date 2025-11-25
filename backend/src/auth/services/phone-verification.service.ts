@@ -114,7 +114,7 @@ export class PhoneVerificationService {
 
       // Send SMS via Twilio
       await this.twilioClient.messages.create({
-        body: `Your CourtMate verification code is: ${verificationCode}. This code expires in 10 minutes.`,
+        body: `Your CourtBuddy verification code is: ${verificationCode}. This code expires in 10 minutes.`,
         to: phone,
         from: phoneNumber,
       });

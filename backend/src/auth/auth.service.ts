@@ -64,8 +64,8 @@ export class AuthService {
       phone: registerDto.phone,
       firstName: registerDto.firstName,
       lastName: registerDto.lastName,
-      phoneVerified: false, // Phone verification required
-      emailVerified: false, // Email verification required
+      phoneVerified: true, // TODO: Set to false once Twilio is configured
+      emailVerified: true, // TODO: Set to false once SendGrid is configured
       gender: Gender.OTHER, // Default to 'other' during registration, user can update on profile page
       role: UserRole.USER,
     });
@@ -83,33 +83,35 @@ export class AuthService {
     // Generate tokens (like login does)
     const tokens = await this.generateTokens(savedUser);
 
+    // TODO: Re-enable email verification once SendGrid is configured
     // Send email verification (non-blocking - don't fail registration if this fails)
-    try {
-      const verificationToken = await this.emailVerificationService.sendVerificationEmail(registerDto.email);
-      const frontendUrl = this.configService.get<string>('FRONTEND_URL') || 'http://localhost:3002';
-      const verificationLink = `${frontendUrl}/auth/verify-email?token=${verificationToken}&email=${encodeURIComponent(registerDto.email)}`;
-      const emailContent = this.emailService.generateEmailVerificationEmail(
-        verificationLink,
-        registerDto.firstName,
-      );
-      await this.emailService.sendEmail(
-        registerDto.email,
-        'Verify Your Email Address - CourtMate',
-        emailContent,
-      );
-      this.logger.log(`Email verification sent to ${registerDto.email}`);
-    } catch (error) {
-      // Log error but don't fail registration
-      this.logger.warn('Failed to send email verification', error);
-    }
+    // try {
+    //   const verificationToken = await this.emailVerificationService.sendVerificationEmail(registerDto.email);
+    //   const frontendUrl = this.configService.get<string>('FRONTEND_URL') || 'http://localhost:3002';
+    //   const verificationLink = `${frontendUrl}/auth/verify-email?token=${verificationToken}&email=${encodeURIComponent(registerDto.email)}`;
+    //   const emailContent = this.emailService.generateEmailVerificationEmail(
+    //     verificationLink,
+    //     registerDto.firstName,
+    //   );
+    //   await this.emailService.sendEmail(
+    //     registerDto.email,
+    //     'Verify Your Email Address - CourtBuddy',
+    //     emailContent,
+    //   );
+    //   this.logger.log(`Email verification sent to ${registerDto.email}`);
+    // } catch (error) {
+    //   // Log error but don't fail registration
+    //   this.logger.warn('Failed to send email verification', error);
+    // }
 
+    // TODO: Re-enable SMS verification once Twilio is configured
     // Send verification code (non-blocking - don't fail registration if this fails)
-    try {
-      await this.phoneVerificationService.sendVerificationCode(registerDto.phone);
-    } catch (error) {
-      // Log error but don't fail registration
-      this.logger.warn('Failed to send verification code', error);
-    }
+    // try {
+    //   await this.phoneVerificationService.sendVerificationCode(registerDto.phone);
+    // } catch (error) {
+    //   // Log error but don't fail registration
+    //   this.logger.warn('Failed to send verification code', error);
+    // }
 
     // Return tokens and user info (same structure as login)
     return {
@@ -226,7 +228,7 @@ export class AuthService {
       );
       await this.emailService.sendEmail(
         user.email,
-        'Verify Your Email Address - CourtMate',
+        'Verify Your Email Address - CourtBuddy',
         emailContent,
       );
       this.logger.log(`Verification email resent to ${user.email}`);
@@ -356,7 +358,7 @@ export class AuthService {
       // Send email
       await this.emailService.sendEmail(
         email,
-        'Reset Your Password - CourtMate',
+        'Reset Your Password - CourtBuddy',
         emailContent,
       );
       

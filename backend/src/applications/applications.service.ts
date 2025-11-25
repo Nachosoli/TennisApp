@@ -56,10 +56,11 @@ export class ApplicationsService {
       throw new NotFoundException('User not found');
     }
 
+    // TODO: Re-enable verification checks once Twilio and SendGrid are configured
     // Check if user email is verified
-    if (!user.emailVerified) {
-      throw new ForbiddenException('Please verify your email address before applying to matches');
-    }
+    // if (!user.emailVerified) {
+    //   throw new ForbiddenException('Please verify your email address before applying to matches');
+    // }
 
     // Check if user has gender defined
     if (!user.gender) {
@@ -67,9 +68,9 @@ export class ApplicationsService {
     }
 
     // Check if user is verified (if phone provided)
-    if (user.phone && !user.phoneVerified) {
-      throw new ForbiddenException('Please verify your phone number before applying to matches');
-    }
+    // if (user.phone && !user.phoneVerified) {
+    //   throw new ForbiddenException('Please verify your phone number before applying to matches');
+    // }
 
     // Get match slot
     const slot = await this.matchSlotRepository.findOne({

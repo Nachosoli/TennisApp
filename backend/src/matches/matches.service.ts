@@ -56,10 +56,11 @@ export class MatchesService {
       throw new ForbiddenException('Users without a home court cannot create matches');
     }
 
+    // TODO: Re-enable verification check once Twilio is configured
     // Verify user is verified (if phone provided)
-    if (user.phone && !user.phoneVerified) {
-      throw new ForbiddenException('Please verify your phone number before creating matches');
-    }
+    // if (user.phone && !user.phoneVerified) {
+    //   throw new ForbiddenException('Please verify your phone number before creating matches');
+    // }
 
     // Verify court exists
     const court = await this.courtRepository.findOne({

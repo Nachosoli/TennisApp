@@ -1,6 +1,6 @@
-// Service Worker for CourtMate PWA
-const CACHE_NAME = 'courtmate-v1';
-const RUNTIME_CACHE = 'courtmate-runtime-v1';
+// Service Worker for CourtBuddy PWA
+const CACHE_NAME = 'courtbuddy-v1';
+const RUNTIME_CACHE = 'courtbuddy-runtime-v1';
 
 // Assets to cache on install
 const PRECACHE_ASSETS = [
@@ -99,7 +99,7 @@ self.addEventListener('fetch', (event) => {
 // Push notification event
 self.addEventListener('push', (event) => {
   const data = event.data ? event.data.json() : {};
-  const title = data.title || 'CourtMate Notification';
+  const title = data.title || 'CourtBuddy Notification';
   const options = {
     body: data.body || 'You have a new notification',
     icon: '/icon-192x192.png',

@@ -49,7 +49,7 @@ export class SmsService {
     courtName: string;
     date: string;
   }): string {
-    return `New match at ${matchDetails.courtName} on ${matchDetails.date} by ${matchDetails.creatorName}. Check CourtMate app!`;
+    return `New match at ${matchDetails.courtName} on ${matchDetails.date} by ${matchDetails.creatorName}. Check CourtBuddy app!`;
   }
 
   generateMatchAcceptedSms(matchDetails: {
@@ -57,7 +57,7 @@ export class SmsService {
     courtName: string;
     date: string;
   }): string {
-    return `${matchDetails.applicantName} applied to your match at ${matchDetails.courtName} on ${matchDetails.date}. Check CourtMate app!`;
+    return `${matchDetails.applicantName} applied to your match at ${matchDetails.courtName} on ${matchDetails.date}. Check CourtBuddy app!`;
   }
 
   generateMatchConfirmedSms(matchDetails: {
@@ -73,7 +73,7 @@ export class SmsService {
     opponentName: string;
     date: string;
   }): string {
-    return `Reminder: Submit score for match vs ${matchDetails.opponentName} on ${matchDetails.date}. Update your ELO in CourtMate app!`;
+    return `Reminder: Submit score for match vs ${matchDetails.opponentName} on ${matchDetails.date}. Update your ELO in CourtBuddy app!`;
   }
 
   generateNewChatMessageSms(matchDetails: {
@@ -83,6 +83,6 @@ export class SmsService {
     const preview = matchDetails.messagePreview.length > 50
       ? matchDetails.messagePreview.substring(0, 50) + '...'
       : matchDetails.messagePreview;
-    return `New message from ${matchDetails.senderName}: "${preview}" - Reply in CourtMate app`;
+    return `New message from ${matchDetails.senderName}: "${preview}" - Reply in CourtBuddy app`;
   }
 }

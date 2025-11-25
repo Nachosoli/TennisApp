@@ -78,7 +78,7 @@ export default function LoginPage() {
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
       <Card className="w-full max-w-md">
         <div className="text-center mb-6">
-          <h2 className="text-3xl font-bold text-gray-900 mb-2">Sign in to CourtMate</h2>
+          <h2 className="text-3xl font-bold text-gray-900 mb-2">Sign in to CourtBuddy</h2>
           <p className="mt-2 text-sm text-gray-700">
             Or{' '}
             <Link href="/auth/register" className="font-semibold text-blue-600 hover:text-blue-700">
