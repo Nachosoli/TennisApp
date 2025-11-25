@@ -4,8 +4,16 @@ export class InitialSchema1700000000000 implements MigrationInterface {
   name = 'InitialSchema1700000000000';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
-    // Enable PostGIS extension
-    await queryRunner.query(`CREATE EXTENSION IF NOT EXISTS "postgis"`);
+    // Enable PostGIS extension (optional - may not be available in all PostgreSQL instances)
+    try {
+      await queryRunner.query(`CREATE EXTENSION IF NOT EXISTS "postgis"`);
+    } catch (error: any) {
+      if (error.code === '0A000' || error.message?.includes('extension "postgis" is not available')) {
+        console.warn('⚠️  PostGIS extension is not available - location-based features will be disabled');
+      } else {
+        throw error; // Re-throw if it's a different error
+      }
+    }
 
     // Create enum types
     await queryRunner.query(
@@ -281,9 +289,19 @@ export class InitialSchema1700000000000 implements MigrationInterface {
     // Create indexes
     await queryRunner.query(`CREATE INDEX "IDX_users_email" ON "users" ("email")`);
     await queryRunner.query(`CREATE INDEX "IDX_users_phone" ON "users" ("phone")`);
-    await queryRunner.query(
-      `CREATE INDEX "IDX_courts_coordinates" ON "courts" USING GIST ("coordinates")`,
-    );
+    // Create GIST index for coordinates (requires PostGIS - skip if not available)
+    try {
+      await queryRunner.query(
+        `CREATE INDEX "IDX_courts_coordinates" ON "courts" USING GIST ("coordinates")`,
+      );
+    } catch (error: any) {
+      if (error.message?.includes('data type geography has no default operator class') || 
+          error.message?.includes('PostGIS')) {
+        console.warn('⚠️  Skipping GIST index on coordinates - PostGIS not available');
+      } else {
+        throw error; // Re-throw if it's a different error
+      }
+    }
     await queryRunner.query(`CREATE INDEX "IDX_courts_created_by_user_id" ON "courts" ("created_by_user_id")`);
     await queryRunner.query(`CREATE INDEX "IDX_matches_creator_user_id" ON "matches" ("creator_user_id")`);
     await queryRunner.query(`CREATE INDEX "IDX_matches_court_id" ON "matches" ("court_id")`);
