@@ -59,7 +59,7 @@ export class User {
   email: string;
 
   @Column({ name: 'password_hash', nullable: true })
-  passwordHash: string;
+  passwordHash: string | null;
 
   @Column({ nullable: true })
   provider: string; // 'google', 'facebook', etc. or null for email/password

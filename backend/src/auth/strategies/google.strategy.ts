@@ -65,7 +65,7 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
     const photoUrl = photos?.[0]?.value || null;
 
     if (!email) {
-      return done(new Error('No email found in Google profile'), null);
+      return done(new Error('No email found in Google profile'), undefined);
     }
 
     // Try to find existing user by email or provider ID
@@ -100,7 +100,7 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
         provider: 'google',
         providerId: id,
         photoUrl,
-        passwordHash: null, // OAuth users don't have passwords
+        passwordHash: undefined, // OAuth users don't have passwords
         emailVerified: true, // Google emails are verified
         phoneVerified: false, // Still need phone verification
         role: 'user' as any,
