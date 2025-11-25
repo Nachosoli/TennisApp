@@ -223,32 +223,48 @@ export class MatchesService {
     }
 
     // Distance filter (requires coordinates)
+    // Note: PostGIS is not available, so distance filtering is done in memory after fetching
+    // For now, we'll skip distance filtering in the query and apply it after if needed
     if (filters?.latitude && filters?.longitude && filters?.maxDistance) {
-      query
-        .andWhere(
-          `ST_DWithin(
-            court.coordinates::geography,
-            ST_SetSRID(ST_MakePoint(:lng, :lat), 4326)::geography,
-            :maxDistance
-          )`,
-          {
-            lng: filters.longitude,
-            lat: filters.latitude,
-            maxDistance: filters.maxDistance,
-          },
-        )
-        .orderBy(
-          `ST_Distance(
-            court.coordinates::geography,
-            ST_SetSRID(ST_MakePoint(:lng, :lat), 4326)::geography
-          )`,
-          'ASC',
-        );
+      // Without PostGIS, we can't filter by distance in the query
+      // The distance filter will be applied after fetching if needed
+      // For now, we'll just order by date
+      query.orderBy('match.date', 'ASC').addOrderBy('match.createdAt', 'DESC'        );
     } else {
       query.orderBy('match.date', 'ASC').addOrderBy('match.createdAt', 'DESC');
     }
 
-    return query.getMany();
+    let matches = await query.getMany();
+
+    // Apply distance filter in memory if PostGIS is not available
+    if (filters?.latitude && filters?.longitude && filters?.maxDistance) {
+      const R = 6371000; // Earth radius in meters
+      matches = matches
+        .map((match) => {
+          if (!match.court?.coordinates || !match.court.coordinates.coordinates) {
+            return null;
+          }
+          const [lng, lat] = match.court.coordinates.coordinates;
+          const dLat = ((lat - filters.latitude!) * Math.PI) / 180;
+          const dLon = ((lng - filters.longitude!) * Math.PI) / 180;
+          const a =
+            Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+            Math.cos((filters.latitude! * Math.PI) / 180) *
+              Math.cos((lat * Math.PI) / 180) *
+              Math.sin(dLon / 2) *
+              Math.sin(dLon / 2);
+          const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+          const distance = R * c;
+          return { match, distance };
+        })
+        .filter((item): item is { match: Match; distance: number } => 
+          item !== null && item.distance <= filters.maxDistance!
+        )
+        .sort((a, b) => a.distance - b.distance)
+        .map((item) => item.match);
+    }
+
+    return matches;
   }
 
   async findById(id: string): Promise<Match> {

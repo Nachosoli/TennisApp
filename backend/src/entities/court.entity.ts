@@ -22,7 +22,7 @@ export enum SurfaceType {
 }
 
 @Entity('courts')
-@Index(['coordinates'], { spatial: true })
+// Spatial index removed - requires PostGIS. Using regular index if needed.
 @Index(['createdByUserId'])
 export class Court {
   @PrimaryGeneratedColumn('uuid')
@@ -35,10 +35,28 @@ export class Court {
   address: string;
 
   @Column({
-    type: 'geography',
-    spatialFeatureType: 'Point',
-    srid: 4326,
+    type: 'point',
     nullable: true,
+    transformer: {
+      to: (value: Point | null) => {
+        if (!value || !value.coordinates) return null;
+        // Convert GeoJSON Point to PostgreSQL point format: (lng, lat)
+        return `(${value.coordinates[0]},${value.coordinates[1]})`;
+      },
+      from: (value: string | null) => {
+        if (!value) return null;
+        // Convert PostgreSQL point format to GeoJSON Point
+        // Format: (lng,lat) or (lng, lat)
+        const match = value.match(/\((-?\d+\.?\d*),(-?\d+\.?\d*)\)/);
+        if (match) {
+          return {
+            type: 'Point',
+            coordinates: [parseFloat(match[1]), parseFloat(match[2])],
+          } as Point;
+        }
+        return null;
+      },
+    },
   })
   coordinates: Point;
 

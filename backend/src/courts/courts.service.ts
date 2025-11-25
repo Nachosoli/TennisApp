@@ -194,32 +194,41 @@ export class CourtsService {
     longitude: number,
     radiusMeters: number = 5000,
   ): Promise<Court[]> {
-    // Using PostGIS ST_DWithin for distance queries
-    const courts = await this.courtRepository
+    // Note: PostGIS is not available, so we'll fetch all courts and filter in memory
+    // This is not ideal for large datasets, but works without PostGIS
+    const allCourts = await this.courtRepository
       .createQueryBuilder('court')
       .where('court.deletedAt IS NULL')
-      .andWhere(
-        `ST_DWithin(
-          court.coordinates::geography,
-          ST_SetSRID(ST_MakePoint(:lng, :lat), 4326)::geography,
-          :radius
-        )`,
-        {
-          lng: longitude,
-          lat: latitude,
-          radius: radiusMeters,
-        },
-      )
-      .orderBy(
-        `ST_Distance(
-          court.coordinates::geography,
-          ST_SetSRID(ST_MakePoint(:lng, :lat), 4326)::geography
-        )`,
-        'ASC',
-      )
+      .andWhere('court.coordinates IS NOT NULL')
       .getMany();
 
-    return courts;
+    // Calculate distance using Haversine formula
+    const R = 6371000; // Earth radius in meters
+    const filteredCourts = allCourts
+      .map((court) => {
+        if (!court.coordinates || !court.coordinates.coordinates) {
+          return null;
+        }
+        const [lng, lat] = court.coordinates.coordinates;
+        const dLat = ((lat - latitude) * Math.PI) / 180;
+        const dLon = ((lng - longitude) * Math.PI) / 180;
+        const a =
+          Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+          Math.cos((latitude * Math.PI) / 180) *
+            Math.cos((lat * Math.PI) / 180) *
+            Math.sin(dLon / 2) *
+            Math.sin(dLon / 2);
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        const distance = R * c;
+        return { court, distance };
+      })
+      .filter((item): item is { court: Court; distance: number } => 
+        item !== null && item.distance <= radiusMeters
+      )
+      .sort((a, b) => a.distance - b.distance)
+      .map((item) => item.court);
+
+    return filteredCourts;
   }
 
   async findAllForDropdown(): Promise<{ id: string; name: string; address: string }[]> {
