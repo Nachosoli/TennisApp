@@ -136,14 +136,24 @@ export class AuthController {
   @ApiOperation({ summary: 'Google OAuth callback' })
   @ApiResponse({ status: 302, description: 'Redirects to frontend with tokens' })
   async googleAuthRedirect(@Request() req, @Res() res: Response) {
-    // User is attached to request by GoogleStrategy
-    const tokens = await this.authService.generateTokens(req.user);
-    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3002';
-    
-    // Redirect to frontend with tokens in URL query params
-    // Frontend will extract tokens and store them
-    const redirectUrl = `${frontendUrl}/auth/callback?accessToken=${tokens.accessToken}&refreshToken=${tokens.refreshToken}`;
-    return res.redirect(redirectUrl);
+    try {
+      // User is attached to request by GoogleStrategy
+      if (!req.user) {
+        throw new Error('User not found in OAuth callback');
+      }
+      
+      const tokens = await this.authService.generateTokens(req.user);
+      const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3002';
+      
+      // Redirect to frontend with tokens in URL query params
+      // Frontend will extract tokens and store them
+      const redirectUrl = `${frontendUrl}/auth/callback?accessToken=${tokens.accessToken}&refreshToken=${tokens.refreshToken}`;
+      return res.redirect(redirectUrl);
+    } catch (error) {
+      // If error, redirect to login with error message
+      const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3002';
+      return res.redirect(`${frontendUrl}/auth/login?error=oauth_failed`);
+    }
   }
 
   @Get('me')

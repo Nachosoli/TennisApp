@@ -44,12 +44,17 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
     }
 
     // Try to find existing user by email or provider ID
+    // First try by provider ID (more specific)
     let user = await this.userRepository.findOne({
-      where: [
-        { email },
-        { provider: 'google', providerId: id },
-      ],
+      where: { provider: 'google', providerId: id },
     });
+    
+    // If not found, try by email
+    if (!user) {
+      user = await this.userRepository.findOne({
+        where: { email },
+      });
+    }
 
     if (user) {
       // Update user if they're logging in with Google for the first time
