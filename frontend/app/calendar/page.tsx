@@ -70,9 +70,9 @@ export default function CalendarPage() {
       case 'BEGINNER':
         return rating >= 0.5 && rating <= 3.0;
       case 'INTERMEDIATE':
-        return rating > 3.0 && rating <= 4.5;
+        return rating > 3.0 && rating < 4.0; // Changed to < 4.0 so 4.0 is Advanced
       case 'ADVANCED':
-        return rating > 4.5 && rating <= 5.0;
+        return rating >= 4.0 && rating <= 5.0; // Changed to >= 4.0 to include 4.0
       case 'PRO':
         return rating > 5.0;
       default:
@@ -93,7 +93,13 @@ export default function CalendarPage() {
       if (filters.gender && match.gender !== filters.gender) return false;
       
       // Surface filter: only apply if filter is set
-      if (filters.surface && match.surface !== filters.surface) return false;
+      // Check match.surfaceFilter (from backend), match.surface, or fallback to court.surface
+      if (filters.surface) {
+        const matchSurface = (match as any).surfaceFilter || match.surface || match.court?.surface;
+        if (!matchSurface || matchSurface.toLowerCase() !== filters.surface.toLowerCase()) {
+          return false;
+        }
+      }
       
       // Distance filter: only apply if filter is set and match has maxDistance
       if (filters.maxDistance && match.maxDistance && match.maxDistance > filters.maxDistance * 1609.34) return false;
