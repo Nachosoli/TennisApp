@@ -407,6 +407,37 @@ function ProfilePageContent() {
       setIsLoading(true);
       setError(null);
       
+      // Check if there's a new facility to create
+      let newFacilityId = selectedFacilityId;
+      if (showNewFacilityForm && facilityName.trim() && newFacilityAddress.trim() && selectedGooglePlace) {
+        try {
+          const location = selectedGooglePlace.geometry?.location;
+          if (!location) {
+            throw new Error('Invalid address location');
+          }
+          const newCourt = await courtsApi.create({
+            name: facilityName.trim(),
+            address: newFacilityAddress,
+            lat: location.lat(),
+            lng: location.lng(),
+            surface: newFacilitySurfaceType,
+            isPublic: true,
+          });
+          newFacilityId = newCourt.id;
+          setSelectedFacilityId(newCourt.id);
+          setSelectedFacilityName(newCourt.name);
+          // Reset form fields
+          setNewFacilityAddress('');
+          setSelectedGooglePlace(null);
+          setShowNewFacilityForm(false);
+        } catch (err: any) {
+          const errorMessage = getErrorMessage(err);
+          setError(errorMessage);
+          setIsLoading(false);
+          return; // Stop submission if court creation fails
+        }
+      }
+      
       // If facility was found, include homeCourtId in update
       // Also preserve existing homeCourtId if user already has one and is not changing it
       const updateData: any = {
@@ -420,9 +451,9 @@ function ProfilePageContent() {
         ratingValue: (data.ratingType && String(data.ratingType) !== '') ? data.ratingValue : undefined,
       };
 
-      // Preserve existing homeCourtId if user has one, or use newly selected facility
-      if (selectedFacilityId) {
-        updateData.homeCourtId = selectedFacilityId;
+      // Preserve existing homeCourtId if user has one, or use newly selected/created facility
+      if (newFacilityId) {
+        updateData.homeCourtId = newFacilityId;
       } else if (user?.homeCourtId) {
         // Preserve existing home court if not changing it
         updateData.homeCourtId = user.homeCourtId;
@@ -434,7 +465,7 @@ function ProfilePageContent() {
       setError(null);
       
       // Reset facility search if it was saved
-      if (selectedFacilityId) {
+      if (newFacilityId) {
         setFacilityName('');
         setSelectedFacilityId(null);
         setSelectedFacilityName(null);
@@ -560,7 +591,7 @@ function ProfilePageContent() {
                 )}
               </div>
               {user?.phoneVerified && (
-                <p className="text-sm text-green-600 -mt-2 flex items-center">
+                <p className="text-sm text-green-600 mt-2 flex items-center">
                   <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                   </svg>

@@ -17,22 +17,14 @@ export const useMatchChat = ({ matchId }: UseMatchChatProps) => {
 
     socket.joinMatchRoom(matchId);
 
-    const handleMessage = (data: {
-      userId: string;
-      message: string;
-      createdAt: string;
-      userName?: string;
-    }) => {
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: Date.now().toString(),
-          matchId,
-          userId: data.userId,
-          message: data.message,
-          createdAt: data.createdAt,
-        },
-      ]);
+    const handleMessage = (data: ChatMessage) => {
+      setMessages((prev) => {
+        // Avoid duplicates
+        if (prev.some((m) => m.id === data.id)) {
+          return prev;
+        }
+        return [...prev, data];
+      });
       scrollToBottom();
     };
 

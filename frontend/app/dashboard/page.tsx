@@ -63,8 +63,21 @@ export default function DashboardPage() {
         matchesApi.getMyMatches().catch(() => []),
       ]);
       setStats(userStats);
-      // Filter out any cancelled matches that might still exist in database
-      const activeMatches = (matches || []).filter(match => match.status?.toLowerCase() !== 'cancelled');
+      // Filter out cancelled matches and matches where user has rejected application
+      const activeMatches = (matches || []).filter(match => {
+        if (match.status?.toLowerCase() === 'cancelled') return false;
+        
+        // Check if user has rejected application
+        const hasRejectedApplication = match.slots?.some(slot =>
+          slot.applications?.some(app =>
+            (app.applicantUserId === user.id || app.userId === user.id) &&
+            app.status?.toLowerCase() === 'rejected'
+          )
+        );
+        if (hasRejectedApplication) return false;
+        
+        return true;
+      });
       setRecentMatches(activeMatches.slice(0, 5));
     } catch (error) {
       console.error('Failed to load dashboard data:', error);
@@ -387,6 +400,9 @@ export default function DashboardPage() {
 
                       // Check if user has waitlisted application (needed for status display)
                       const hasWaitlistedApplication = userApplication?.status?.toLowerCase() === 'waitlisted';
+                      
+                      // Check if user has pending application
+                      const hasPendingApplication = userApplication?.status?.toLowerCase() === 'pending';
 
                       // Determine status
                       const matchDate = parseLocalDate(match.date);
@@ -397,6 +413,9 @@ export default function DashboardPage() {
                       
                       if (match.status?.toLowerCase() === 'completed') {
                         statusText = 'Completed';
+                        statusClass = 'bg-blue-100 text-blue-800';
+                      } else if (hasPendingApplication) {
+                        statusText = 'Applied';
                         statusClass = 'bg-blue-100 text-blue-800';
                       } else if (hasWaitlistedApplication) {
                         statusText = 'Waitlisted';

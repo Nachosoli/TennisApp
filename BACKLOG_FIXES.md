@@ -493,6 +493,9 @@ This document outlines all the fixes that need to be implemented based on user f
 12. **backend/src/results/results.service.ts** (if needed)
     - Update to handle set-by-set scores or alternative outcomes (Issue #10)
 
+13. **frontend/app/layout.tsx**
+    - Move themeColor and viewport to separate viewport export (Issue #11)
+
 ---
 
 ## Testing Checklist
@@ -524,4 +527,46 @@ This document outlines all the fixes that need to be implemented based on user f
 - [ ] Report score UI has checkboxes for default win and retirement
 - [ ] Score submission handles set-by-set scores correctly
 - [ ] Score submission handles alternative outcomes (default, retirement)
+- [ ] Next.js metadata/viewport warnings are resolved in deployment logs
+- [ ] themeColor and viewport are in separate viewport export
+- [ ] App functionality remains unchanged after metadata refactoring
+
+---
+
+## 11. Next.js Metadata/Viewport Warnings in Deployment
+
+**File:** `frontend/app/layout.tsx`
+
+**Problem:** 
+- Next.js deployment logs show warnings about `themeColor` and `viewport` being configured in the `metadata` export
+- These should be moved to a separate `viewport` export according to Next.js 13+ App Router best practices
+- Warnings appear in deployment logs but don't break functionality
+
+**Current Code Location:** Lines 19-34
+
+**Solution:**
+- Move `themeColor` and `viewport` from the `metadata` export to a separate `viewport` export
+- Import `Viewport` type from "next"
+- Keep all other metadata properties in the `metadata` export
+
+**Implementation:**
+- Update imports to include `Viewport` type:
+  ```typescript
+  import type { Metadata, Viewport } from "next";
+  ```
+- Remove `themeColor` and `viewport` from `metadata` export (lines 23, 29-33)
+- Add separate `viewport` export:
+  ```typescript
+  export const viewport: Viewport = {
+    width: "device-width",
+    initialScale: 1,
+    maximumScale: 1,
+    themeColor: "#2563eb",
+  };
+  ```
+- Verify that all metadata properties remain in the `metadata` export
+- Test that the app still works correctly after the change
+- Verify warnings disappear from deployment logs
+
+---
 

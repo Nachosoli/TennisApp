@@ -56,9 +56,14 @@ export class ApplicationsService {
       throw new NotFoundException('User not found');
     }
 
-    // Check if user has home court (at least one player must have home court)
-    if (!user.homeCourtId) {
-      throw new ForbiddenException('Users without a home court cannot apply to matches');
+    // Check if user email is verified
+    if (!user.emailVerified) {
+      throw new ForbiddenException('Please verify your email address before applying to matches');
+    }
+
+    // Check if user has gender defined
+    if (!user.gender) {
+      throw new ForbiddenException('Please set your gender in your profile before applying to matches');
     }
 
     // Check if user is verified (if phone provided)

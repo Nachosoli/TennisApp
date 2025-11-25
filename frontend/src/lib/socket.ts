@@ -67,19 +67,19 @@ class SocketService {
 
   sendMessage(matchId: string, message: string): void {
     if (this.socket) {
-      this.socket.emit('chat_message', { matchId, message });
+      this.socket.emit('send_message', { matchId, message });
     }
   }
 
-  onMessage(callback: (data: { userId: string; message: string; createdAt: string }) => void): void {
+  onMessage(callback: (data: { userId: string; message: string; createdAt: string; id?: string; user?: any }) => void): void {
     if (this.socket) {
-      this.socket.on('chat_message', callback);
+      this.socket.on('new_message', callback);
     }
   }
 
   offMessage(callback?: (data: any) => void): void {
     if (this.socket) {
-      this.socket.off('chat_message', callback);
+      this.socket.off('new_message', callback);
     }
   }
 

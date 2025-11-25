@@ -18,9 +18,21 @@ import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { getErrorMessage } from '@/lib/errors';
 
 const scoreSchema = z.object({
-  score: z.string().min(1, 'Score is required'),
+  set1Player: z.string().optional(),
+  set1Opponent: z.string().optional(),
+  set2Player: z.string().optional(),
+  set2Opponent: z.string().optional(),
+  set3Player: z.string().optional(),
+  set3Opponent: z.string().optional(),
+  wonByDefault: z.boolean().optional(),
+  opponentRetired: z.boolean().optional(),
   winnerId: z.string().min(1, 'Winner must be selected'),
-});
+}).refine((data) => {
+  // At least one set must be filled OR alternative outcome must be selected
+  const hasSetData = data.set1Player || data.set1Opponent || data.set2Player || data.set2Opponent || data.set3Player || data.set3Opponent;
+  const hasAlternative = data.wonByDefault || data.opponentRetired;
+  return hasSetData || hasAlternative;
+}, { message: 'Please enter at least one set score or select an alternative outcome' });
 
 type ScoreFormData = z.infer<typeof scoreSchema>;
 
@@ -71,14 +83,60 @@ function ScoreEntryPageContent() {
 
   const participants = [
     { id: currentMatch.creatorUserId, name: `${currentMatch.creator?.firstName} ${currentMatch.creator?.lastName}` },
-    // Add other participants from applications
   ];
+
+  // Find confirmed applicant from match slots
+  const confirmedSlot = currentMatch.slots?.find(slot =>
+    slot.status?.toLowerCase() === 'confirmed' ||
+    slot.applications?.some(app => app.status?.toLowerCase() === 'confirmed')
+  );
+
+  if (confirmedSlot?.applications) {
+    const confirmedApplication = confirmedSlot.applications.find(
+      app => app.status?.toLowerCase() === 'confirmed'
+    );
+    if (confirmedApplication?.applicant) {
+      participants.push({
+        id: confirmedApplication.applicant.id || confirmedApplication.applicantUserId || '',
+        name: `${confirmedApplication.applicant.firstName} ${confirmedApplication.applicant.lastName}`
+      });
+    }
+  }
+
+  // Determine opponent name for display
+  const opponent = participants.find(p => p.id !== user?.id);
+  const opponentName = opponent?.name || 'Opponent';
 
   const onSubmit = async (data: ScoreFormData) => {
     try {
       setIsLoading(true);
       setError(null);
-      await resultsApi.submitScore(matchId, data);
+      
+      // Format score string from sets or handle alternative outcomes
+      let scoreString = '';
+      if (data.wonByDefault) {
+        scoreString = 'Won by default';
+      } else if (data.opponentRetired) {
+        scoreString = 'Opponent retired';
+      } else {
+        // Build score string from sets
+        const sets: string[] = [];
+        if (data.set1Player || data.set1Opponent) {
+          sets.push(`${data.set1Player || '0'}-${data.set1Opponent || '0'}`);
+        }
+        if (data.set2Player || data.set2Opponent) {
+          sets.push(`${data.set2Player || '0'}-${data.set2Opponent || '0'}`);
+        }
+        if (data.set3Player || data.set3Opponent) {
+          sets.push(`${data.set3Player || '0'}-${data.set3Opponent || '0'}`);
+        }
+        scoreString = sets.join(' ');
+      }
+      
+      await resultsApi.submitScore(matchId, {
+        score: scoreString,
+        winnerId: data.winnerId,
+      });
       router.push(`/matches/${matchId}`);
     } catch (err: any) {
       const errorMessage = getErrorMessage(err);
@@ -108,20 +166,75 @@ function ScoreEntryPageContent() {
               </div>
             )}
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Score *
-              </label>
-              <Input
-                {...register('score')}
-                error={errors.score?.message}
-                placeholder="e.g., 6-4 3-6 6-2"
-              />
-              <p className="mt-1 text-sm text-gray-500">
-                Enter score in format: set1-set2 set3-set4 (e.g., 6-4 3-6 6-2)
-              </p>
+            {/* Player vs Opponent Display */}
+            <div className="flex items-center gap-4 mb-6">
+              <div className="flex items-center gap-2">
+                <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center text-white font-semibold">
+                  {user?.firstName?.[0] || 'U'}
+                </div>
+                <span className="font-medium text-gray-900">You</span>
+              </div>
+              <span className="text-gray-500 text-lg">vs.</span>
+              <div className="flex items-center gap-2">
+                <span className="text-blue-600 font-medium">{opponentName}</span>
+              </div>
             </div>
 
+            {/* Instructional Text */}
+            <div className="bg-gray-50 p-4 rounded-lg mb-6">
+              <p className="text-sm text-gray-700 mb-2">
+                <strong>Scores should be reported from the perspective of the person reporting.</strong>
+              </p>
+              <ul className="text-sm text-gray-600 space-y-1">
+                <li>Example win: 6-4, 6-4.</li>
+                <li>Example loss: 4-6, 3-6.</li>
+                <li>Tie break sets are reported 7-6 or 6-7.</li>
+              </ul>
+            </div>
+
+            {/* SET Sections */}
+            {[1, 2, 3].map((setNum) => (
+              <div key={setNum} className="space-y-2">
+                <label className="block text-sm font-medium text-gray-700">
+                  SET {setNum}
+                </label>
+                <div className="flex items-center gap-2">
+                  <Input
+                    {...register(`set${setNum}Player` as any)}
+                    placeholder="0"
+                    className="w-20"
+                  />
+                  <span className="text-gray-500">-</span>
+                  <Input
+                    {...register(`set${setNum}Opponent` as any)}
+                    placeholder="0"
+                    className="w-20"
+                  />
+                </div>
+              </div>
+            ))}
+
+            {/* Alternative Outcomes */}
+            <div className="space-y-3 pt-4 border-t border-gray-200">
+              <label className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  {...register('wonByDefault')}
+                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                />
+                <span className="text-sm text-gray-700">I won the match by default</span>
+              </label>
+              <label className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  {...register('opponentRetired')}
+                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                />
+                <span className="text-sm text-gray-700">the match was not completed - my opponent retired</span>
+              </label>
+            </div>
+
+            {/* Winner Selection */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Winner *
@@ -139,6 +252,9 @@ function ScoreEntryPageContent() {
               </select>
               {errors.winnerId && (
                 <p className="mt-1 text-sm text-red-600">{errors.winnerId.message}</p>
+              )}
+              {(errors as any).root && (
+                <p className="mt-1 text-sm text-red-600">{(errors as any).root.message}</p>
               )}
             </div>
 

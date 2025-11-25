@@ -13,6 +13,10 @@ export class PasswordService {
     plainPassword: string,
     hashedPassword: string,
   ): Promise<boolean> {
+    // Safety check: if hash is null/undefined, password comparison fails
+    if (!hashedPassword) {
+      return false;
+    }
     return bcrypt.compare(plainPassword, hashedPassword);
   }
 }
