@@ -210,12 +210,4 @@ export interface CreateMatchDto {
   }[];
 }
 
-// Chat types
-export interface ChatMessage {
-  id: string;
-  matchId: string;
-  userId: string;
-  message: string;
-  createdAt: string;
-}
 

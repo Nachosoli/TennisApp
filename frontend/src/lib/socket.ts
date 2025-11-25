@@ -1,4 +1,5 @@
 import { io, Socket } from 'socket.io-client';
+import { ChatMessage } from '@/types';
 
 const SOCKET_URL = process.env.NEXT_PUBLIC_WS_URL || process.env.NEXT_PUBLIC_SOCKET_URL || 'ws://localhost:3001';
 
@@ -71,7 +72,7 @@ class SocketService {
     }
   }
 
-  onMessage(callback: (data: { userId: string; message: string; createdAt: string; id?: string; user?: any }) => void): void {
+  onMessage(callback: (data: ChatMessage) => void): void {
     if (this.socket) {
       this.socket.on('new_message', callback);
     }
