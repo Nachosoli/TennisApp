@@ -34,6 +34,11 @@ export default function CalendarPage() {
   const [isGeocoding, setIsGeocoding] = useState(false);
   const [geocodeError, setGeocodeError] = useState<string | null>(null);
   
+  // Map viewport bounds state for dynamic filtering
+  const [mapBounds, setMapBounds] = useState<google.maps.LatLngBounds | null>(null);
+  const [hasUserInteracted, setHasUserInteracted] = useState(false);
+  const [isProgrammaticUpdate, setIsProgrammaticUpdate] = useState(false);
+  
   const [allMatches, setAllMatches] = useState<Match[]>([]);
   const [filteredMatches, setFilteredMatches] = useState<Match[]>([]);
   const [matchCount, setMatchCount] = useState(0);
@@ -134,8 +139,17 @@ export default function CalendarPage() {
           lat: location.lat(),
           lng: location.lng(),
         };
+        // Set flag to prevent bounds change from being treated as user interaction
+        setIsProgrammaticUpdate(true);
         setSearchCenter(center);
         setGeocodeError(null);
+        // Reset user interaction flag when new city is searched
+        // This ensures city radius filtering takes precedence
+        setHasUserInteracted(false);
+        // Clear the flag after a short delay to allow map to update
+        setTimeout(() => {
+          setIsProgrammaticUpdate(false);
+        }, 1000);
       } else {
         setGeocodeError('City not found. Please try again.');
         setSearchCenter(null);
@@ -154,14 +168,41 @@ export default function CalendarPage() {
     setSearchCity('');
     setSearchCenter(null);
     setGeocodeError(null);
+    setHasUserInteracted(false);
+    setMapBounds(null);
   };
 
-  // Calculate match count and filtered matches based on city search and filters
+  // Handle map bounds changes (when user pans/zooms)
+  const handleBoundsChanged = (bounds: google.maps.LatLngBounds | null) => {
+    if (bounds) {
+      setMapBounds(bounds);
+      // Only mark as user interaction if it's not a programmatic update (e.g., from city search)
+      // This allows city radius filtering to work initially, then switches to viewport filtering on manual pan/zoom
+      if (!isProgrammaticUpdate) {
+        setHasUserInteracted(true);
+      }
+    }
+  };
+
+  // Check if a coordinate is within the map bounds
+  const isWithinBounds = (lat: number, lng: number, bounds: google.maps.LatLngBounds): boolean => {
+    return bounds.contains(new (window as any).google.maps.LatLng(lat, lng));
+  };
+
+  // Calculate match count and filtered matches based on viewport bounds or city search
   useEffect(() => {
     let filtered = [...allMatches];
     
-    // City radius filtering (if city is searched)
-    if (searchCenter) {
+    // Priority 1: Viewport bounds filtering (if user has interacted with map)
+    if (hasUserInteracted && mapBounds && isGoogleMapsLoaded && typeof window !== 'undefined' && (window as any).google) {
+      filtered = filtered.filter(match => {
+        if (!match.court?.location?.coordinates) return false;
+        const [lng, lat] = match.court.location.coordinates;
+        return isWithinBounds(lat, lng, mapBounds);
+      });
+    }
+    // Priority 2: City radius filtering (if city is searched and user hasn't interacted with map)
+    else if (searchCenter && !hasUserInteracted) {
       const radiusMiles = 25; // 25-mile radius
       filtered = filtered.filter(match => {
         if (!match.court?.location?.coordinates) return false;
@@ -175,6 +216,7 @@ export default function CalendarPage() {
         return distance <= radiusMiles;
       });
     }
+    // If no filtering is active, show all matches
     
     // TODO: Future feature - Re-enable to add back gender/surface/skill level filtering
     // Uncomment below to re-enable filters (combine with city search using AND logic)
@@ -195,7 +237,7 @@ export default function CalendarPage() {
     
     setFilteredMatches(filtered);
     setMatchCount(filtered.length);
-  }, [searchCenter, filters, allMatches]);
+  }, [mapBounds, hasUserInteracted, searchCenter, filters, allMatches, isGoogleMapsLoaded]);
 
   if (authLoading) {
     return (
@@ -316,7 +358,7 @@ export default function CalendarPage() {
             {/* TODO: Future feature - Pass filters when re-enabled
             <CalendarView filters={filters} onDateSelect={setSelectedDate} />
             */}
-            <CalendarView filters={{}} onDateSelect={setSelectedDate} />
+            <CalendarView matches={filteredMatches} filters={{}} onDateSelect={setSelectedDate} />
           </div>
 
           {/* Right Side - Map */}
@@ -331,6 +373,7 @@ export default function CalendarPage() {
                 } : null}
                 searchCenter={searchCenter}
                 currentUserId={user?.id}
+                onBoundsChanged={handleBoundsChanged}
               />
             </Card>
           </div>

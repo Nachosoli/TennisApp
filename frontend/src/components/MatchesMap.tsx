@@ -14,6 +14,7 @@ const GOOGLE_MAPS_LIBRARIES: ("places" | "geometry")[] = ["places", "geometry"];
 interface MatchesMapProps {
   matches: Match[];
   onMapLoad?: () => void;
+  onBoundsChanged?: (bounds: google.maps.LatLngBounds | null) => void;
   homeCourt?: {
     coordinates?: {
       coordinates: [number, number]; // [lng, lat]
@@ -34,7 +35,7 @@ const defaultCenter = {
   lng: -81.6557,
 };
 
-export const MatchesMap = ({ matches, onMapLoad, homeCourt, searchCenter, currentUserId }: MatchesMapProps) => {
+export const MatchesMap = ({ matches, onMapLoad, onBoundsChanged, homeCourt, searchCenter, currentUserId }: MatchesMapProps) => {
   const [selectedCourt, setSelectedCourt] = useState<string | null>(null);
   const [map, setMap] = useState<google.maps.Map | null>(null);
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
@@ -198,6 +199,26 @@ export const MatchesMap = ({ matches, onMapLoad, homeCourt, searchCenter, curren
       }
     }
   }, [map, searchCenter, courtMatchesMap]);
+
+  // Set up bounds change listener to notify parent when map viewport changes
+  useEffect(() => {
+    if (!map || !onBoundsChanged) return;
+
+    const handleBoundsChanged = () => {
+      const bounds = map.getBounds();
+      onBoundsChanged(bounds);
+    };
+
+    // Listen to 'idle' event which fires after pan/zoom operations complete
+    const listener = google.maps.event.addListener(map, 'idle', handleBoundsChanged);
+    
+    // Also call once on mount to get initial bounds
+    handleBoundsChanged();
+
+    return () => {
+      google.maps.event.removeListener(listener);
+    };
+  }, [map, onBoundsChanged]);
 
   if (loadError) {
     return (
