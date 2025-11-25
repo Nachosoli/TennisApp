@@ -44,12 +44,7 @@ function CourtsPageContent() {
   return (
     <Layout>
       <div className="space-y-6">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-          <h1 className="text-3xl font-bold text-gray-900">Courts</h1>
-          <Link href="/courts/create">
-            <Button variant="primary" className="w-full sm:w-auto">Add Court</Button>
-          </Link>
-        </div>
+        <h1 className="text-3xl font-bold text-gray-900">Courts</h1>
 
         {isLoading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -59,10 +54,7 @@ function CourtsPageContent() {
           </div>
         ) : courts.length === 0 ? (
           <Card className="text-center py-12">
-            <p className="text-gray-600 mb-4">No courts found</p>
-            <Link href="/courts/create">
-              <Button variant="primary">Add First Court</Button>
-            </Link>
+            <p className="text-gray-600">No courts found</p>
           </Card>
         ) : (
           <>
