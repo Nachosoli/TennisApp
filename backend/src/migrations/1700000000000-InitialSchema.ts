@@ -93,12 +93,28 @@ export class InitialSchema1700000000000 implements MigrationInterface {
     `);
 
     // Create courts table
+    // Try with geography type (PostGIS), fall back to point if PostGIS not available
+    let hasPostGIS = false;
+    try {
+      const result = await queryRunner.query(`
+        SELECT EXISTS (
+          SELECT 1 FROM pg_extension WHERE extname = 'postgis'
+        ) as has_postgis;
+      `);
+      hasPostGIS = result[0]?.has_postgis === true;
+    } catch (error) {
+      // If we can't check, assume no PostGIS
+      hasPostGIS = false;
+    }
+    
+    const coordinatesType = hasPostGIS ? 'geography(Point,4326)' : 'point';
+    
     await queryRunner.query(`
       CREATE TABLE "courts" (
         "id" uuid NOT NULL DEFAULT uuid_generate_v4(),
         "name" character varying NOT NULL,
         "address" text NOT NULL,
-        "coordinates" geography(Point,4326),
+        "coordinates" ${coordinatesType},
         "surface_type" "public"."courts_surfacetype_enum" NOT NULL,
         "is_public" boolean NOT NULL DEFAULT true,
         "created_by_user_id" uuid NOT NULL,
