@@ -17,20 +17,31 @@ export default function LoginPage() {
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    e.stopPropagation();
     setError(null);
 
-    console.log('=== FORM SUBMITTED ===');
-    console.log('Email:', email);
-    console.log('Password length:', password.length);
+    // Get values directly from form inputs as fallback if state is empty
+    const formData = new FormData(e.currentTarget);
+    const formEmail = (formData.get('email') as string) || email || '';
+    const formPassword = (formData.get('password') as string) || password || '';
 
-    if (!email || !password) {
+    console.log('=== FORM SUBMITTED ===');
+    console.log('Email from state:', email);
+    console.log('Email from form:', formEmail);
+    console.log('Password length from state:', password.length);
+    console.log('Password length from form:', formPassword.length);
+
+    const finalEmail = formEmail.trim();
+    const finalPassword = formPassword;
+
+    if (!finalEmail || !finalPassword) {
       setError('Please enter both email and password');
       return;
     }
 
     try {
       console.log('Calling login function...');
-      await login(email, password);
+      await login(finalEmail, finalPassword);
       console.log('Login function completed');
       
       // Wait a moment for store to update
@@ -87,6 +98,7 @@ export default function LoginPage() {
             <Input
               label="Email"
               type="email"
+              name="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="you@example.com"
@@ -99,6 +111,7 @@ export default function LoginPage() {
             <Input
               label="Password"
               type="password"
+              name="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="••••••••"
