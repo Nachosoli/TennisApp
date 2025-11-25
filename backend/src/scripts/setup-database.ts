@@ -9,10 +9,19 @@ async function setupDatabase() {
     await dataSource.initialize();
     console.log('✅ Database connection established');
 
-    // Enable PostGIS extension
-    console.log('📦 Enabling PostGIS extension...');
-    await dataSource.query('CREATE EXTENSION IF NOT EXISTS postgis;');
-    console.log('✅ PostGIS extension enabled');
+    // Enable PostGIS extension (optional - may not be available in all PostgreSQL instances)
+    console.log('📦 Attempting to enable PostGIS extension...');
+    try {
+      await dataSource.query('CREATE EXTENSION IF NOT EXISTS postgis;');
+      console.log('✅ PostGIS extension enabled');
+    } catch (error: any) {
+      if (error.code === '0A000' || error.message?.includes('extension "postgis" is not available')) {
+        console.warn('⚠️  PostGIS extension is not available in this PostgreSQL instance');
+        console.warn('   Location-based features may not work, but the app will still function');
+      } else {
+        throw error; // Re-throw if it's a different error
+      }
+    }
 
     // Run migrations
     console.log('🔄 Running migrations...');
