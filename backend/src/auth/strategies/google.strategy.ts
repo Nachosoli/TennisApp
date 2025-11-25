@@ -100,7 +100,7 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
         provider: 'google',
         providerId: id,
         photoUrl,
-        passwordHash: undefined, // OAuth users don't have passwords
+        passwordHash: null, // OAuth users don't have passwords
         emailVerified: true, // Google emails are verified
         phoneVerified: false, // Still need phone verification
         role: 'user' as any,

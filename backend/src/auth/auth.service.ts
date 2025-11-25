@@ -55,7 +55,7 @@ export class AuthService {
     // Hash password (only if provided - OAuth users don't have passwords)
     const passwordHash = registerDto.password
       ? await this.passwordService.hashPassword(registerDto.password)
-      : undefined;
+      : null;
 
     // Create user
     const user = this.userRepository.create({
