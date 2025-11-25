@@ -16,15 +16,40 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
     @InjectRepository(UserStats)
     private userStatsRepository: Repository<UserStats>,
   ) {
+    console.log('🔵 [GoogleStrategy] Constructor called');
+    
+    const clientID = configService.get<string>('GOOGLE_CLIENT_ID');
+    const clientSecret = configService.get<string>('GOOGLE_CLIENT_SECRET');
+    
+    console.log('🔵 [GoogleStrategy] Client ID:', clientID ? 'SET' : 'NOT SET');
+    console.log('🔵 [GoogleStrategy] Client Secret:', clientSecret ? 'SET' : 'NOT SET');
+    
+    // Add validation - this will throw an error if missing, preventing silent failure
+    if (!clientID || !clientSecret) {
+      const error = new Error(
+        'Google OAuth credentials are not configured. Please set GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET environment variables.'
+      );
+      console.error('❌ [GoogleStrategy]', error.message);
+      throw error;
+    }
+    
     const backendUrl = configService.get<string>('BACKEND_URL') || 'http://localhost:3001';
     const callbackUrl = configService.get<string>('GOOGLE_CALLBACK_URL') || `${backendUrl}/api/v1/auth/google/callback`;
     
-    super({
-      clientID: configService.get<string>('GOOGLE_CLIENT_ID'),
-      clientSecret: configService.get<string>('GOOGLE_CLIENT_SECRET'),
-      callbackURL: callbackUrl,
-      scope: ['email', 'profile'],
-    });
+    console.log('🔵 [GoogleStrategy] Initializing with callback:', callbackUrl);
+    
+    try {
+      super({
+        clientID,
+        clientSecret,
+        callbackURL: callbackUrl,
+        scope: ['email', 'profile'],
+      });
+      console.log('✅ [GoogleStrategy] Successfully initialized');
+    } catch (error) {
+      console.error('❌ [GoogleStrategy] Failed to initialize:', error);
+      throw error;
+    }
   }
 
   async validate(
