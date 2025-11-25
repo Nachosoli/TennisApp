@@ -35,7 +35,7 @@ export class Court {
   address: string;
 
   @Column({
-    type: 'point',
+    type: 'text',
     nullable: true,
     transformer: {
       to: (value: Point | null) => {
