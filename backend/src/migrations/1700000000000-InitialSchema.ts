@@ -4,15 +4,26 @@ export class InitialSchema1700000000000 implements MigrationInterface {
   name = 'InitialSchema1700000000000';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
-    // Enable PostGIS extension (optional - may not be available in all PostgreSQL instances)
+    // Check if PostGIS is available before trying to create it
+    // This avoids transaction abort if PostGIS is not available
+    let hasPostGIS = false;
     try {
-      await queryRunner.query(`CREATE EXTENSION IF NOT EXISTS "postgis"`);
-    } catch (error: any) {
-      if (error.code === '0A000' || error.message?.includes('extension "postgis" is not available')) {
-        console.warn('⚠️  PostGIS extension is not available - location-based features will be disabled');
+      const result = await queryRunner.query(`
+        SELECT EXISTS (
+          SELECT 1 FROM pg_available_extensions WHERE name = 'postgis'
+        ) as available;
+      `);
+      hasPostGIS = result[0]?.available === true;
+      
+      if (hasPostGIS) {
+        await queryRunner.query(`CREATE EXTENSION IF NOT EXISTS "postgis"`);
       } else {
-        throw error; // Re-throw if it's a different error
+        console.warn('⚠️  PostGIS extension is not available - location-based features will be disabled');
       }
+    } catch (error: any) {
+      // If check fails, assume no PostGIS and continue
+      console.warn('⚠️  PostGIS extension is not available - location-based features will be disabled');
+      hasPostGIS = false;
     }
 
     // Create enum types
@@ -93,20 +104,7 @@ export class InitialSchema1700000000000 implements MigrationInterface {
     `);
 
     // Create courts table
-    // Try with geography type (PostGIS), fall back to point if PostGIS not available
-    let hasPostGIS = false;
-    try {
-      const result = await queryRunner.query(`
-        SELECT EXISTS (
-          SELECT 1 FROM pg_extension WHERE extname = 'postgis'
-        ) as has_postgis;
-      `);
-      hasPostGIS = result[0]?.has_postgis === true;
-    } catch (error) {
-      // If we can't check, assume no PostGIS
-      hasPostGIS = false;
-    }
-    
+    // Use geography type if PostGIS is available, otherwise use point
     const coordinatesType = hasPostGIS ? 'geography(Point,4326)' : 'point';
     
     await queryRunner.query(`
