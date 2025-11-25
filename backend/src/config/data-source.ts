@@ -4,7 +4,9 @@ import { config } from 'dotenv';
 config();
 
 // Get database configuration
-const databaseUrl = process.env.DATABASE_URL;
+// Prefer DATABASE_PUBLIC_URL for external access (e.g., from local machine via railway run)
+// Use DATABASE_URL when running inside Railway's network
+const databaseUrl = process.env.DATABASE_PUBLIC_URL || process.env.DATABASE_URL;
 
 let dataSourceConfig: any;
 
