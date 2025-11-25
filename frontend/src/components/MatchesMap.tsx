@@ -14,13 +14,11 @@ const GOOGLE_MAPS_LIBRARIES: ("places" | "geometry")[] = ["places", "geometry"];
 interface MatchesMapProps {
   matches: Match[];
   onMapLoad?: () => void;
-  onBoundsChanged?: (bounds: google.maps.LatLngBounds | null) => void;
   homeCourt?: {
     coordinates?: {
       coordinates: [number, number]; // [lng, lat]
     };
   } | null;
-  searchCenter?: { lat: number; lng: number } | null;
   currentUserId?: string;
 }
 
@@ -35,7 +33,7 @@ const defaultCenter = {
   lng: -81.6557,
 };
 
-export const MatchesMap = ({ matches, onMapLoad, onBoundsChanged, homeCourt, searchCenter, currentUserId }: MatchesMapProps) => {
+export const MatchesMap = ({ matches, onMapLoad, homeCourt, currentUserId }: MatchesMapProps) => {
   const [selectedCourt, setSelectedCourt] = useState<string | null>(null);
   const [map, setMap] = useState<google.maps.Map | null>(null);
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
@@ -117,25 +115,20 @@ export const MatchesMap = ({ matches, onMapLoad, onBoundsChanged, homeCourt, sea
     }
   }, []);
 
-  // Get center prioritizing: searchCenter > home court > geolocation > first match > default
+  // Get center prioritizing: home court > geolocation > first match > default
   const center = useMemo(() => {
-    // Priority 1: Searched city center (highest priority when city is searched)
-    if (searchCenter) {
-      return searchCenter;
-    }
-    
-    // Priority 2: User's home court
+    // Priority 1: User's home court
     if (homeCourt?.coordinates?.coordinates) {
       const [lng, lat] = homeCourt.coordinates.coordinates;
       return { lat, lng };
     }
     
-    // Priority 3: User's geolocation
+    // Priority 2: User's geolocation
     if (userLocation) {
       return userLocation;
     }
     
-    // Priority 4: First match's court coordinates
+    // Priority 3: First match's court coordinates
     for (const [, { court }] of courtMatchesMap) {
       if (court.coordinates?.coordinates) {
         const [lng, lat] = court.coordinates.coordinates;
@@ -143,9 +136,9 @@ export const MatchesMap = ({ matches, onMapLoad, onBoundsChanged, homeCourt, sea
       }
     }
     
-    // Priority 5: Default Jacksonville
+    // Priority 4: Default Jacksonville
     return defaultCenter;
-  }, [searchCenter, homeCourt, userLocation, courtMatchesMap]);
+  }, [homeCourt, userLocation, courtMatchesMap]);
 
   const onLoad = (map: google.maps.Map) => {
     setMap(map);
@@ -170,55 +163,6 @@ export const MatchesMap = ({ matches, onMapLoad, onBoundsChanged, homeCourt, sea
     
     onMapLoad?.();
   };
-
-  // Update map center and bounds when searchCenter changes
-  useEffect(() => {
-    if (map && searchCenter) {
-      // Center map on searched city
-      map.setCenter(searchCenter);
-      
-      // Fit bounds to show all matches in the filtered area
-      if (courtMatchesMap.size > 0) {
-        const bounds = new google.maps.LatLngBounds();
-        courtMatchesMap.forEach(({ court }) => {
-          if (court.coordinates?.coordinates) {
-            const [lng, lat] = court.coordinates.coordinates;
-            bounds.extend({ lat, lng });
-          }
-        });
-        map.fitBounds(bounds);
-        
-        // Prevent too much zoom
-        const listener = google.maps.event.addListener(map, 'idle', () => {
-          if (map.getZoom()! > 15) map.setZoom(15);
-          google.maps.event.removeListener(listener);
-        });
-      } else {
-        // If no matches, set a reasonable zoom level for city view
-        map.setZoom(11);
-      }
-    }
-  }, [map, searchCenter, courtMatchesMap]);
-
-  // Set up bounds change listener to notify parent when map viewport changes
-  useEffect(() => {
-    if (!map || !onBoundsChanged) return;
-
-    const handleBoundsChanged = () => {
-      const bounds = map.getBounds();
-      onBoundsChanged(bounds || null);
-    };
-
-    // Listen to 'idle' event which fires after pan/zoom operations complete
-    const listener = google.maps.event.addListener(map, 'idle', handleBoundsChanged);
-    
-    // Also call once on mount to get initial bounds
-    handleBoundsChanged();
-
-    return () => {
-      google.maps.event.removeListener(listener);
-    };
-  }, [map, onBoundsChanged]);
 
   if (loadError) {
     return (

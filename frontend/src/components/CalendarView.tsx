@@ -11,7 +11,6 @@ import { useAuthStore } from '@/stores/auth-store';
 import { parseLocalDate } from '@/lib/date-utils';
 
 interface CalendarViewProps {
-  matches?: Match[]; // Optional: if provided, use these matches instead of fetching
   filters?: {
     skillLevel?: string;
     gender?: string;
@@ -21,7 +20,7 @@ interface CalendarViewProps {
   onDateSelect?: (date: Date | null) => void;
 }
 
-export const CalendarView = ({ matches: providedMatches, filters, onDateSelect }: CalendarViewProps) => {
+export const CalendarView = ({ filters, onDateSelect }: CalendarViewProps) => {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [matches, setMatches] = useState<Match[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -46,55 +45,38 @@ export const CalendarView = ({ matches: providedMatches, filters, onDateSelect }
   };
 
   useEffect(() => {
-    // If matches are provided as prop, use them directly (filter by month)
-    if (providedMatches) {
-      setIsLoading(true);
-      const monthStart = startOfMonth(currentDate);
-      const monthEnd = endOfMonth(currentDate);
-      
-      // Filter provided matches by the selected month
-      const filtered = providedMatches.filter(match => {
-        const matchDate = parseLocalDate(match.date);
-        return matchDate >= monthStart && matchDate <= monthEnd;
-      });
-      
-      setMatches(filtered);
-      setIsLoading(false);
-    } else {
-      // Fall back to API call (backward compatibility)
-      const monthStart = startOfMonth(currentDate);
-      const monthEnd = endOfMonth(currentDate);
-      
-      setIsLoading(true);
-      matchesApi.getCalendar({
-        dateFrom: format(monthStart, 'yyyy-MM-dd'),
-        dateTo: format(monthEnd, 'yyyy-MM-dd'),
-        ...filters,
+    const monthStart = startOfMonth(currentDate);
+    const monthEnd = endOfMonth(currentDate);
+    
+    setIsLoading(true);
+    matchesApi.getCalendar({
+      dateFrom: format(monthStart, 'yyyy-MM-dd'),
+      dateTo: format(monthEnd, 'yyyy-MM-dd'),
+      ...filters,
+    })
+      .then((matches) => {
+        // Filter out cancelled matches, confirmed matches (for non-creators), and user's own matches
+        const filtered = matches.filter(match => {
+          if (match.status?.toLowerCase() === 'cancelled') return false;
+          if (user && match.creatorUserId === user.id) return false;
+          
+          // Check if user has a waitlisted application for this match
+          const hasWaitlistedApplication = user && match.slots?.some(slot =>
+            slot.applications?.some(app =>
+              (app.applicantUserId === user.id || app.userId === user.id) &&
+              app.status?.toLowerCase() === 'waitlisted'
+            )
+          );
+          
+          // Hide confirmed matches from other users UNLESS they have a waitlisted application
+          if (match.status?.toLowerCase() === 'confirmed' && user && match.creatorUserId !== user.id && !hasWaitlistedApplication) return false;
+          return true;
+        });
+        setMatches(filtered);
       })
-        .then((matches) => {
-          // Filter out cancelled matches, confirmed matches (for non-creators), and user's own matches
-          const filtered = matches.filter(match => {
-            if (match.status?.toLowerCase() === 'cancelled') return false;
-            if (user && match.creatorUserId === user.id) return false;
-            
-            // Check if user has a waitlisted application for this match
-            const hasWaitlistedApplication = user && match.slots?.some(slot =>
-              slot.applications?.some(app =>
-                (app.applicantUserId === user.id || app.userId === user.id) &&
-                app.status?.toLowerCase() === 'waitlisted'
-              )
-            );
-            
-            // Hide confirmed matches from other users UNLESS they have a waitlisted application
-            if (match.status?.toLowerCase() === 'confirmed' && user && match.creatorUserId !== user.id && !hasWaitlistedApplication) return false;
-            return true;
-          });
-          setMatches(filtered);
-        })
-        .catch(console.error)
-        .finally(() => setIsLoading(false));
-    }
-  }, [currentDate, filters, user, providedMatches]);
+      .catch(console.error)
+      .finally(() => setIsLoading(false));
+  }, [currentDate, filters, user]);
 
   const monthStart = startOfMonth(currentDate);
   const monthEnd = endOfMonth(currentDate);
