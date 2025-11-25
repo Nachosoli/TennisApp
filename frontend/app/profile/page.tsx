@@ -27,7 +27,10 @@ const profileSchema = z.object({
   email: z.string().email('Invalid email'),
   phone: z.string().optional(),
   bio: z.string().optional(),
-  gender: z.enum(['male', 'female']),
+  gender: z.union([z.enum(['male', 'female']), z.literal('')]).refine(
+    (val) => val !== '',
+    { message: 'Please select your gender' }
+  ),
   ratingType: z.enum(['utr', 'usta', 'ultimate', 'custom', '']).optional(),
   ratingValue: z.number().min(0).max(12, 'Rating must be between 0 and 12').optional(),
 }).refine(
@@ -149,9 +152,9 @@ function ProfilePageContent() {
   useEffect(() => {
     if (user) {
       console.log('Profile: Resetting form with user data:', { phone: user.phone, user });
-      // Normalize gender: only allow 'male' or 'female', default to 'male' for invalid values
+      // Normalize gender: if 'other' or invalid, show "Select gender" (empty string)
       const userGender = (user as any).gender?.toLowerCase();
-      const normalizedGender = (userGender === 'male' || userGender === 'female') ? userGender : 'male';
+      const normalizedGender = (userGender === 'male' || userGender === 'female') ? userGender : '';
       
       reset({
         firstName: user.firstName,
