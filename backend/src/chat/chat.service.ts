@@ -47,6 +47,14 @@ export class ChatService {
     });
 
     const savedMessage = await this.chatMessageRepository.save(message);
+    
+    // Load the message with user relation for frontend display
+    const messageWithUser = await this.chatMessageRepository.findOne({
+      where: { id: savedMessage.id },
+      relations: ['user'],
+    });
+    
+    return messageWithUser || savedMessage;
 
     // Get match participants and notify them (except sender)
     const matchWithRelations = await this.matchRepository.findOne({
@@ -134,63 +142,71 @@ export class ChatService {
     return this.chatMessageRepository.find({
       where: { matchId },
       relations: ['user'],
-      order: { createdAt: 'ASC' },
+      order: { createdAt: 'DESC' }, // Newest first for message board style
     });
   }
 
   /**
-   * Create an automatic contact information message when a match is confirmed
+   * Create an automatic match confirmation message when a match is confirmed
    * @param matchId The match ID
-   * @param fromUserId The user ID who will see this message (recipient)
-   * @param toUserId The user ID whose contact info will be shared (sender of the info)
-   * @returns The created message, or null if no contact information is available
+   * @param senderUserId The user ID who is sending the message (sender)
+   * @param recipientUserId The user ID who will receive the message (recipient)
+   * @param match The match entity with relations (court, slots, etc.)
+   * @param confirmedSlot The confirmed match slot
+   * @returns The created message
    */
   async createContactInfoMessage(
     matchId: string,
-    fromUserId: string,
-    toUserId: string,
+    senderUserId: string,
+    recipientUserId: string,
+    match: any,
+    confirmedSlot: any,
   ): Promise<ChatMessage | null> {
-    // Verify match exists
-    const match = await this.matchRepository.findOne({
-      where: { id: matchId },
+    // Get the sender user
+    const sender = await this.userRepository.findOne({
+      where: { id: senderUserId },
     });
 
-    if (!match) {
-      throw new NotFoundException('Match not found');
+    if (!sender) {
+      throw new NotFoundException('Sender user not found');
     }
 
-    // Get the user whose contact info will be shared
-    const contactUser = await this.userRepository.findOne({
-      where: { id: toUserId },
+    // Format the match date
+    const matchDate = match.date instanceof Date ? match.date : new Date(match.date);
+    const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    const dayName = dayNames[matchDate.getDay()];
+    const month = matchDate.getMonth() + 1; // 1-12
+    const day = matchDate.getDate();
+    const datePrefix = `${dayName} ${month}/${day}`;
+
+    // Format full date for message body
+    const fullDate = matchDate.toLocaleDateString('en-US', {
+      month: 'long',
+      day: 'numeric',
+      year: 'numeric',
     });
 
-    if (!contactUser) {
-      throw new NotFoundException('User not found');
-    }
+    // Format time slot
+    const formatTime = (timeString: string): string => {
+      if (!timeString) return '';
+      // Convert HH:MM:SS or HH:MM to 12-hour format
+      const [hours, minutes] = timeString.split(':').map(Number);
+      const period = hours >= 12 ? 'PM' : 'AM';
+      const displayHours = hours > 12 ? hours - 12 : hours === 0 ? 12 : hours;
+      return `${displayHours}:${minutes.toString().padStart(2, '0')} ${period}`;
+    };
 
-    // Build contact information message
-    const contactInfoParts: string[] = ['Contact Information:'];
-    
-    if (contactUser.phone) {
-      contactInfoParts.push(`Phone: ${contactUser.phone}`);
-    }
-    
-    if (contactUser.email) {
-      contactInfoParts.push(`Email: ${contactUser.email}`);
-    }
+    const timeSlot = `${formatTime(confirmedSlot.startTime)} - ${formatTime(confirmedSlot.endTime)}`;
+    const courtName = match.court?.name || 'Court';
 
-    // If no contact info available, don't create message
-    if (contactInfoParts.length === 1) {
-      // Only has "Contact Information:" header, no actual info
-      return null;
-    }
+    // Build message: "Sender's Name, Wednesday 9/24): Your match is scheduled! Date at Time Slot at Court"
+    const senderName = `${sender.firstName} ${sender.lastName}`;
+    const messageText = `${senderName}, ${datePrefix}): Your match is scheduled! ${fullDate} at ${timeSlot} at ${courtName}`;
 
-    const messageText = contactInfoParts.join('\n');
-
-    // Create the message (fromUserId is the recipient, toUserId's info is shared)
+    // Create the message
     const message = this.chatMessageRepository.create({
       matchId,
-      userId: toUserId, // The person whose contact info is being shared
+      userId: senderUserId, // The sender of the message
       message: messageText,
     });
 

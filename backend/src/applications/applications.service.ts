@@ -338,24 +338,36 @@ export class ApplicationsService {
       },
     );
 
-    // Create automatic contact information messages for both participants
+    // Create automatic match confirmation messages for both participants
     try {
-      // Message from applicant to creator (showing applicant's contact info)
-      await this.chatService.createContactInfoMessage(
-        match.id,
-        creatorUserId, // Creator will see this message
-        application.applicantUserId, // Applicant's contact info is shared
-      );
+      // Load match with relations for message creation
+      const matchWithRelations = await this.matchRepository.findOne({
+        where: { id: match.id },
+        relations: ['court', 'slots'],
+      });
 
-      // Message from creator to applicant (showing creator's contact info)
-      await this.chatService.createContactInfoMessage(
-        match.id,
-        application.applicantUserId, // Applicant will see this message
-        creatorUserId, // Creator's contact info is shared
-      );
+      if (matchWithRelations) {
+        // Message from applicant to creator
+        await this.chatService.createContactInfoMessage(
+          match.id,
+          application.applicantUserId, // Sender: applicant
+          creatorUserId, // Recipient: creator
+          matchWithRelations,
+          application.matchSlot,
+        );
+
+        // Message from creator to applicant
+        await this.chatService.createContactInfoMessage(
+          match.id,
+          creatorUserId, // Sender: creator
+          application.applicantUserId, // Recipient: applicant
+          matchWithRelations,
+          application.matchSlot,
+        );
+      }
     } catch (error) {
-      // Log error but don't fail confirmation if contact message creation fails
-      console.warn('Failed to create contact information messages:', error);
+      // Log error but don't fail confirmation if message creation fails
+      console.warn('Failed to create match confirmation messages:', error);
     }
 
     // Emit real-time updates

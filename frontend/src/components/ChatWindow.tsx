@@ -1,7 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
-import { useMatchChat } from '@/hooks/useMatchChat';
+import React, { useState, useEffect } from 'react';
 import { useAuthStore } from '@/stores/auth-store';
 import { chatApi } from '@/lib/chat';
 import { ChatMessage } from '@/types';
@@ -15,129 +14,121 @@ interface ChatWindowProps {
 
 export const ChatWindow = ({ matchId }: ChatWindowProps) => {
   const [message, setMessage] = useState('');
-  const [initialMessages, setInitialMessages] = useState<ChatMessage[]>([]);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isSending, setIsSending] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const { user } = useAuthStore();
-  const { sendMessage: sendSocketMessage, messages: socketMessages, messagesEndRef } = useMatchChat({ matchId });
-  const inputRef = useRef<HTMLInputElement>(null);
+
+  const loadMessages = async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      const loadedMessages = await chatApi.getMatchMessages(matchId);
+      // Messages are already sorted DESC (newest first) from backend
+      setMessages(loadedMessages);
+    } catch (err: any) {
+      console.error('Failed to load messages:', err);
+      setError('Failed to load messages. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   useEffect(() => {
-    // Load initial messages (including auto-generated contact messages)
-    chatApi.getMatchMessages(matchId)
-      .then((messages) => {
-        setInitialMessages(messages);
-        // Scroll to bottom after loading messages to show latest (including contact info)
-        setTimeout(() => {
-          messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-        }, 100);
-      })
-      .catch(console.error)
-      .finally(() => setIsLoading(false));
+    loadMessages();
   }, [matchId]);
-
-  // Merge initial messages with socket messages
-  const messages = React.useMemo(() => {
-    const allMessages = [...initialMessages];
-    socketMessages.forEach((socketMsg) => {
-      if (!allMessages.some((m) => m.id === socketMsg.id)) {
-        allMessages.push(socketMsg);
-      }
-    });
-    // Sort by createdAt
-    return allMessages.sort((a, b) => 
-      new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
-    );
-  }, [initialMessages, socketMessages]);
 
   const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!message.trim()) return;
+    if (!message.trim() || isSending) return;
 
     try {
-      // Send via socket for real-time
-      sendSocketMessage(message);
-      
-      // Clear input - message will appear via socket
+      setIsSending(true);
+      setError(null);
+      await chatApi.sendMessage(matchId, message.trim());
       setMessage('');
-      inputRef.current?.focus();
-    } catch (error) {
-      console.error('Failed to send message:', error);
+      // Reload messages to show the new one
+      await loadMessages();
+    } catch (err: any) {
+      console.error('Failed to send message:', err);
+      setError(err.response?.data?.message || 'Failed to send message. Please try again.');
+    } finally {
+      setIsSending(false);
     }
   };
 
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-96">
-        <LoadingSpinner size="lg" text="Loading chat..." />
+        <LoadingSpinner size="lg" text="Loading messages..." />
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col h-96 border-2 border-gray-300 rounded-lg bg-white shadow-lg">
-      {/* Header */}
-      <div className="bg-blue-600 text-white px-4 py-3 rounded-t-lg font-semibold flex items-center gap-2">
-        <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-          <path d="M2 5a2 2 0 012-2h7a2 2 0 012 2v4a2 2 0 01-2 2H9l-3 3v-3H4a2 2 0 01-2-2V5z" />
-          <path d="M15 7v2a4 4 0 01-4 4H9.828l-1.766 1.767c.28.149.599.233.938.233h2l3 3v-3h2a2 2 0 002-2V9a2 2 0 00-2-2h-1z" />
-        </svg>
-        Match Chat
-      </div>
-
-      {/* Messages */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-gray-50">
+    <div className="flex flex-col border-2 border-gray-300 rounded-lg bg-white shadow-lg">
+      {/* Messages Board */}
+      <div className="flex-1 overflow-y-auto p-6 space-y-4 bg-gray-50 min-h-[300px] max-h-[500px]">
+        {error && (
+          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4">
+            {error}
+          </div>
+        )}
         {messages.length === 0 ? (
           <div className="text-center text-gray-500 py-8">
             <p>No messages yet. Start the conversation!</p>
           </div>
         ) : (
           messages.map((msg) => {
-            const isOwnMessage = msg.userId === user?.id;
+            // Get sender name - use user relation if available, otherwise show "Unknown"
+            const senderName = msg.user 
+              ? `${msg.user.firstName} ${msg.user.lastName}`
+              : 'Unknown User';
+            
             return (
               <div
                 key={msg.id}
-                className={`flex ${isOwnMessage ? 'justify-end' : 'justify-start'}`}
+                className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm"
               >
-                <div
-                  className={`max-w-xs lg:max-w-md px-4 py-2 rounded-xl shadow-md ${
-                    isOwnMessage
-                      ? 'bg-blue-600 text-white'
-                      : 'bg-white text-gray-900 border border-gray-200'
-                  }`}
-                >
-                  {!isOwnMessage && msg.user && (
-                    <p className="text-xs font-medium mb-1 opacity-75">
-                      {msg.user.firstName} {msg.user.lastName}
-                    </p>
-                  )}
-                  <p className="text-sm">{msg.message}</p>
-                  <p className={`text-xs mt-1 ${
-                    isOwnMessage ? 'text-blue-100' : 'text-gray-500'
-                  }`}>
-                    {format(new Date(msg.createdAt), 'h:mm a')}
-                  </p>
-                </div>
+                {/* Sender Name */}
+                <p className="font-semibold text-gray-900 mb-2">
+                  {senderName}
+                </p>
+                {/* Message Content */}
+                <p className="text-gray-700 whitespace-pre-wrap mb-2">
+                  {msg.message}
+                </p>
+                {/* Timestamp */}
+                <p className="text-xs text-gray-500">
+                  {format(new Date(msg.createdAt), 'MMM d, yyyy h:mm a')}
+                </p>
               </div>
             );
           })
         )}
-        <div ref={messagesEndRef} />
       </div>
 
-      {/* Input */}
-      <form onSubmit={handleSend} className="border-t-2 border-gray-200 p-4 bg-gray-50">
-        <div className="flex gap-2">
-          <input
-            ref={inputRef}
-            type="text"
+      {/* Input Area */}
+      <form onSubmit={handleSend} className="border-t-2 border-gray-200 p-4 bg-white">
+        <div className="space-y-3">
+          <textarea
             value={message}
             onChange={(e) => setMessage(e.target.value)}
-            placeholder="Type a message..."
-            className="flex-1 px-4 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
+            placeholder="Message your opponent"
+            rows={3}
+            className="w-full px-4 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white resize-none"
           />
-          <Button type="submit" variant="primary" disabled={!message.trim()}>
-            Send
-          </Button>
+          <div className="flex justify-end">
+            <Button 
+              type="submit" 
+              variant="primary" 
+              disabled={!message.trim() || isSending}
+              isLoading={isSending}
+            >
+              Send Message
+            </Button>
+          </div>
         </div>
       </form>
     </div>
