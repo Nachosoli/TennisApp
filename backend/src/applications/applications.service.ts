@@ -499,6 +499,107 @@ export class ApplicationsService {
     return application;
   }
 
+  async approveFromWaitlist(
+    creatorUserId: string,
+    applicationId: string,
+  ): Promise<Application> {
+    const application = await this.applicationRepository.findOne({
+      where: { id: applicationId },
+      relations: ['matchSlot', 'matchSlot.match', 'applicant'],
+    });
+
+    if (!application) {
+      throw new NotFoundException('Application not found');
+    }
+
+    // Verify creator
+    if (application.matchSlot.match.creatorUserId !== creatorUserId) {
+      throw new ForbiddenException('Only match creator can approve waitlisted applications');
+    }
+
+    // Check if application is waitlisted
+    if (application.status !== ApplicationStatus.WAITLISTED) {
+      throw new BadRequestException('Application is not waitlisted');
+    }
+
+    // Check if match is pending (opponent withdrew)
+    if (application.matchSlot.match.status !== MatchStatus.PENDING) {
+      throw new BadRequestException('Match must be pending to approve from waitlist');
+    }
+
+    // Check if match is singles
+    if (application.matchSlot.match.format !== MatchFormat.SINGLES) {
+      throw new BadRequestException('Waitlist approval is only for singles matches');
+    }
+
+    // Approve the waitlisted application
+    application.status = ApplicationStatus.CONFIRMED;
+    await this.applicationRepository.save(application);
+
+    // Update slot status
+    application.matchSlot.status = SlotStatus.CONFIRMED;
+    application.matchSlot.confirmedAt = new Date();
+    await this.matchSlotRepository.save(application.matchSlot);
+
+    // Confirm match (singles: creator + 1 applicant = 2 total)
+    const currentMatch = application.matchSlot.match;
+    currentMatch.status = MatchStatus.CONFIRMED;
+    await this.matchRepository.save(currentMatch);
+
+    // Waitlist all other waitlisted applications (match is now full again)
+    const otherWaitlistedApplications = await this.applicationRepository
+      .createQueryBuilder('app')
+      .innerJoin('app.matchSlot', 'slot')
+      .innerJoin('slot.match', 'm')
+      .where('m.id = :matchId', { matchId: currentMatch.id })
+      .andWhere('app.id != :applicationId', { applicationId: application.id })
+      .andWhere('app.status = :waitlisted', { waitlisted: ApplicationStatus.WAITLISTED })
+      .getMany();
+
+    // They're already waitlisted, just notify them that spot was filled
+    for (const otherApp of otherWaitlistedApplications) {
+      await this.notificationsService.createNotification(
+        otherApp.applicantUserId,
+        NotificationType.MATCH_ACCEPTED,
+        `The waitlist spot for this match has been filled by another player.`,
+        {
+          matchId: currentMatch.id,
+        },
+      );
+    }
+
+    // Notify the approved user
+    await this.notificationsService.createNotification(
+      application.applicantUserId,
+      NotificationType.MATCH_CONFIRMED,
+      `Your waitlist application has been approved! The match is confirmed.`,
+      {
+        matchId: currentMatch.id,
+      },
+    );
+
+    // Clear match cache
+    await this.matchesService.clearMatchCache(currentMatch.id);
+
+    // Emit real-time updates
+    try {
+      const updatedMatch = await this.matchRepository.findOne({
+        where: { id: currentMatch.id },
+        relations: ['court', 'creator', 'slots', 'slots.applications', 'slots.applications.applicant'],
+      });
+      if (updatedMatch) {
+        this.matchUpdatesGateway.emitMatchUpdate(currentMatch.id, updatedMatch);
+        this.matchUpdatesGateway.emitToUser(application.applicantUserId, 'application_updated', application);
+        this.matchUpdatesGateway.emitToUser(creatorUserId, 'application_updated', application);
+        this.chatGateway.emitMatchUpdate(currentMatch.id, updatedMatch);
+      }
+    } catch (error) {
+      console.warn('Failed to emit application update:', error);
+    }
+
+    return application;
+  }
+
   async rejectApplication(
     creatorUserId: string,
     applicationId: string,
