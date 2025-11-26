@@ -113,12 +113,15 @@ export class ChatService {
       return true;
     }
 
-    // Check if user has an application for any slot in this match
-    const hasApplication = match.slots.some(
-      (slot) => slot.applications?.some((app) => app.applicantUserId === userId),
+    // Check if user has a confirmed application for any slot in this match
+    // For confirmed matches, only confirmed applicants should have access
+    const hasConfirmedApplication = match.slots.some(
+      (slot) => slot.applications?.some(
+        (app) => app.applicantUserId === userId && app.status === 'confirmed'
+      ),
     );
 
-    return hasApplication;
+    return hasConfirmedApplication;
   }
 
   async getMatchMessages(matchId: string, userId: string): Promise<ChatMessage[]> {

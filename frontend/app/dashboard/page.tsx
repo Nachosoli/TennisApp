@@ -427,7 +427,16 @@ export default function DashboardPage() {
                         statusText = 'Report Score';
                         statusClass = 'bg-yellow-100 text-yellow-800';
                       } else if (match.status?.toLowerCase() === 'pending') {
-                        statusText = 'Pending';
+                        // Check if creator has pending applications
+                        const pendingApplicationsCount = isCreator && match.slots?.reduce((count, slot) => {
+                          return count + (slot.applications?.filter(app => app.status?.toLowerCase() === 'pending').length || 0);
+                        }, 0) || 0;
+                        
+                        if (pendingApplicationsCount > 0) {
+                          statusText = `Pending (${pendingApplicationsCount} application${pendingApplicationsCount > 1 ? 's' : ''})`;
+                        } else {
+                          statusText = 'Pending';
+                        }
                         statusClass = 'bg-yellow-100 text-yellow-800';
                       } else {
                         statusText = 'Upcoming';
@@ -442,7 +451,9 @@ export default function DashboardPage() {
                       ) || false;
 
                       // Determine if user can report score
-                      const canReportScore = isPast && !score && (isCreator || userApplication?.status?.toLowerCase() === 'confirmed');
+                      // Allow reporting for confirmed matches (even if not past date yet)
+                      const isConfirmed = match.status?.toLowerCase() === 'confirmed';
+                      const canReportScore = !score && isConfirmed && (isCreator || userApplication?.status?.toLowerCase() === 'confirmed');
                       
                       // Determine if user can delete (creator only, not completed)
                       const canDelete = isCreator && match.status?.toLowerCase() !== 'completed';
@@ -505,60 +516,56 @@ export default function DashboardPage() {
                           </td>
                           <td className="px-4 py-3">
                             <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
-                              {canReportScore && (
-                                <Button
-                                  type="button"
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => handleReportScore(match.id)}
-                                >
-                                  Report Score
-                                </Button>
-                              )}
-                              {canEdit && (
-                                <Button
-                                  type="button"
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => router.push(`/matches/${match.id}/edit`)}
-                                >
-                                  Edit
-                                </Button>
-                              )}
-                              {canDelete && (
-                                <Button
-                                  type="button"
-                                  variant="danger"
-                                  size="sm"
-                                  onClick={() => setShowDeleteConfirm(match.id)}
-                                  isLoading={deletingMatchId === match.id}
-                                  disabled={deletingMatchId === match.id}
-                                >
-                                  Delete
-                                </Button>
-                              )}
-                              {canWithdraw && userApplication && (
-                                <Button
-                                  type="button"
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => setShowWithdrawConfirm(userApplication.id)}
-                                  isLoading={withdrawingApplicationId === userApplication.id}
-                                  disabled={withdrawingApplicationId === userApplication.id}
-                                >
-                                  Remove Myself
-                                </Button>
-                              )}
-                              {/* Chat button for confirmed matches */}
-                              {(isCreator || userApplication?.status?.toLowerCase() === 'confirmed') && match.status?.toLowerCase() === 'confirmed' && (
-                                <Button
-                                  type="button"
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => router.push(`/matches/${match.id}`)}
-                                >
-                                  Chat
-                                </Button>
+                              {/* Don't show any actions if score is submitted (match is completed) */}
+                              {!score && (
+                                <>
+                                  {canEdit && (
+                                    <Button
+                                      type="button"
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={() => router.push(`/matches/${match.id}/edit`)}
+                                    >
+                                      Edit
+                                    </Button>
+                                  )}
+                                  {canWithdraw && userApplication && (
+                                    <Button
+                                      type="button"
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={() => setShowWithdrawConfirm(userApplication.id)}
+                                      isLoading={withdrawingApplicationId === userApplication.id}
+                                      disabled={withdrawingApplicationId === userApplication.id}
+                                    >
+                                      Remove Myself
+                                    </Button>
+                                  )}
+                                  {/* Chat button for confirmed matches */}
+                                  {(isCreator || userApplication?.status?.toLowerCase() === 'confirmed') && match.status?.toLowerCase() === 'confirmed' && (
+                                    <Button
+                                      type="button"
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={() => router.push(`/matches/${match.id}`)}
+                                    >
+                                      Chat
+                                    </Button>
+                                  )}
+                                  {/* Delete button should always be last */}
+                                  {canDelete && (
+                                    <Button
+                                      type="button"
+                                      variant="danger"
+                                      size="sm"
+                                      onClick={() => setShowDeleteConfirm(match.id)}
+                                      isLoading={deletingMatchId === match.id}
+                                      disabled={deletingMatchId === match.id}
+                                    >
+                                      Delete
+                                    </Button>
+                                  )}
+                                </>
                               )}
                             </div>
                           </td>

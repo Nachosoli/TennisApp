@@ -4,11 +4,12 @@ import { Result } from '@/types';
 export const resultsApi = {
   async submitScore(matchId: string, data: {
     score: string;
-    winnerId: string;
+    winnerId?: string; // Optional, backend will determine from score
   }): Promise<Result> {
     const response = await apiClient.post<Result>(`/results`, {
       matchId,
-      ...data,
+      score: data.score,
+      // winnerId is determined by backend from score
     });
     return response.data;
   },

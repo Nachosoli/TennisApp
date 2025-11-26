@@ -95,8 +95,12 @@ export class ResultsService {
       guestPlayer2Name = application.guestPartnerName || null;
     }
 
-    // Validate score format
+    // Validate score format (allow alternative outcomes)
     this.validateScore(createDto.score);
+    
+    // Handle alternative outcomes for winner determination
+    const isAlternativeOutcome = createDto.score.toLowerCase().includes('won by default') || 
+                                  createDto.score.toLowerCase().includes('retired');
 
     // Create result
     const result = this.resultRepository.create({
@@ -117,13 +121,31 @@ export class ResultsService {
     await this.matchRepository.save(match);
 
     // Calculate and update ELO if both players are platform users
+    // For alternative outcomes, determine winner based on who submitted
     if (player1UserId && player2UserId) {
+      let scoreForElo = createDto.score;
+      
+      // If alternative outcome, we need to determine winner
+      // If "Won by default" or "Opponent retired", the submitter won
+      // We need to know if submitter is player1 or player2
+      const submitterIsPlayer1 = userId === player1UserId;
+      const isAlternativeOutcome = createDto.score.toLowerCase().includes('won by default') || 
+                                    createDto.score.toLowerCase().includes('retired');
+      
+      if (isAlternativeOutcome) {
+        // For ELO calculation, use a default score format
+        // Score format is always "player1Games-player2Games"
+        // If submitter (winner) is player1: "6-0 6-0" (player1 wins)
+        // If submitter (winner) is player2: "0-6 0-6" (player2 wins, meaning player1 lost)
+        scoreForElo = submitterIsPlayer1 ? '6-0 6-0' : '0-6 0-6';
+      }
+      
       await this.updateEloAfterMatch(
         match.id,
         match.format === MatchFormat.SINGLES ? MatchType.SINGLES : MatchType.DOUBLES,
         player1UserId,
         player2UserId,
-        createDto.score,
+        scoreForElo,
       );
     }
 
@@ -173,11 +195,21 @@ export class ResultsService {
   }
 
   private validateScore(score: string): void {
+    // Allow alternative outcomes or standard score format
+    const alternativeOutcomes = ['won by default', 'opponent retired'];
+    const isAlternative = alternativeOutcomes.some(outcome => 
+      score.toLowerCase().includes(outcome)
+    );
+    
+    if (isAlternative) {
+      return; // Alternative outcomes are valid
+    }
+    
     // Format: "6-4 3-6 6-2" or "6-4 6-3"
     const scoreRegex = /^(\d+-\d+)(\s+\d+-\d+)*$/;
     if (!scoreRegex.test(score.trim())) {
       throw new BadRequestException(
-        'Invalid score format. Use format like "6-4 3-6 6-2" or "6-4 6-3"',
+        'Invalid score format. Use format like "6-4 3-6 6-2" or "6-4 6-3", or select an alternative outcome',
       );
     }
   }

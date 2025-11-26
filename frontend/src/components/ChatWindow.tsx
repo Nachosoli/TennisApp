@@ -22,9 +22,15 @@ export const ChatWindow = ({ matchId }: ChatWindowProps) => {
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    // Load initial messages
+    // Load initial messages (including auto-generated contact messages)
     chatApi.getMatchMessages(matchId)
-      .then(setInitialMessages)
+      .then((messages) => {
+        setInitialMessages(messages);
+        // Scroll to bottom after loading messages to show latest (including contact info)
+        setTimeout(() => {
+          messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+        }, 100);
+      })
       .catch(console.error)
       .finally(() => setIsLoading(false));
   }, [matchId]);

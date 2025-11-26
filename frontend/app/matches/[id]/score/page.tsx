@@ -26,7 +26,6 @@ const scoreSchema = z.object({
   set3Opponent: z.string().optional(),
   wonByDefault: z.boolean().optional(),
   opponentRetired: z.boolean().optional(),
-  winnerId: z.string().min(1, 'Winner must be selected'),
 }).refine((data) => {
   // At least one set must be filled OR alternative outcome must be selected
   const hasSetData = data.set1Player || data.set1Opponent || data.set2Player || data.set2Opponent || data.set3Player || data.set3Opponent;
@@ -106,13 +105,71 @@ function ScoreEntryPageContent() {
   // Determine opponent name for display
   const opponent = participants.find(p => p.id !== user?.id);
   const opponentName = opponent?.name || 'Opponent';
+  
+  // Determine if user is creator (player1) or applicant (player2)
+  const isCreator = currentMatch.creatorUserId === user?.id;
+  const player1Id = currentMatch.creatorUserId;
+  const player2Id = opponent?.id || '';
+
+  // Determine winner from scores (for confirmation popup)
+  const determineWinner = (data: ScoreFormData): string | null => {
+    if (data.wonByDefault || data.opponentRetired) {
+      // If won by default or opponent retired, YOU win
+      return user?.id || null;
+    }
+
+    // Count sets won by YOU and opponent
+    let youSets = 0;
+    let opponentSets = 0;
+
+    const sets = [
+      { you: data.set1Player, opponent: data.set1Opponent },
+      { you: data.set2Player, opponent: data.set2Opponent },
+      { you: data.set3Player, opponent: data.set3Opponent },
+    ];
+
+    for (const set of sets) {
+      const youGames = parseInt(set.you || '0', 10);
+      const opponentGames = parseInt(set.opponent || '0', 10);
+      
+      // Only count sets that have been played (at least one game > 0)
+      if (youGames > 0 || opponentGames > 0) {
+        if (youGames > opponentGames) {
+          youSets++;
+        } else if (opponentGames > youGames) {
+          opponentSets++;
+        }
+        // If tied, neither wins the set
+      }
+    }
+
+    // Winner is whoever wins 2+ sets
+    if (youSets >= 2) {
+      return user?.id || null;
+    } else if (opponentSets >= 2) {
+      return opponent?.id || null;
+    }
+
+    // If we can't determine a clear winner (e.g., incomplete match), return null
+    // Backend will handle validation
+    return null;
+  };
 
   const onSubmit = async (data: ScoreFormData) => {
     try {
       setIsLoading(true);
       setError(null);
       
+      // Determine winner from scores
+      const winnerId = determineWinner(data);
+      if (!winnerId) {
+        setError('Unable to determine winner from scores. Please check your input.');
+        setIsLoading(false);
+        return;
+      }
+
       // Format score string from sets or handle alternative outcomes
+      // Backend expects format: "player1Games-player2Games" where player1 is creator
       let scoreString = '';
       if (data.wonByDefault) {
         scoreString = 'Won by default';
@@ -120,22 +177,45 @@ function ScoreEntryPageContent() {
         scoreString = 'Opponent retired';
       } else {
         // Build score string from sets
+        // If user is creator, scores are already in correct format (YOU = player1)
+        // If user is applicant, we need to swap (YOU = player2, so swap to player1-player2)
         const sets: string[] = [];
-        if (data.set1Player || data.set1Opponent) {
-          sets.push(`${data.set1Player || '0'}-${data.set1Opponent || '0'}`);
-        }
-        if (data.set2Player || data.set2Opponent) {
-          sets.push(`${data.set2Player || '0'}-${data.set2Opponent || '0'}`);
-        }
-        if (data.set3Player || data.set3Opponent) {
-          sets.push(`${data.set3Player || '0'}-${data.set3Opponent || '0'}`);
+        const setData = [
+          { you: data.set1Player, opponent: data.set1Opponent },
+          { you: data.set2Player, opponent: data.set2Opponent },
+          { you: data.set3Player, opponent: data.set3Opponent },
+        ];
+        
+        for (const set of setData) {
+          if (set.you || set.opponent) {
+            const youGames = set.you || '0';
+            const opponentGames = set.opponent || '0';
+            
+            if (isCreator) {
+              // Creator reporting: YOU = player1, opponent = player2
+              sets.push(`${youGames}-${opponentGames}`);
+            } else {
+              // Applicant reporting: YOU = player2, opponent = player1, so swap
+              sets.push(`${opponentGames}-${youGames}`);
+            }
+          }
         }
         scoreString = sets.join(' ');
+      }
+
+      // Show confirmation popup
+      const winnerName = winnerId === user?.id ? 'You' : opponentName;
+      const confirmationMessage = winnerId === user?.id
+        ? `You are about to report that you won the match vs ${opponentName}. Continue?`
+        : `You are about to report that ${opponentName} won the match. Continue?`;
+      
+      if (!window.confirm(confirmationMessage)) {
+        setIsLoading(false);
+        return;
       }
       
       await resultsApi.submitScore(matchId, {
         score: scoreString,
-        winnerId: data.winnerId,
       });
       router.push(`/matches/${matchId}`);
     } catch (err: any) {
@@ -234,29 +314,10 @@ function ScoreEntryPageContent() {
               </label>
             </div>
 
-            {/* Winner Selection */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Winner *
-              </label>
-              <select
-                {...register('winnerId')}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="">Select winner</option>
-                {participants.map((participant) => (
-                  <option key={participant.id} value={participant.id}>
-                    {participant.name}
-                  </option>
-                ))}
-              </select>
-              {errors.winnerId && (
-                <p className="mt-1 text-sm text-red-600">{errors.winnerId.message}</p>
-              )}
-              {(errors as any).root && (
-                <p className="mt-1 text-sm text-red-600">{(errors as any).root.message}</p>
-              )}
-            </div>
+            {/* Winner will be determined automatically from scores */}
+            {(errors as any).root && (
+              <p className="mt-1 text-sm text-red-600">{(errors as any).root.message}</p>
+            )}
 
             <div className="flex gap-4">
               <Button

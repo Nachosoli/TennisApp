@@ -61,31 +61,25 @@ export default function MatchDetailPage() {
 
     const handleMatchUpdate = (updatedMatch: any) => {
       if (updatedMatch.id === matchId) {
+        // Immediately refresh match data
         fetchMatchById(matchId);
       }
     };
 
-    socket.onMatchUpdate(handleMatchUpdate);
-
-    return () => {
-      socket.offMatchUpdate(handleMatchUpdate);
-    };
-  }, [socket, matchId, fetchMatchById, user]);
-
-  // Listen for application updates
-  useEffect(() => {
-    if (!socket.socket || !matchId || !user) return;
-
     const handleApplicationUpdate = () => {
+      // Immediately refresh match data when application is updated
       fetchMatchById(matchId);
     };
 
+    socket.onMatchUpdate(handleMatchUpdate);
     socket.onApplicationUpdate(handleApplicationUpdate);
 
     return () => {
+      socket.offMatchUpdate(handleMatchUpdate);
       socket.offApplicationUpdate(handleApplicationUpdate);
     };
   }, [socket, matchId, fetchMatchById, user]);
+
 
   // Conditional returns after all hooks
   if (authLoading) {
