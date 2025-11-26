@@ -93,6 +93,20 @@ export class AdminController {
   }
 
   // Court Management
+  @Get('courts')
+  @ApiOperation({ summary: 'Get all courts with pagination and filters' })
+  async getAllCourts(
+    @Query('page') page?: number,
+    @Query('limit') limit?: number,
+    @Query('search') search?: string,
+  ) {
+    return this.adminService.getAllCourts(
+      page ? Number(page) : 1,
+      limit ? Number(limit) : 50,
+      search,
+    );
+  }
+
   @Delete('courts/:courtId')
   @ApiOperation({ summary: 'Delete a court' })
   async deleteCourt(

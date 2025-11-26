@@ -46,11 +46,23 @@ export const adminApi = {
   },
 
   // Court Management
-  async getAllCourts(page: number = 1, limit: number = 50) {
-    const response = await apiClient.get<{ courts: Court[]; total: number }>('/admin/courts', {
-      params: { page, limit },
+  async getAllCourts(page: number = 1, limit: number = 50, search?: string) {
+    const response = await apiClient.get<{ courts: any[]; total: number }>('/admin/courts', {
+      params: { page, limit, ...(search && { search }) },
     });
-    return response.data;
+    // Transform backend format to frontend format
+    const transformedCourts: Court[] = response.data.courts.map((court: any) => ({
+      ...court,
+      surface: (court.surfaceType || 'hard').toLowerCase() as 'hard' | 'clay' | 'grass' | 'indoor',
+      location: court.coordinates ? {
+        type: 'Point' as const,
+        coordinates: court.coordinates.coordinates || [0, 0],
+      } : {
+        type: 'Point' as const,
+        coordinates: [0, 0],
+      },
+    }));
+    return { courts: transformedCourts, total: response.data.total };
   },
 
   async editCourt(courtId: string, data: Partial<Court>) {

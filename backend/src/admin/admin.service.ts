@@ -131,6 +131,35 @@ export class AdminService {
   }
 
   /**
+   * Get all courts with pagination and filters
+   */
+  async getAllCourts(
+    page: number = 1,
+    limit: number = 50,
+    search?: string,
+  ): Promise<{ courts: Court[]; total: number }> {
+    const query = this.courtRepository.createQueryBuilder('court')
+      .leftJoinAndSelect('court.createdBy', 'createdBy')
+      .where('court.deletedAt IS NULL');
+
+    // Search by name or address
+    if (search) {
+      query.andWhere(
+        '(LOWER(court.name) LIKE LOWER(:search) OR LOWER(court.address) LIKE LOWER(:search))',
+        { search: `%${search}%` },
+      );
+    }
+
+    const [courts, total] = await query
+      .orderBy('court.createdAt', 'DESC')
+      .skip((page - 1) * limit)
+      .take(limit)
+      .getManyAndCount();
+
+    return { courts, total };
+  }
+
+  /**
    * Delete a court
    */
   async deleteCourt(adminId: string, courtId: string, reason: string): Promise<Court> {

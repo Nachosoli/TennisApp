@@ -131,7 +131,7 @@ export default function AdminUserDetailPage() {
       <Layout>
         <div className="text-center py-12">
           <p className="text-gray-600">User not found</p>
-          <Button variant="outline" onClick={() => router.back()} className="mt-4">
+          <Button variant="outline" onClick={() => router.push('/admin/users')} className="mt-4">
             Go Back
           </Button>
         </div>
@@ -149,7 +149,7 @@ export default function AdminUserDetailPage() {
             </h1>
             <p className="text-gray-600 mt-1">{user.email}</p>
           </div>
-          <Button variant="outline" onClick={() => router.back()}>
+          <Button variant="outline" onClick={() => router.push('/admin/users')}>
             Back to Users
           </Button>
         </div>
