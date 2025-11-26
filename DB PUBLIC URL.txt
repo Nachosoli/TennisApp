@@ -1,0 +1,1 @@
+postgresql://postgres:bPkLCVbufrytDZjwWuJCpDdaYvLpwynw@centerbeam.proxy.rlwy.net:54851/railway

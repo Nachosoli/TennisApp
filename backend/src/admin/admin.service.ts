@@ -650,4 +650,82 @@ export class AdminService {
 
     return this.adminActionRepository.save(action);
   }
+
+  /**
+   * TEMPORARY: Wipe all database tables except courts and users
+   * ⚠️ REMOVE THIS METHOD AFTER USE
+   */
+  async wipeDatabase(adminId: string) {
+    const TABLES_TO_DELETE = [
+      'chat_messages',
+      'results',
+      'elo_logs',
+      'applications',
+      'match_slots',
+      'matches',
+      'notifications',
+      'notification_preferences',
+      'user_stats',
+      'reports',
+      'admin_actions',
+      'payment_methods',
+      'push_subscriptions',
+    ];
+
+    const deletionResults: Array<{ table: string; count: number }> = [];
+
+    // Delete tables in order (respecting foreign key constraints)
+    for (const tableName of TABLES_TO_DELETE) {
+      try {
+        // Check if table exists first
+        const exists = await this.dataSource.query(
+          `SELECT EXISTS (
+            SELECT FROM information_schema.tables 
+            WHERE table_schema = 'public' 
+            AND table_name = $1
+          )`,
+          [tableName]
+        );
+
+        if (!exists[0]?.exists) {
+          deletionResults.push({ table: tableName, count: 0 });
+          continue;
+        }
+
+        // Get count before deletion
+        const countResult = await this.dataSource.query(`SELECT COUNT(*) as count FROM ${tableName}`);
+        const countBefore = parseInt(countResult[0]?.count || '0', 10);
+
+        if (countBefore > 0) {
+          // Use TRUNCATE CASCADE to handle foreign keys automatically
+          await this.dataSource.query(`TRUNCATE TABLE ${tableName} CASCADE`);
+          deletionResults.push({ table: tableName, count: countBefore });
+        } else {
+          deletionResults.push({ table: tableName, count: 0 });
+        }
+      } catch (error: any) {
+        // Continue with other tables even if one fails
+        deletionResults.push({ table: tableName, count: 0 });
+      }
+    }
+
+    // Log admin action
+    await this.logAdminAction(
+      adminId,
+      ActionType.DELETE_USER, // Using existing action type
+      TargetType.USER, // Using existing target type
+      'database-wipe',
+      { deletionResults, message: 'Database wipe - deleted all data except courts and users' },
+    );
+
+    const totalDeleted = deletionResults.reduce((sum, r) => sum + r.count, 0);
+
+    return {
+      success: true,
+      message: 'Database wipe completed successfully',
+      totalRecordsDeleted: totalDeleted,
+      breakdown: deletionResults.filter(r => r.count > 0),
+      tablesKept: ['courts', 'users'],
+    };
+  }
 }
