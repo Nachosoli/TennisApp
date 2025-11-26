@@ -55,7 +55,7 @@ export default function LoginPage() {
         console.log('User authenticated, redirecting...');
         // Use window.location for more reliable redirect
         if (user.role === 'ADMIN' || user.role === 'admin') {
-          window.location.href = '/admin/dashboard';
+          window.location.href = '/admin';
         } else {
           window.location.href = '/dashboard';
         }

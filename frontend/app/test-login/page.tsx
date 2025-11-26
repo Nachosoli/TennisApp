@@ -27,7 +27,7 @@ export default function TestLoginPage() {
       // Check user role and redirect
       const { user } = useAuthStore.getState();
       if (user?.role === 'ADMIN' || user?.role === 'admin') {
-        router.push('/admin/dashboard');
+        router.push('/admin');
       } else {
         router.push('/dashboard');
       }
