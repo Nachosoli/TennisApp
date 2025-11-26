@@ -397,7 +397,10 @@ export default function MatchDetailPage() {
                                   setApplyingSlotId(slot.id);
                                   await applicationsApi.applyToSlot({ matchSlotId: slot.id });
                                   setApplySuccess('Application submitted successfully! The match creator will review your request.');
-                                  await fetchMatchById(matchId);
+                                  // Force immediate refresh to update Apply button state
+                                  setTimeout(() => {
+                                    fetchMatchById(matchId);
+                                  }, 500);
                                   // Clear success message after 5 seconds
                                   setTimeout(() => setApplySuccess(null), 5000);
                                 } catch (error: any) {

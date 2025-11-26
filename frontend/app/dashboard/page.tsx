@@ -493,9 +493,9 @@ export default function DashboardPage() {
                                 <Link 
                                   href={`/matches/${match.id}/score`}
                                   onClick={(e) => e.stopPropagation()}
-                                  className="text-blue-600 hover:text-blue-800 hover:underline"
+                                  className="text-blue-600 hover:text-blue-800 hover:underline font-medium"
                                 >
-                                  -
+                                  Report Score
                                 </Link>
                               ) : (
                                 '-'

@@ -9,6 +9,8 @@ import { User } from '../entities/user.entity';
 import { NotificationsModule } from '../notifications/notifications.module';
 import { GatewaysModule } from '../gateways/gateways.module';
 import { ChatModule } from '../chat/chat.module';
+import { MatchesModule } from '../matches/matches.module';
+import { ChatGateway } from '../chat/chat.gateway';
 
 @Module({
   imports: [
@@ -16,6 +18,7 @@ import { ChatModule } from '../chat/chat.module';
     NotificationsModule,
     GatewaysModule,
     ChatModule, // Import ChatModule to use ChatService
+    MatchesModule, // Import MatchesModule to use MatchesService for cache clearing
   ],
   controllers: [ApplicationsController],
   providers: [ApplicationsService],

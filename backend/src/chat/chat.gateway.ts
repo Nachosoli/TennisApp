@@ -117,5 +117,10 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       client.emit('error', { message: error.message });
     }
   }
+
+  // Emit match update to match participants (for compatibility with frontend socket on /chat namespace)
+  emitMatchUpdate(matchId: string, match: any) {
+    this.server.to(`match:${matchId}`).emit('match_updated', match);
+  }
 }
 

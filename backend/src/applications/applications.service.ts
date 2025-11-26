@@ -20,6 +20,8 @@ import { NotificationsService } from '../notifications/notifications.service';
 import { NotificationType } from '../entities/notification.entity';
 import { MatchUpdatesGateway } from '../gateways/match-updates.gateway';
 import { ChatService } from '../chat/chat.service';
+import { MatchesService } from '../matches/matches.service';
+import { ChatGateway } from '../chat/chat.gateway';
 
 @Injectable()
 export class ApplicationsService {
@@ -40,6 +42,10 @@ export class ApplicationsService {
     @Inject(forwardRef(() => MatchUpdatesGateway))
     private matchUpdatesGateway: MatchUpdatesGateway,
     private chatService: ChatService,
+    @Inject(forwardRef(() => MatchesService))
+    private matchesService: MatchesService,
+    @Inject(forwardRef(() => ChatGateway))
+    private chatGateway: ChatGateway,
   ) {
     // Get lock expiration from config (default 2 hours)
     this.lockExpirationHours = parseInt(
@@ -158,7 +164,10 @@ export class ApplicationsService {
         relations: ['court', 'creator', 'slots'],
       });
       if (updatedMatch) {
+        // Emit on /matches namespace
         this.matchUpdatesGateway.emitMatchUpdate(slot.match.id, updatedMatch);
+        // Also emit on /chat namespace for frontend compatibility
+        this.chatGateway.emitMatchUpdate(slot.match.id, updatedMatch);
         this.matchUpdatesGateway.emitToUser(
           slot.match.creatorUserId,
           'application_updated',
@@ -207,6 +216,9 @@ export class ApplicationsService {
     // Update match status
     application.matchSlot.match.status = MatchStatus.CONFIRMED;
     await this.matchRepository.save(application.matchSlot.match);
+    
+    // Clear match cache to force refresh on frontend
+    await this.matchesService.clearMatchCache(application.matchSlot.match.id);
 
     // Auto-waitlist all other pending and rejected applications for this match
     // This includes both new pending applications and previously rejected ones (from before waitlist feature)
@@ -348,14 +360,19 @@ export class ApplicationsService {
 
     // Emit real-time updates
     try {
+      // Load match with applications for proper frontend display
       const updatedMatch = await this.matchRepository.findOne({
         where: { id: match.id },
-        relations: ['court', 'creator', 'slots'],
+        relations: ['court', 'creator', 'slots', 'slots.applications', 'slots.applications.applicant'],
       });
       if (updatedMatch) {
+        // Emit on /matches namespace
         this.matchUpdatesGateway.emitMatchUpdate(match.id, updatedMatch);
         this.matchUpdatesGateway.emitToUser(application.applicantUserId, 'application_updated', application);
         this.matchUpdatesGateway.emitToUser(creatorUserId, 'application_updated', application);
+        
+        // Also emit on /chat namespace for frontend compatibility
+        this.chatGateway.emitMatchUpdate(match.id, updatedMatch);
       }
     } catch (error) {
       console.warn('Failed to emit application update:', error);
@@ -390,11 +407,14 @@ export class ApplicationsService {
     try {
       const updatedMatch = await this.matchRepository.findOne({
         where: { id: application.matchSlot.match.id },
-        relations: ['court', 'creator', 'slots'],
+        relations: ['court', 'creator', 'slots', 'slots.applications', 'slots.applications.applicant'],
       });
       if (updatedMatch) {
+        // Emit on /matches namespace
         this.matchUpdatesGateway.emitMatchUpdate(application.matchSlot.match.id, updatedMatch);
         this.matchUpdatesGateway.emitToUser(application.applicantUserId, 'application_updated', application);
+        // Also emit on /chat namespace for frontend compatibility
+        this.chatGateway.emitMatchUpdate(application.matchSlot.match.id, updatedMatch);
       }
     } catch (error) {
       console.warn('Failed to emit application update:', error);
@@ -469,14 +489,18 @@ export class ApplicationsService {
     try {
       const updatedMatch = await this.matchRepository.findOne({
         where: { id: matchId },
-        relations: ['court', 'creator', 'slots', 'slots.applications'],
+        relations: ['court', 'creator', 'slots', 'slots.applications', 'slots.applications.applicant'],
       });
       if (updatedMatch) {
+        // Emit on /matches namespace
+        // Emit on /matches namespace
         this.matchUpdatesGateway.emitMatchUpdate(matchId, updatedMatch);
         this.matchUpdatesGateway.emitToUser(application.applicantUserId, 'application_withdrawn', {
           applicationId,
           matchId: matchId,
         });
+        // Also emit on /chat namespace for frontend compatibility
+        this.chatGateway.emitMatchUpdate(matchId, updatedMatch);
       }
     } catch (error) {
       console.warn('Failed to emit application withdrawal update:', error);

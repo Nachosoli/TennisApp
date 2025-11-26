@@ -302,10 +302,10 @@ export class MatchesService {
     }
 
     // Full match details with all relations (for match detail page)
-    // Note: Applications are loaded separately via getMatchApplications endpoint
+    // Include applications so opponent name can be determined on score page
     const match = await this.matchRepository.findOne({
       where: { id },
-      relations: ['court', 'creator', 'slots', 'slots.lockedBy', 'results', 'results.player1', 'results.player2'],
+      relations: ['court', 'creator', 'slots', 'slots.lockedBy', 'slots.applications', 'slots.applications.applicant', 'results', 'results.player1', 'results.player2'],
     });
 
     if (!match) {
@@ -451,6 +451,11 @@ export class MatchesService {
       .limit(50); // Limit results to prevent excessive data loading
 
     return query.getMany();
+  }
+
+  async clearMatchCache(matchId: string): Promise<void> {
+    await this.cacheManager.del(`match:${matchId}`);
+    await this.cacheManager.del(`match:details:${matchId}`);
   }
 }
 
