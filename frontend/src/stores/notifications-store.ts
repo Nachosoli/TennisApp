@@ -16,6 +16,8 @@ interface NotificationsState {
   }) => Promise<void>;
   addNotification: (notification: Notification) => void;
   markAsRead: (notificationId: string) => void;
+  deleteNotification: (notificationId: string) => Promise<void>;
+  clearAll: () => Promise<void>;
 }
 
 export const useNotificationsStore = create<NotificationsState>((set, get) => ({
@@ -75,5 +77,31 @@ export const useNotificationsStore = create<NotificationsState>((set, get) => ({
       ),
       unreadCount: Math.max(0, state.unreadCount - 1),
     }));
+  },
+
+  deleteNotification: async (notificationId: string) => {
+    try {
+      await notificationsApi.deleteNotification(notificationId);
+      set((state) => ({
+        notifications: state.notifications.filter((n) => n.id !== notificationId),
+        unreadCount: Math.max(0, state.unreadCount - 1),
+      }));
+    } catch (error) {
+      console.error('Failed to delete notification:', error);
+      throw error;
+    }
+  },
+
+  clearAll: async () => {
+    try {
+      await notificationsApi.clearAllNotifications();
+      set({
+        notifications: [],
+        unreadCount: 0,
+      });
+    } catch (error) {
+      console.error('Failed to clear notifications:', error);
+      throw error;
+    }
   },
 }));

@@ -346,4 +346,23 @@ export class NotificationsService {
       where: { userId },
     });
   }
+
+  /**
+   * Delete a single notification
+   */
+  async deleteNotification(userId: string, notificationId: string): Promise<void> {
+    await this.notificationRepository.delete({
+      id: notificationId,
+      userId,
+    });
+  }
+
+  /**
+   * Clear all notifications for a user
+   */
+  async clearAllNotifications(userId: string): Promise<void> {
+    await this.notificationRepository.delete({
+      userId,
+    });
+  }
 }

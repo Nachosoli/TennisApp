@@ -21,6 +21,19 @@ export default function AdminReportsPage() {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [selectedReport, setSelectedReport] = useState<Report | null>(null);
 
+  const loadReports = async () => {
+    setIsLoading(true);
+    try {
+      const status = statusFilter === 'all' ? undefined : statusFilter;
+      const data = await adminApi.getAllReports(status);
+      setReports(data.reports);
+    } catch (error) {
+      console.error('Failed to load reports:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   useEffect(() => {
     if (user && isAdmin) {
       loadReports();
@@ -46,19 +59,6 @@ export default function AdminReportsPage() {
       </Layout>
     );
   }
-
-  const loadReports = async () => {
-    setIsLoading(true);
-    try {
-      const status = statusFilter === 'all' ? undefined : statusFilter;
-      const data = await adminApi.getAllReports(status);
-      setReports(data.reports);
-    } catch (error) {
-      console.error('Failed to load reports:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   const handleStatusChange = async (reportId: string, status: string) => {
     try {

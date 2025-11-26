@@ -20,5 +20,13 @@ export const notificationsApi = {
     const response = await apiClient.put<NotificationPreference>('/notifications/preferences', data);
     return response.data;
   },
+
+  async deleteNotification(id: string): Promise<void> {
+    await apiClient.delete(`/notifications/${id}`);
+  },
+
+  async clearAllNotifications(): Promise<void> {
+    await apiClient.delete('/notifications');
+  },
 };
 

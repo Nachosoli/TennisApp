@@ -55,4 +55,21 @@ export class NotificationsController {
   ) {
     return this.notificationsService.deletePushSubscription(userId, subscriptionId);
   }
+
+  @Delete(':id')
+  @ApiOperation({ summary: 'Delete a notification' })
+  async deleteNotification(
+    @CurrentUser('id') userId: string,
+    @Param('id') notificationId: string,
+  ) {
+    await this.notificationsService.deleteNotification(userId, notificationId);
+    return { message: 'Notification deleted successfully' };
+  }
+
+  @Delete()
+  @ApiOperation({ summary: 'Clear all notifications for the current user' })
+  async clearAllNotifications(@CurrentUser('id') userId: string) {
+    await this.notificationsService.clearAllNotifications(userId);
+    return { message: 'All notifications cleared successfully' };
+  }
 }

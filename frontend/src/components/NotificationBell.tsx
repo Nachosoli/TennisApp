@@ -1,6 +1,8 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { useSocket } from '@/hooks/useSocket';
 import { useAuthStore } from '@/stores/auth-store';
 import { useNotificationsStore } from '@/stores/notifications-store';
@@ -9,6 +11,7 @@ import { format } from 'date-fns';
 
 export const NotificationBell = () => {
   const [isOpen, setIsOpen] = useState(false);
+  const router = useRouter();
   const socket = useSocket();
   const { user } = useAuthStore();
   const {
@@ -17,8 +20,10 @@ export const NotificationBell = () => {
     fetchNotifications,
     addNotification,
     markAsRead,
+    clearAll,
   } = useNotificationsStore();
   const hasLoadedRef = useRef<string | null>(null);
+  const [isClearing, setIsClearing] = useState(false);
 
   useEffect(() => {
     if (!user) return;
@@ -86,7 +91,7 @@ export const NotificationBell = () => {
                   <p>No notifications</p>
                 </div>
               ) : (
-                notifications.map((notification) => (
+                notifications.slice(0, 5).map((notification) => (
                   <div
                     key={notification.id}
                     className="p-4 hover:bg-gray-50 cursor-pointer"
@@ -103,6 +108,38 @@ export const NotificationBell = () => {
                 ))
               )}
             </div>
+            {notifications.length > 0 && (
+              <div className="p-3 border-t border-gray-200 bg-gray-50 flex gap-2">
+                <Link
+                  href="/notifications"
+                  onClick={() => setIsOpen(false)}
+                  className="flex-1 text-center px-3 py-2 text-sm text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded transition-colors"
+                >
+                  View All
+                </Link>
+                <button
+                  onClick={async (e) => {
+                    e.stopPropagation();
+                    if (window.confirm('Are you sure you want to clear all notifications?')) {
+                      setIsClearing(true);
+                      try {
+                        await clearAll();
+                        setIsOpen(false);
+                      } catch (error) {
+                        console.error('Failed to clear notifications:', error);
+                        alert('Failed to clear notifications. Please try again.');
+                      } finally {
+                        setIsClearing(false);
+                      }
+                    }
+                  }}
+                  disabled={isClearing}
+                  className="flex-1 px-3 py-2 text-sm text-red-600 hover:text-red-700 hover:bg-red-50 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isClearing ? 'Clearing...' : 'Clear All'}
+                </button>
+              </div>
+            )}
           </div>
         </>
       )}
