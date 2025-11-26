@@ -217,8 +217,8 @@ export const CalendarView = ({ filters, onDateSelect }: CalendarViewProps) => {
               {selectedDayMatches.map((match) => {
                 const creator = match.creator;
                 const creatorStats = creator?.stats;
-                // Use match.surface or fallback to court surface
-                const surface = match.surface || match.court?.surface;
+                // Check surfaceFilter (from backend), match.surface, or fallback to court surface
+                const surface = (match as any).surfaceFilter || match.surface || match.court?.surface;
                 const surfaceColor = getSurfaceColor(surface);
                 
                 // Check if current user has applied to this match (pending)
@@ -259,10 +259,7 @@ export const CalendarView = ({ filters, onDateSelect }: CalendarViewProps) => {
                   >
                     <div className="flex justify-between items-start mb-3">
                       <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-1">
-                          <h4 className="font-bold text-lg">{match.court?.name || 'Court TBD'}</h4>
-                          {statusBadge}
-                        </div>
+                        <h4 className="font-bold text-lg mb-1">{match.court?.name || 'Court TBD'}</h4>
                         <p className="text-sm opacity-80 mb-2">{match.court?.address}</p>
                         
                         {/* Creator Info */}
@@ -300,15 +297,8 @@ export const CalendarView = ({ filters, onDateSelect }: CalendarViewProps) => {
                         </div>
                       </div>
                       
-                      <div className="ml-4 flex flex-col items-end gap-2">
-                        <span className="text-xs font-medium px-2 py-1 rounded bg-white bg-opacity-70">
-                          {match.skillLevel}
-                        </span>
-                        {surface && (
-                          <span className="text-xs font-medium px-2 py-1 rounded bg-white bg-opacity-70">
-                            {surface}
-                          </span>
-                        )}
+                      <div className="ml-4">
+                        {statusBadge}
                       </div>
                     </div>
                     

@@ -33,6 +33,22 @@ const defaultCenter = {
   lng: -81.6557,
 };
 
+// Helper function to convert rating to skill level
+const getSkillLevelFromRating = (rating: number | undefined): string => {
+  if (rating === undefined || rating === null) return 'N/A';
+  if (rating >= 0.5 && rating <= 3.0) return 'BEGINNER';
+  if (rating > 3.0 && rating < 4.0) return 'INTERMEDIATE';
+  if (rating >= 4.0 && rating <= 5.0) return 'ADVANCED';
+  if (rating > 5.0) return 'PRO';
+  return 'N/A';
+};
+
+// Helper function to format gender
+const formatGender = (gender: string | undefined): string => {
+  if (!gender) return 'N/A';
+  return gender.toUpperCase();
+};
+
 export const MatchesMap = ({ matches, onMapLoad, homeCourt, currentUserId }: MatchesMapProps) => {
   const [selectedCourt, setSelectedCourt] = useState<string | null>(null);
   const [map, setMap] = useState<google.maps.Map | null>(null);
@@ -265,7 +281,7 @@ export const MatchesMap = ({ matches, onMapLoad, homeCourt, currentUserId }: Mat
                 {courtMatchesMap.get(selectedCourt)!.matches.slice(0, 3).map((match) => (
                   <div key={match.id} className="text-xs text-gray-600 border-l-2 border-blue-500 pl-2">
                     <div className="font-medium">{format(parseLocalDate(match.date), 'MMM d, yyyy')}</div>
-                    <div>{match.skillLevel} • {match.gender}</div>
+                    <div>{getSkillLevelFromRating(match.creator?.ratingValue)} • {formatGender(match.creator?.gender)}</div>
                   </div>
                 ))}
                 
