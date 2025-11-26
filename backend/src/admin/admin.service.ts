@@ -10,6 +10,7 @@ import { User, UserRole } from '../entities/user.entity';
 import { Court } from '../entities/court.entity';
 import { Match, MatchStatus } from '../entities/match.entity';
 import { Result } from '../entities/result.entity';
+import { Application, ApplicationStatus } from '../entities/application.entity';
 import { AdminAction, ActionType, TargetType } from '../entities/admin-action.entity';
 import { SuspendUserDto } from './dto/suspend-user.dto';
 import { EditUserDto } from './dto/edit-user.dto';
@@ -345,6 +346,218 @@ export class AdminService {
       order: { createdAt: 'DESC' },
       take: limit,
     });
+  }
+
+  /**
+   * Get all users with pagination and filters
+   */
+  async getAllUsers(
+    page: number = 1,
+    limit: number = 50,
+    search?: string,
+    role?: string,
+    isActive?: boolean,
+  ): Promise<{ users: User[]; total: number }> {
+    const query = this.userRepository.createQueryBuilder('user')
+      .leftJoinAndSelect('user.homeCourt', 'homeCourt')
+      .leftJoinAndSelect('user.stats', 'stats');
+
+    // Search by name or email
+    if (search) {
+      query.andWhere(
+        '(LOWER(user.firstName) LIKE LOWER(:search) OR LOWER(user.lastName) LIKE LOWER(:search) OR LOWER(user.email) LIKE LOWER(:search))',
+        { search: `%${search}%` },
+      );
+    }
+
+    // Filter by role
+    if (role) {
+      query.andWhere('user.role = :role', { role: role.toUpperCase() });
+    }
+
+    // Filter by active status
+    if (isActive !== undefined) {
+      query.andWhere('user.isActive = :isActive', { isActive });
+    }
+
+    const [users, total] = await query
+      .orderBy('user.createdAt', 'DESC')
+      .skip((page - 1) * limit)
+      .take(limit)
+      .getManyAndCount();
+
+    return { users, total };
+  }
+
+  /**
+   * Get user by ID
+   */
+  async getUserById(userId: string): Promise<User> {
+    const user = await this.userRepository.findOne({
+      where: { id: userId },
+      relations: ['homeCourt', 'stats'],
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    return user;
+  }
+
+  /**
+   * Set user's home court (admin action)
+   */
+  async setUserHomeCourt(adminId: string, userId: string, courtId: string): Promise<User> {
+    const user = await this.userRepository.findOne({
+      where: { id: userId },
+      relations: ['homeCourt'],
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    const court = await this.courtRepository.findOne({
+      where: { id: courtId },
+    });
+
+    if (!court) {
+      throw new NotFoundException('Court not found');
+    }
+
+    const oldCourtId = user.homeCourtId;
+    (user as any).homeCourtId = courtId;
+    await this.userRepository.save(user);
+
+    // Log admin action
+    await this.logAdminAction(adminId, ActionType.EDIT_USER, TargetType.USER, userId, {
+      action: 'set_home_court',
+      oldCourtId,
+      newCourtId: courtId,
+      courtName: court.name,
+    });
+
+    // Reload user with relations
+    return this.userRepository.findOne({
+      where: { id: userId },
+      relations: ['homeCourt'],
+    }) as Promise<User>;
+  }
+
+  /**
+   * Get all matches for a user (as creator and as participant)
+   */
+  async getUserMatches(userId: string): Promise<Match[]> {
+    const user = await this.userRepository.findOne({
+      where: { id: userId },
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    // Get matches where user is creator
+    const createdMatches = await this.matchRepository.find({
+      where: { creatorUserId: userId },
+      relations: ['court', 'creator', 'slots', 'slots.applications', 'slots.applications.applicant'],
+      order: { date: 'DESC', createdAt: 'DESC' },
+    });
+
+    // Get matches where user is a confirmed participant
+    const participatedMatches = await this.matchRepository
+      .createQueryBuilder('match')
+      .leftJoinAndSelect('match.court', 'court')
+      .leftJoinAndSelect('match.creator', 'creator')
+      .leftJoinAndSelect('match.slots', 'slots')
+      .leftJoinAndSelect('slots.applications', 'applications')
+      .leftJoinAndSelect('applications.applicant', 'applicant')
+      .leftJoin('slots.applications', 'userApplication')
+      .where('userApplication.applicantUserId = :userId', { userId })
+      .andWhere('userApplication.status = :status', { status: ApplicationStatus.CONFIRMED })
+      .orderBy('match.date', 'DESC')
+      .addOrderBy('match.createdAt', 'DESC')
+      .getMany();
+
+    // Combine and deduplicate (user might be creator and participant in same match)
+    const allMatches = [...createdMatches];
+    const createdMatchIds = new Set(createdMatches.map(m => m.id));
+    
+    for (const match of participatedMatches) {
+      if (!createdMatchIds.has(match.id)) {
+        allMatches.push(match);
+      }
+    }
+
+    // Sort by date descending
+    return allMatches.sort((a, b) => {
+      const dateA = a.date instanceof Date ? a.date : new Date(a.date);
+      const dateB = b.date instanceof Date ? b.date : new Date(b.date);
+      return dateB.getTime() - dateA.getTime();
+    });
+  }
+
+  /**
+   * Get comprehensive user statistics
+   */
+  async getUserStats(userId: string): Promise<{
+    user: User;
+    matchesCreated: number;
+    matchesParticipated: number;
+    matchesCompleted: number;
+    matchesCancelled: number;
+    totalMatches: number;
+    winRate: number;
+    stats: any;
+  }> {
+    const user = await this.userRepository.findOne({
+      where: { id: userId },
+      relations: ['homeCourt', 'stats'],
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    // Get matches created
+    const matchesCreated = await this.matchRepository.count({
+      where: { creatorUserId: userId },
+    });
+
+    // Get matches participated (confirmed applications)
+    const matchesParticipated = await this.matchRepository
+      .createQueryBuilder('match')
+      .leftJoin('match.slots', 'slots')
+      .leftJoin('slots.applications', 'applications')
+      .where('applications.applicantUserId = :userId', { userId })
+      .andWhere('applications.status = :status', { status: 'confirmed' })
+      .getCount();
+
+    // Get completed matches
+    const matchesCompleted = await this.matchRepository.count({
+      where: { creatorUserId: userId, status: MatchStatus.COMPLETED },
+    });
+
+    // Get cancelled matches
+    const matchesCancelled = await this.matchRepository.count({
+      where: { creatorUserId: userId, status: MatchStatus.CANCELLED },
+    });
+
+    const totalMatches = matchesCreated;
+    const winRate = user.stats && user.stats.totalMatches > 0
+      ? (user.stats.totalWins / user.stats.totalMatches) * 100
+      : 0;
+
+    return {
+      user,
+      matchesCreated,
+      matchesParticipated,
+      matchesCompleted,
+      matchesCancelled,
+      totalMatches,
+      winRate: Number(winRate.toFixed(2)),
+      stats: user.stats || null,
+    };
   }
 
   /**

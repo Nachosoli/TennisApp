@@ -27,6 +27,31 @@ export class AdminController {
   constructor(private adminService: AdminService) {}
 
   // User Management
+  @Get('users')
+  @ApiOperation({ summary: 'Get all users with pagination and filters' })
+  async getAllUsers(
+    @Query('page') page?: number,
+    @Query('limit') limit?: number,
+    @Query('search') search?: string,
+    @Query('role') role?: string,
+    @Query('isActive') isActive?: string,
+  ) {
+    const activeFilter = isActive === 'true' ? true : isActive === 'false' ? false : undefined;
+    return this.adminService.getAllUsers(
+      page ? Number(page) : 1,
+      limit ? Number(limit) : 50,
+      search,
+      role,
+      activeFilter,
+    );
+  }
+
+  @Get('users/:userId')
+  @ApiOperation({ summary: 'Get user by ID' })
+  async getUserById(@Param('userId') userId: string) {
+    return this.adminService.getUserById(userId);
+  }
+
   @Post('users/:userId/suspend')
   @ApiOperation({ summary: 'Suspend a user' })
   async suspendUser(
@@ -136,5 +161,28 @@ export class AdminController {
   @ApiOperation({ summary: 'Get admin action logs' })
   async getAdminActions(@Query('limit') limit?: number) {
     return this.adminService.getAdminActions(limit);
+  }
+
+  // User Management - Additional Methods
+  @Post('users/:userId/home-court')
+  @ApiOperation({ summary: 'Set user home court' })
+  async setUserHomeCourt(
+    @Param('userId') userId: string,
+    @Body('courtId') courtId: string,
+    @CurrentUser('id') adminId: string,
+  ) {
+    return this.adminService.setUserHomeCourt(adminId, userId, courtId);
+  }
+
+  @Get('users/:userId/matches')
+  @ApiOperation({ summary: 'Get all matches for a user' })
+  async getUserMatches(@Param('userId') userId: string) {
+    return this.adminService.getUserMatches(userId);
+  }
+
+  @Get('users/:userId/stats')
+  @ApiOperation({ summary: 'Get comprehensive user statistics' })
+  async getUserStats(@Param('userId') userId: string) {
+    return this.adminService.getUserStats(userId);
   }
 }

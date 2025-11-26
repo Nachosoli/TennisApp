@@ -37,31 +37,36 @@ export class AnalyticsService {
     peakUsage: any;
     revenue: any; // Placeholder
   }> {
-    const [
-      userGrowth,
-      matchCompletion,
-      popularCourts,
-      eloDistribution,
-      geographicDistribution,
-      peakUsage,
-    ] = await Promise.all([
-      this.getUserGrowth(),
-      this.getMatchCompletion(),
-      this.getPopularCourts(),
-      this.getEloDistribution(),
-      this.getGeographicDistribution(),
-      this.getPeakUsage(),
-    ]);
+    try {
+      const [
+        userGrowth,
+        matchCompletion,
+        popularCourts,
+        eloDistribution,
+        geographicDistribution,
+        peakUsage,
+      ] = await Promise.allSettled([
+        this.getUserGrowth(),
+        this.getMatchCompletion(),
+        this.getPopularCourts(),
+        this.getEloDistribution(),
+        this.getGeographicDistribution(),
+        this.getPeakUsage(),
+      ]);
 
-    return {
-      userGrowth,
-      matchCompletion,
-      popularCourts,
-      eloDistribution,
-      geographicDistribution,
-      peakUsage,
-      revenue: { placeholder: true }, // Placeholder for future revenue tracking
-    };
+      return {
+        userGrowth: userGrowth.status === 'fulfilled' ? userGrowth.value : null,
+        matchCompletion: matchCompletion.status === 'fulfilled' ? matchCompletion.value : null,
+        popularCourts: popularCourts.status === 'fulfilled' ? popularCourts.value : [],
+        eloDistribution: eloDistribution.status === 'fulfilled' ? eloDistribution.value : null,
+        geographicDistribution: geographicDistribution.status === 'fulfilled' ? geographicDistribution.value : null,
+        peakUsage: peakUsage.status === 'fulfilled' ? peakUsage.value : { peakDays: [], peakHours: [] },
+        revenue: { placeholder: true }, // Placeholder for future revenue tracking
+      };
+    } catch (error) {
+      console.error('Error in getDashboard:', error);
+      throw error; // Re-throw to let NestJS handle it properly
+    }
   }
 
   /**
@@ -314,35 +319,54 @@ export class AnalyticsService {
    */
   async getPeakUsage(): Promise<{
     peakDays: Array<{ day: string; matchCount: number }>;
-    peakHours: Array<{ hour: number; matchCount: number }>;
+    peakHours: Array<{ hour: string; matchCount: number }>;
   }> {
-    // Peak days of week
-    const daysOfWeek = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-    const peakDays = await Promise.all(
-      daysOfWeek.map(async (day, index) => {
-        const matches = await this.matchRepository
-          .createQueryBuilder('match')
-          .where(`EXTRACT(DOW FROM match.date) = :dayIndex`, { dayIndex: index })
-          .getCount();
-        return { day, matchCount: matches };
-      }),
-    );
+    try {
+      // Peak days of week
+      const daysOfWeek = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+      const peakDays = await Promise.all(
+        daysOfWeek.map(async (day, index) => {
+          try {
+            const matches = await this.matchRepository
+              .createQueryBuilder('match')
+              .where(`EXTRACT(DOW FROM match.date) = :dayIndex`, { dayIndex: index })
+              .getCount();
+            return { day, matchCount: matches };
+          } catch (error) {
+            console.error(`Error getting peak day ${day}:`, error);
+            return { day, matchCount: 0 };
+          }
+        }),
+      );
 
-    // Peak hours (based on slot start times)
-    const peakHours: Array<{ hour: number; matchCount: number }> = [];
-    for (let hour = 6; hour < 22; hour++) {
-      const matches = await this.matchRepository
-        .createQueryBuilder('match')
-        .leftJoin('match.slots', 'slot')
-        .where(`EXTRACT(HOUR FROM slot.start_time) = :hour`, { hour })
-        .getCount();
-      peakHours.push({ hour, matchCount: matches });
+      // Peak hours (based on slot start times)
+      const peakHours: Array<{ hour: string; matchCount: number }> = [];
+      for (let hour = 6; hour < 22; hour++) {
+        try {
+          const matches = await this.matchRepository
+            .createQueryBuilder('match')
+            .innerJoin('match.slots', 'slot')
+            .where(`EXTRACT(HOUR FROM slot.start_time::time) = :hour`, { hour })
+            .getCount();
+          peakHours.push({ hour: `${hour}:00`, matchCount: matches });
+        } catch (error) {
+          console.error(`Error getting peak hour ${hour}:`, error);
+          peakHours.push({ hour: `${hour}:00`, matchCount: 0 });
+        }
+      }
+
+      return {
+        peakDays: peakDays.sort((a, b) => b.matchCount - a.matchCount),
+        peakHours: peakHours.sort((a, b) => b.matchCount - a.matchCount),
+      };
+    } catch (error) {
+      console.error('Error in getPeakUsage:', error);
+      // Return empty data instead of throwing
+      return {
+        peakDays: [],
+        peakHours: [],
+      };
     }
-
-    return {
-      peakDays: peakDays.sort((a, b) => b.matchCount - a.matchCount),
-      peakHours: peakHours.sort((a, b) => b.matchCount - a.matchCount),
-    };
   }
 }
 
