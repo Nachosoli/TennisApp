@@ -51,7 +51,7 @@ export default function AdminEditUserPage() {
   useEffect(() => {
     if (!currentUser) return;
     
-    if (currentUser?.role !== 'ADMIN' && currentUser?.role !== 'admin') {
+    if (currentUser?.role !== 'admin') {
       router.push('/');
       return;
     }
@@ -115,7 +115,7 @@ export default function AdminEditUserPage() {
     }
   };
 
-  if (currentUser?.role !== 'ADMIN' && currentUser?.role !== 'admin') {
+  if (currentUser?.role !== 'admin') {
     return null;
   }
 

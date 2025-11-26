@@ -44,7 +44,7 @@ function AuthCallbackContent() {
             });
 
             // Redirect based on role
-            if (user.role === 'ADMIN' || user.role === 'admin') {
+            if (user.role === 'admin') {
               router.push('/admin');
             } else {
               router.push('/dashboard');

@@ -190,7 +190,7 @@ export default function AdminUsersPage() {
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <span className={`px-2 py-1 text-xs rounded ${
-                            u.role === 'ADMIN' || u.role === 'admin' 
+                            u.role === 'admin' 
                               ? 'bg-purple-100 text-purple-800' 
                               : 'bg-gray-100 text-gray-800'
                           }`}>

@@ -50,7 +50,7 @@ export const useAuthStore = create<AuthState>()(
             ...response.user,
             verified: response.user.phoneVerified !== undefined ? response.user.phoneVerified : false, // Backend uses phoneVerified, frontend uses verified
             phoneVerified: response.user.phoneVerified !== undefined ? response.user.phoneVerified : false,
-            role: (response.user.role?.toUpperCase() || 'USER') as 'USER' | 'ADMIN',
+            role: (response.user.role || 'user') as 'user' | 'admin',
           };
           console.log('AuthStore: Normalized user:', normalizedUser);
           

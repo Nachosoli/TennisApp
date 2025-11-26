@@ -8,7 +8,7 @@ export function UserDropdown() {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const { user, logout } = useAuthStore();
-  const isAdmin = user?.role === 'ADMIN' || user?.role === 'admin';
+  const isAdmin = user?.role === 'admin';
 
   // Close dropdown when clicking outside
   useEffect(() => {

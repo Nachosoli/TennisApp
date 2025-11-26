@@ -8,7 +8,7 @@ export interface User {
   verified?: boolean; // Backend uses 'verified', not 'phoneVerified'
   phoneVerified?: boolean; // Keep for backward compatibility
   emailVerified?: boolean; // Email verification status
-  role: 'user' | 'admin' | 'USER' | 'ADMIN'; // Backend returns lowercase
+  role: 'user' | 'admin'; // Backend returns lowercase
   ratingType?: 'utr' | 'usta' | 'ultimate' | 'custom';
   ratingValue?: number;
   gender?: 'male' | 'female';

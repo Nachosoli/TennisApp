@@ -74,9 +74,6 @@ export default function AdminReportsPage() {
     }
   };
 
-  if (user?.role !== 'ADMIN') {
-    return null;
-  }
 
   const getStatusColor = (status: string) => {
     switch (status) {

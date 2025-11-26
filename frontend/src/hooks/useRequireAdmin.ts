@@ -11,7 +11,7 @@ export const useRequireAdmin = () => {
   useEffect(() => {
     if (!isLoading && user) {
       // Check if user is admin
-      const isAdmin = currentUser?.role === 'ADMIN' || currentUser?.role === 'admin';
+      const isAdmin = currentUser?.role === 'admin';
       
       if (!isAdmin) {
         // Not admin, redirect to dashboard
@@ -29,7 +29,7 @@ export const useRequireAdmin = () => {
     return { isLoading: false, user: null, isAdmin: false };
   }
 
-  const isAdmin = currentUser?.role === 'ADMIN' || currentUser?.role === 'admin';
+  const isAdmin = currentUser?.role === 'admin';
   
   if (!isAdmin) {
     return { isLoading: false, user: null, isAdmin: false };

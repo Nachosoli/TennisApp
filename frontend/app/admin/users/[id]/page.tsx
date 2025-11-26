@@ -38,7 +38,7 @@ export default function AdminUserDetailPage() {
   useEffect(() => {
     if (!currentUser) return;
     
-    if (currentUser?.role !== 'ADMIN' && currentUser?.role !== 'admin') {
+    if (currentUser?.role !== 'admin') {
       router.push('/');
       return;
     }
@@ -112,7 +112,7 @@ export default function AdminUserDetailPage() {
     }
   };
 
-  if (currentUser?.role !== 'ADMIN') {
+  if (currentUser?.role !== 'admin') {
     return null;
   }
 
@@ -177,7 +177,7 @@ export default function AdminUserDetailPage() {
               <div>
                 <span className="font-medium text-gray-700">Role:</span>{' '}
                 <span className={`px-2 py-1 rounded text-sm ${
-                  user.role === 'ADMIN' ? 'bg-purple-100 text-purple-800' : 'bg-gray-100 text-gray-800'
+                  user.role === 'admin' ? 'bg-purple-100 text-purple-800' : 'bg-gray-100 text-gray-800'
                 }`}>
                   {user.role}
                 </span>
