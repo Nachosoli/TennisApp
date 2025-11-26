@@ -366,7 +366,7 @@ export default function AdminDashboard() {
 
             {/* Admin Actions */}
             <Card title="Management">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <Button
                   variant="primary"
                   className="w-full py-6 text-lg font-semibold"
@@ -401,18 +401,6 @@ export default function AdminDashboard() {
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
                     </svg>
                     Manage Matches
-                  </div>
-                </Button>
-                <Button
-                  variant="primary"
-                  className="w-full py-6 text-lg font-semibold"
-                  onClick={() => router.push('/admin/reports')}
-                >
-                  <div className="flex flex-col items-center gap-2">
-                    <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                    </svg>
-                    Manage Reports
                   </div>
                 </Button>
               </div>

@@ -145,11 +145,67 @@ export class ChatService {
       throw new ForbiddenException('You do not have access to this match chat');
     }
 
-    return this.chatMessageRepository.find({
+    // Get all messages
+    const allMessages = await this.chatMessageRepository.find({
       where: { matchId },
       relations: ['user'],
       order: { createdAt: 'ASC' }, // Oldest first for chat UI (older on top, newer on bottom)
     });
+
+    // Get when user joined the match (for privacy: new opponents shouldn't see old messages)
+    const userJoinTime = await this.getUserJoinTime(matchId, userId);
+    
+    if (!userJoinTime) {
+      // User not confirmed, return empty (shouldn't happen due to access check, but safety)
+      return [];
+    }
+
+    // Filter messages: only show messages created after user joined
+    // This ensures new opponents don't see previous chat history
+    return allMessages.filter(msg => new Date(msg.createdAt) >= userJoinTime);
+  }
+
+  /**
+   * Get the timestamp when a user joined a match
+   * For creator: returns match creation time
+   * For applicant: returns when their application was confirmed
+   */
+  private async getUserJoinTime(matchId: string, userId: string): Promise<Date | null> {
+    const match = await this.matchRepository.findOne({
+      where: { id: matchId },
+      relations: ['slots', 'slots.applications'],
+    });
+
+    if (!match) {
+      return null;
+    }
+
+    // Creator: joined when match was created
+    if (match.creatorUserId === userId) {
+      return match.createdAt;
+    }
+
+    // Applicant: joined when their application was confirmed
+    // Find the confirmed application for this user
+    for (const slot of match.slots || []) {
+      if (slot.applications) {
+        const confirmedApp = slot.applications.find(
+          app => app.applicantUserId === userId && app.status === 'confirmed'
+        );
+        if (confirmedApp) {
+          // Use slot's confirmedAt if available, otherwise use application creation time
+          // Note: confirmedAt is set when application is confirmed
+          if (slot.confirmedAt) {
+            return slot.confirmedAt;
+          }
+          // Fallback to application creation time (shouldn't happen, but safety)
+          return confirmedApp.createdAt;
+        }
+      }
+    }
+
+    // User not found as confirmed participant
+    return null;
   }
 
   /**

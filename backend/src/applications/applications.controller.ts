@@ -96,5 +96,18 @@ export class ApplicationsController {
   ) {
     return this.applicationsService.withdrawApplication(user.id, id);
   }
+
+  @Put(':id/approve-from-waitlist')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Approve a waitlisted application (match creator only, singles matches only)' })
+  @ApiResponse({ status: 200, description: 'Waitlisted application approved' })
+  @ApiResponse({ status: 403, description: 'Not authorized' })
+  @ApiResponse({ status: 400, description: 'Application is not waitlisted or match is not pending' })
+  async approveFromWaitlist(
+    @CurrentUser() user: User,
+    @Param('id') id: string,
+  ) {
+    return this.applicationsService.approveFromWaitlist(user.id, id);
+  }
 }
 

@@ -12,10 +12,11 @@ import { format } from 'date-fns';
 interface ApplicationsTableProps {
   matchId: string;
   matchFormat?: 'singles' | 'doubles';
+  matchStatus?: string;
   onApplicationConfirmed?: () => void;
 }
 
-export const ApplicationsTable = ({ matchId, matchFormat = 'singles', onApplicationConfirmed }: ApplicationsTableProps) => {
+export const ApplicationsTable = ({ matchId, matchFormat = 'singles', matchStatus, onApplicationConfirmed }: ApplicationsTableProps) => {
   const [applications, setApplications] = useState<Application[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -58,6 +59,18 @@ export const ApplicationsTable = ({ matchId, matchFormat = 'singles', onApplicat
     } catch (err: any) {
       setError(err.response?.data?.message || 'Failed to confirm application');
       console.error('Failed to confirm application:', err);
+    }
+  };
+
+  const handleApproveFromWaitlist = async (applicationId: string) => {
+    try {
+      setError(null);
+      await applicationsApi.approveFromWaitlist(applicationId);
+      await loadApplications();
+      onApplicationConfirmed?.(); // Refresh match data
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Failed to approve from waitlist');
+      console.error('Failed to approve from waitlist:', err);
     }
   };
 
@@ -227,7 +240,7 @@ export const ApplicationsTable = ({ matchId, matchFormat = 'singles', onApplicat
                   </span>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                  {(application.status?.toLowerCase() === 'pending' || application.status?.toLowerCase() === 'waitlisted') && (
+                  {application.status?.toLowerCase() === 'pending' && (
                     <div className="flex gap-2">
                       <Button
                         variant="primary"
@@ -244,6 +257,27 @@ export const ApplicationsTable = ({ matchId, matchFormat = 'singles', onApplicat
                         Reject
                       </Button>
                     </div>
+                  )}
+                  {application.status?.toLowerCase() === 'waitlisted' && matchStatus?.toLowerCase() === 'pending' && matchFormat === 'singles' && (
+                    <div className="flex gap-2">
+                      <Button
+                        variant="primary"
+                        size="sm"
+                        onClick={() => handleApproveFromWaitlist(application.id)}
+                      >
+                        Approve from Waitlist
+                      </Button>
+                      <Button
+                        variant="danger"
+                        size="sm"
+                        onClick={() => handleReject(application.id)}
+                      >
+                        Reject
+                      </Button>
+                    </div>
+                  )}
+                  {application.status?.toLowerCase() === 'waitlisted' && matchStatus?.toLowerCase() !== 'pending' && (
+                    <span className="text-xs text-gray-500">Waitlisted</span>
                   )}
                   {application.status?.toLowerCase() !== 'pending' && application.status?.toLowerCase() !== 'waitlisted' && (
                     <span className="text-gray-400 text-xs">-</span>

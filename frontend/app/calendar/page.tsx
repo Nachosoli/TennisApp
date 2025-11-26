@@ -45,8 +45,10 @@ export default function CalendarPage() {
           )
         );
         
-        // Hide confirmed matches from other users UNLESS they have a waitlisted application
-        if (match.status?.toLowerCase() === 'confirmed' && user && match.creatorUserId !== user.id && !hasWaitlistedApplication) return false;
+        // Show confirmed singles matches to all users (they can join waitlist)
+        // Only hide confirmed matches if user is not creator and doesn't have waitlisted application
+        // But for singles, we want to show them so users can join waitlist
+        // For now, show all confirmed matches (singles can join waitlist, doubles will be handled separately)
         return true;
       });
       setAllMatches(filtered);

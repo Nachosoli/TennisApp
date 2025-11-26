@@ -214,13 +214,59 @@ export default function MatchDetailPage() {
             <h1 className="text-3xl font-bold text-gray-900">{currentMatch.court?.name}</h1>
             <p className="text-gray-600 mt-1">{currentMatch.court?.address}</p>
           </div>
-          <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-            currentMatch.status?.toLowerCase() === 'confirmed' ? 'bg-green-100 text-green-800' :
-            currentMatch.status?.toLowerCase() === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-            'bg-gray-100 text-gray-800'
-          }`}>
-            {currentMatch.status}
-          </span>
+          <div className="flex items-center gap-3">
+            <span className={`px-3 py-1 rounded-full text-sm font-medium ${
+              currentMatch.status?.toLowerCase() === 'confirmed' ? 'bg-green-100 text-green-800' :
+              currentMatch.status?.toLowerCase() === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+              'bg-gray-100 text-gray-800'
+            }`}>
+              {currentMatch.status?.toLowerCase() === 'confirmed' && currentMatch.format === 'singles' 
+                ? 'Match Set (2/2)' 
+                : currentMatch.status}
+            </span>
+            {currentMatch.status?.toLowerCase() === 'confirmed' && 
+             currentMatch.format === 'singles' && 
+             !isCreator && 
+             !currentMatch.slots?.some(slot => 
+               slot.applications?.some(app => 
+                 (app.applicantUserId === user?.id || app.userId === user?.id) &&
+                 (app.status?.toLowerCase() === 'waitlisted' || app.status?.toLowerCase() === 'confirmed')
+               )
+             ) && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={async () => {
+                  try {
+                    setApplyError(null);
+                    setApplySuccess(null);
+                    const firstSlot = currentMatch.slots?.[0];
+                    if (!firstSlot) {
+                      setApplyError('No slots available');
+                      return;
+                    }
+                    setApplyingSlotId(firstSlot.id);
+                    await applicationsApi.applyToSlot({ matchSlotId: firstSlot.id });
+                    setApplySuccess('You have been added to the waitlist!');
+                    setTimeout(() => {
+                      fetchMatchById(matchId);
+                    }, 500);
+                    setTimeout(() => setApplySuccess(null), 5000);
+                  } catch (error: any) {
+                    console.error('Failed to join waitlist:', error);
+                    const errorMessage = error?.response?.data?.message || error?.message || 'Failed to join waitlist. Please try again.';
+                    setApplyError(errorMessage);
+                    setTimeout(() => setApplyError(null), 5000);
+                  } finally {
+                    setApplyingSlotId(null);
+                  }
+                }}
+                isLoading={applyingSlotId !== null}
+              >
+                Join Waitlist
+              </Button>
+            )}
+          </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -445,6 +491,7 @@ export default function MatchDetailPage() {
               <ApplicationsTable 
                 matchId={matchId} 
                 matchFormat={currentMatch.format}
+                matchStatus={currentMatch.status}
                 onApplicationConfirmed={() => fetchMatchById(matchId)}
               />
             </Card>

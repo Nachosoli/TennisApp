@@ -237,6 +237,11 @@ export const CalendarView = ({ filters, onDateSelect }: CalendarViewProps) => {
                   )
                 ) || false;
                 
+                // Check if match is confirmed
+                const isConfirmed = match.status?.toLowerCase() === 'confirmed';
+                const isSingles = match.format === 'singles';
+                const isConfirmedSingles = isConfirmed && isSingles;
+                
                 // Determine status badge
                 const statusBadge = hasUserWaitlisted ? (
                   <span className="px-2 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
@@ -245,6 +250,10 @@ export const CalendarView = ({ filters, onDateSelect }: CalendarViewProps) => {
                 ) : hasUserApplied ? (
                   <span className="px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
                     Applied
+                  </span>
+                ) : isConfirmedSingles ? (
+                  <span className="px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                    Match Set (2/2)
                   </span>
                 ) : (
                   <span className="px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
@@ -255,7 +264,9 @@ export const CalendarView = ({ filters, onDateSelect }: CalendarViewProps) => {
                 return (
                   <div 
                     key={match.id} 
-                    className={`border-2 rounded-lg p-4 hover:shadow-md transition-all ${surfaceColor}`}
+                    className={`border-2 rounded-lg p-4 hover:shadow-md transition-all ${surfaceColor} ${
+                      isConfirmedSingles ? 'opacity-75 border-gray-300' : ''
+                    }`}
                   >
                     <div className="flex justify-between items-start mb-3">
                       <div className="flex-1">

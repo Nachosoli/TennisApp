@@ -12,7 +12,7 @@ import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import type { Cache } from 'cache-manager';
 import { Application, ApplicationStatus } from '../entities/application.entity';
 import { MatchSlot, SlotStatus } from '../entities/match-slot.entity';
-import { Match, MatchStatus } from '../entities/match.entity';
+import { Match, MatchStatus, MatchFormat } from '../entities/match.entity';
 import { User } from '../entities/user.entity';
 import { ApplyToSlotDto } from './dto/apply-to-slot.dto';
 import { ConfigService } from '@nestjs/config';
@@ -100,7 +100,59 @@ export class ApplicationsService {
       throw new BadRequestException('Cannot apply to your own match');
     }
 
-    // Check if match is still pending
+    // Check if match is still pending or confirmed (for waitlist)
+    const isSingles = slot.match.format === 'singles';
+    if (slot.match.status === MatchStatus.CANCELLED || slot.match.status === MatchStatus.COMPLETED) {
+      throw new BadRequestException('Match is not accepting applications');
+    }
+
+    // For confirmed singles matches, allow waitlist applications
+    if (slot.match.status === MatchStatus.CONFIRMED && isSingles) {
+      // Allow application but set status to WAITLISTED immediately
+      const application = this.applicationRepository.create({
+        matchSlotId: slot.id,
+        applicantUserId: userId,
+        guestPartnerName: applyDto.guestPartnerName,
+        status: ApplicationStatus.WAITLISTED, // Auto-waitlist for confirmed singles matches
+      });
+
+      const savedApplication = await this.applicationRepository.save(application);
+
+      // Notify match creator about new waitlist application
+      const matchDate = slot.match.date instanceof Date 
+        ? slot.match.date.toLocaleDateString() 
+        : new Date(slot.match.date).toLocaleDateString();
+      
+      await this.notificationsService.createNotification(
+        slot.match.creatorUserId,
+        NotificationType.MATCH_ACCEPTED,
+        `${user.firstName} ${user.lastName} has joined the waitlist for your match`,
+        {
+          applicantName: `${user.firstName} ${user.lastName}`,
+          courtName: slot.match.court?.name || 'Court',
+          date: matchDate,
+          matchId: slot.match.id,
+        },
+      );
+
+      // Emit real-time update
+      try {
+        const updatedMatch = await this.matchRepository.findOne({
+          where: { id: slot.match.id },
+          relations: ['court', 'creator', 'slots'],
+        });
+        if (updatedMatch) {
+          this.matchUpdatesGateway.emitMatchUpdate(slot.match.id, updatedMatch);
+          this.chatGateway.emitMatchUpdate(slot.match.id, updatedMatch);
+        }
+      } catch (error) {
+        console.warn('Failed to emit application update:', error);
+      }
+
+      return savedApplication;
+    }
+
+    // For pending matches, continue with normal flow
     if (slot.match.status !== MatchStatus.PENDING) {
       throw new BadRequestException('Match is not accepting applications');
     }
@@ -213,41 +265,95 @@ export class ApplicationsService {
     application.matchSlot.confirmedAt = new Date();
     await this.matchSlotRepository.save(application.matchSlot);
 
-    // Update match status
-    application.matchSlot.match.status = MatchStatus.CONFIRMED;
-    await this.matchRepository.save(application.matchSlot.match);
+    const currentMatch = application.matchSlot.match;
+    const isSingles = currentMatch.format === MatchFormat.SINGLES;
+
+    // For singles: Match is confirmed when creator + 1 applicant (2 total)
+    // For doubles: Keep existing logic (will be updated separately)
+    if (isSingles) {
+      // Count confirmed applications (creator + confirmed applicants)
+      const confirmedApplications = await this.applicationRepository
+        .createQueryBuilder('app')
+        .innerJoin('app.matchSlot', 'slot')
+        .innerJoin('slot.match', 'm')
+        .where('m.id = :matchId', { matchId: currentMatch.id })
+        .andWhere('app.status = :confirmed', { confirmed: ApplicationStatus.CONFIRMED })
+        .getCount();
+
+      // Creator + 1 confirmed applicant = 2 total (match is full)
+      if (confirmedApplications >= 1) { // At least 1 confirmed applicant (plus creator = 2)
+        currentMatch.status = MatchStatus.CONFIRMED;
+        await this.matchRepository.save(currentMatch);
+
+        // Now waitlist all other pending applications (match is full)
+        const matchOtherApplications = await this.applicationRepository
+          .createQueryBuilder('app')
+          .innerJoin('app.matchSlot', 'slot')
+          .innerJoin('slot.match', 'm')
+          .where('m.id = :matchId', { matchId: currentMatch.id })
+          .andWhere('app.id != :applicationId', { applicationId: application.id })
+          .andWhere('(app.status = :pending OR app.status = :rejected)', { 
+            pending: ApplicationStatus.PENDING,
+            rejected: ApplicationStatus.REJECTED 
+          })
+          .getMany();
+
+        for (const otherApp of matchOtherApplications) {
+          otherApp.status = ApplicationStatus.WAITLISTED;
+          await this.applicationRepository.save(otherApp);
+          
+          // Notify waitlisted applicant
+          await this.notificationsService.createNotification(
+            otherApp.applicantUserId,
+            NotificationType.MATCH_ACCEPTED,
+            `Your application has been waitlisted for this match. You may be selected if the confirmed participant withdraws.`,
+            {
+              matchId: currentMatch.id,
+            },
+          );
+        }
+      } else {
+        // Not enough confirmed applications yet, keep match as pending
+        currentMatch.status = MatchStatus.PENDING;
+        await this.matchRepository.save(currentMatch);
+        // Don't waitlist other applications yet - they can still be confirmed
+      }
+    } else {
+      // Doubles: Keep existing logic (confirm immediately and waitlist others)
+      currentMatch.status = MatchStatus.CONFIRMED;
+      await this.matchRepository.save(currentMatch);
+
+      // Auto-waitlist all other pending and rejected applications for this match
+      const matchOtherApplications = await this.applicationRepository
+        .createQueryBuilder('app')
+        .innerJoin('app.matchSlot', 'slot')
+        .innerJoin('slot.match', 'm')
+        .where('m.id = :matchId', { matchId: currentMatch.id })
+        .andWhere('app.id != :applicationId', { applicationId: application.id })
+        .andWhere('(app.status = :pending OR app.status = :rejected)', { 
+          pending: ApplicationStatus.PENDING,
+          rejected: ApplicationStatus.REJECTED 
+        })
+        .getMany();
+
+      for (const otherApp of matchOtherApplications) {
+        otherApp.status = ApplicationStatus.WAITLISTED;
+        await this.applicationRepository.save(otherApp);
+        
+        // Notify waitlisted applicant
+        await this.notificationsService.createNotification(
+          otherApp.applicantUserId,
+          NotificationType.MATCH_ACCEPTED,
+          `Your application has been waitlisted for this match. You may be selected if the confirmed participant withdraws.`,
+          {
+            matchId: currentMatch.id,
+          },
+        );
+      }
+    }
     
     // Clear match cache to force refresh on frontend
-    await this.matchesService.clearMatchCache(application.matchSlot.match.id);
-
-    // Auto-waitlist all other pending and rejected applications for this match
-    // This includes both new pending applications and previously rejected ones (from before waitlist feature)
-    const matchOtherApplications = await this.applicationRepository
-      .createQueryBuilder('app')
-      .innerJoin('app.matchSlot', 'slot')
-      .innerJoin('slot.match', 'match')
-      .where('match.id = :matchId', { matchId: application.matchSlot.match.id })
-      .andWhere('app.id != :applicationId', { applicationId: application.id })
-      .andWhere('(app.status = :pending OR app.status = :rejected)', { 
-        pending: ApplicationStatus.PENDING,
-        rejected: ApplicationStatus.REJECTED 
-      })
-      .getMany();
-
-    for (const otherApp of matchOtherApplications) {
-      otherApp.status = ApplicationStatus.WAITLISTED;
-      await this.applicationRepository.save(otherApp);
-      
-      // Notify waitlisted applicant
-      await this.notificationsService.createNotification(
-        otherApp.applicantUserId,
-        NotificationType.MATCH_ACCEPTED,
-        `Your application has been waitlisted for this match. You may be selected if the confirmed participant withdraws.`,
-        {
-          matchId: application.matchSlot.match.id,
-        },
-      );
-    }
+    await this.matchesService.clearMatchCache(currentMatch.id);
 
     // Auto-remove overlapping applications from the confirmed applicant (±2 hours)
     const confirmedSlot = application.matchSlot;
@@ -301,15 +407,15 @@ export class ApplicationsService {
     }
 
     // Notify applicant about match confirmation
-    const match = application.matchSlot.match;
+    const notificationMatch = application.matchSlot.match;
     const creator = await this.userRepository.findOne({
       where: { id: creatorUserId },
     });
     
-    // Handle date conversion (match.date is stored as string to avoid timezone issues)
-    const matchDate = match.date instanceof Date 
-      ? match.date.toLocaleDateString() 
-      : new Date(match.date).toLocaleDateString();
+    // Handle date conversion (notificationMatch.date is stored as string to avoid timezone issues)
+    const matchDate = notificationMatch.date instanceof Date 
+      ? notificationMatch.date.toLocaleDateString() 
+      : new Date(notificationMatch.date).toLocaleDateString();
     
     await this.notificationsService.createNotification(
       application.applicantUserId,
@@ -317,10 +423,10 @@ export class ApplicationsService {
       `Your application has been confirmed!`,
       {
         opponentName: creator ? `${creator.firstName} ${creator.lastName}` : 'Match Creator',
-        courtName: match.court?.name || 'Court',
+        courtName: notificationMatch.court?.name || 'Court',
         date: matchDate,
         time: `${application.matchSlot.startTime} - ${application.matchSlot.endTime}`,
-        matchId: match.id,
+        matchId: notificationMatch.id,
       },
     );
 
@@ -331,10 +437,10 @@ export class ApplicationsService {
       `Match confirmed with ${application.applicant.firstName} ${application.applicant.lastName}`,
       {
         opponentName: `${application.applicant.firstName} ${application.applicant.lastName}`,
-        courtName: match.court?.name || 'Court',
+        courtName: notificationMatch.court?.name || 'Court',
         date: matchDate,
         time: `${application.matchSlot.startTime} - ${application.matchSlot.endTime}`,
-        matchId: match.id,
+        matchId: notificationMatch.id,
       },
     );
 
@@ -342,14 +448,14 @@ export class ApplicationsService {
     try {
       // Load match with relations for message creation
       const matchWithRelations = await this.matchRepository.findOne({
-        where: { id: match.id },
+        where: { id: notificationMatch.id },
         relations: ['court', 'slots'],
       });
 
       if (matchWithRelations) {
         // Message from applicant to creator
         await this.chatService.createContactInfoMessage(
-          match.id,
+          notificationMatch.id,
           application.applicantUserId, // Sender: applicant
           creatorUserId, // Recipient: creator
           matchWithRelations,
@@ -358,7 +464,7 @@ export class ApplicationsService {
 
         // Message from creator to applicant
         await this.chatService.createContactInfoMessage(
-          match.id,
+          notificationMatch.id,
           creatorUserId, // Sender: creator
           application.applicantUserId, // Recipient: applicant
           matchWithRelations,
@@ -374,17 +480,17 @@ export class ApplicationsService {
     try {
       // Load match with applications for proper frontend display
       const updatedMatch = await this.matchRepository.findOne({
-        where: { id: match.id },
+        where: { id: notificationMatch.id },
         relations: ['court', 'creator', 'slots', 'slots.applications', 'slots.applications.applicant'],
       });
       if (updatedMatch) {
         // Emit on /matches namespace
-        this.matchUpdatesGateway.emitMatchUpdate(match.id, updatedMatch);
+        this.matchUpdatesGateway.emitMatchUpdate(notificationMatch.id, updatedMatch);
         this.matchUpdatesGateway.emitToUser(application.applicantUserId, 'application_updated', application);
         this.matchUpdatesGateway.emitToUser(creatorUserId, 'application_updated', application);
         
         // Also emit on /chat namespace for frontend compatibility
-        this.chatGateway.emitMatchUpdate(match.id, updatedMatch);
+        this.chatGateway.emitMatchUpdate(notificationMatch.id, updatedMatch);
       }
     } catch (error) {
       console.warn('Failed to emit application update:', error);
@@ -461,6 +567,7 @@ export class ApplicationsService {
     const match = application.matchSlot.match;
     const slot = application.matchSlot;
     const matchId = match.id;
+    const applicantUserId = application.applicantUserId; // Store before deletion
 
     // Delete the application
     await this.applicationRepository.remove(application);
@@ -473,15 +580,22 @@ export class ApplicationsService {
         relations: ['slots', 'slots.applications'],
       });
 
+      if (!updatedMatch) {
+        return;
+      }
+
+      const isSingles = updatedMatch.format === MatchFormat.SINGLES;
+
       // Check if there are any other confirmed applications for this match
-      const hasOtherConfirmedApplications = updatedMatch?.slots?.some(s => 
+      const hasOtherConfirmedApplications = updatedMatch.slots?.some(s => 
         s.applications?.some(app => 
           app.status === ApplicationStatus.CONFIRMED
         )
       ) || false;
 
-      // If no other confirmed applications, revert match and slot status
-      if (!hasOtherConfirmedApplications && updatedMatch) {
+      // For singles: If no other confirmed applications, revert match to pending and notify waitlisted users
+      // For doubles: Keep existing logic
+      if (!hasOtherConfirmedApplications) {
         updatedMatch.status = MatchStatus.PENDING;
         await this.matchRepository.save(updatedMatch);
 
@@ -493,6 +607,28 @@ export class ApplicationsService {
           updatedSlot.status = SlotStatus.AVAILABLE;
           updatedSlot.confirmedAt = null as any;
           await this.matchSlotRepository.save(updatedSlot);
+        }
+
+        // For singles matches, notify all waitlisted users that a spot opened up
+        if (isSingles) {
+          const waitlistedApplications = await this.applicationRepository
+            .createQueryBuilder('app')
+            .innerJoin('app.matchSlot', 'slot')
+            .innerJoin('slot.match', 'm')
+            .where('m.id = :matchId', { matchId: updatedMatch.id })
+            .andWhere('app.status = :waitlisted', { waitlisted: ApplicationStatus.WAITLISTED })
+            .getMany();
+
+          for (const waitlistedApp of waitlistedApplications) {
+            await this.notificationsService.createNotification(
+              waitlistedApp.applicantUserId,
+              NotificationType.MATCH_ACCEPTED,
+              `A spot has opened up in a match you're waitlisted for. The creator can now approve your application.`,
+              {
+                matchId: updatedMatch.id,
+              },
+            );
+          }
         }
       }
     }
@@ -507,7 +643,7 @@ export class ApplicationsService {
         // Emit on /matches namespace
         // Emit on /matches namespace
         this.matchUpdatesGateway.emitMatchUpdate(matchId, updatedMatch);
-        this.matchUpdatesGateway.emitToUser(application.applicantUserId, 'application_withdrawn', {
+        this.matchUpdatesGateway.emitToUser(applicantUserId, 'application_withdrawn', {
           applicationId,
           matchId: matchId,
         });

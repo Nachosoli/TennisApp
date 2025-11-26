@@ -12,14 +12,11 @@ import { Court } from '@/types';
 import Link from 'next/link';
 import { useRequireAuth } from '@/hooks/useRequireAuth';
 import { PageLoader } from '@/components/ui/PageLoader';
-import { useAuthStore } from '@/stores/auth-store';
 
 function CourtsPageContent() {
   const { isLoading: authLoading, user } = useRequireAuth();
-  const { user: currentUser } = useAuthStore();
   const [courts, setCourts] = useState<Court[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const isAdmin = currentUser?.role === 'admin';
 
   useEffect(() => {
     if (user) {
@@ -47,16 +44,7 @@ function CourtsPageContent() {
   return (
     <Layout>
       <div className="space-y-6">
-        <div className="flex justify-between items-center">
-          <h1 className="text-3xl font-bold text-gray-900">Courts</h1>
-          {isAdmin && (
-            <Link href="/courts/create">
-              <Button variant="primary">
-                Create Court
-              </Button>
-            </Link>
-          )}
-        </div>
+        <h1 className="text-3xl font-bold text-gray-900">Courts</h1>
 
         {isLoading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

@@ -33,4 +33,9 @@ export const applicationsApi = {
   async withdraw(id: string): Promise<void> {
     await apiClient.delete(`/applications/${id}`);
   },
+
+  async approveFromWaitlist(id: string): Promise<Application> {
+    const response = await apiClient.put<Application>(`/applications/${id}/approve-from-waitlist`);
+    return response.data;
+  },
 };
