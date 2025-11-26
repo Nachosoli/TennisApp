@@ -656,7 +656,8 @@ export class AdminService {
    * ⚠️ REMOVE THIS METHOD AFTER USE
    */
   async wipeDatabase(adminId: string) {
-    const TABLES_TO_DELETE = [
+    try {
+      const TABLES_TO_DELETE = [
       'chat_messages',
       'results',
       'elo_logs',
@@ -672,7 +673,7 @@ export class AdminService {
       'push_subscriptions',
     ];
 
-    const deletionResults: Array<{ table: string; count: number }> = [];
+    const deletionResults: Array<{ table: string; count: number; error?: string }> = [];
 
     // Delete tables in order (respecting foreign key constraints)
     for (const tableName of TABLES_TO_DELETE) {
@@ -704,7 +705,8 @@ export class AdminService {
           deletionResults.push({ table: tableName, count: 0 });
         }
       } catch (error: any) {
-        // Continue with other tables even if one fails
+        // Log error but continue with other tables
+        console.error(`Error processing table ${tableName}:`, error.message);
         deletionResults.push({ table: tableName, count: 0 });
       }
     }
@@ -720,12 +722,16 @@ export class AdminService {
 
     const totalDeleted = deletionResults.reduce((sum, r) => sum + r.count, 0);
 
-    return {
-      success: true,
-      message: 'Database wipe completed successfully',
-      totalRecordsDeleted: totalDeleted,
-      breakdown: deletionResults.filter(r => r.count > 0),
-      tablesKept: ['courts', 'users'],
-    };
+      return {
+        success: true,
+        message: 'Database wipe completed successfully',
+        totalRecordsDeleted: totalDeleted,
+        breakdown: deletionResults.filter(r => r.count > 0),
+        tablesKept: ['courts', 'users'],
+      };
+    } catch (error: any) {
+      console.error('Database wipe error:', error);
+      throw new BadRequestException(`Database wipe failed: ${error.message}`);
+    }
   }
 }
