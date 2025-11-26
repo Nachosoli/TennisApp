@@ -100,6 +100,22 @@ export const adminApi = {
     return response.data;
   },
 
+  async getAllMatches(
+    page: number = 1,
+    limit: number = 50,
+    search?: string,
+    status?: string,
+  ) {
+    const params: any = { page, limit };
+    if (search) params.search = search;
+    if (status) params.status = status;
+    
+    const response = await apiClient.get<{ matches: Match[]; total: number }>('/admin/matches', {
+      params,
+    });
+    return response.data;
+  },
+
   async adjustScore(resultId: string, score: string, reason: string) {
     const response = await apiClient.patch(`/admin/results/${resultId}/adjust-score`, { score, reason });
     return response.data;

@@ -365,45 +365,46 @@ export default function AdminDashboard() {
             )}
 
             {/* Admin Actions */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <Card title="User Management">
-                <div className="space-y-3">
-                  <Button
-                    variant="primary"
-                    className="w-full"
-                    onClick={() => router.push('/admin/users')}
-                  >
+            <Card title="Management">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <Button
+                  variant="primary"
+                  className="w-full py-6 text-lg font-semibold"
+                  onClick={() => router.push('/admin/users')}
+                >
+                  <div className="flex flex-col items-center gap-2">
+                    <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                    </svg>
                     Manage Users
-                  </Button>
-                  <Button
-                    variant="outline"
-                    className="w-full"
-                    onClick={() => router.push('/admin/reports')}
-                  >
-                    View Reports
-                  </Button>
-                </div>
-              </Card>
-
-              <Card title="Content Management">
-                <div className="space-y-3">
-                  <Button
-                    variant="primary"
-                    className="w-full"
-                    onClick={() => router.push('/admin/courts')}
-                  >
+                  </div>
+                </Button>
+                <Button
+                  variant="primary"
+                  className="w-full py-6 text-lg font-semibold"
+                  onClick={() => router.push('/admin/courts')}
+                >
+                  <div className="flex flex-col items-center gap-2">
+                    <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                    </svg>
                     Manage Courts
-                  </Button>
-                  <Button
-                    variant="outline"
-                    className="w-full"
-                    onClick={() => router.push('/admin/matches')}
-                  >
+                  </div>
+                </Button>
+                <Button
+                  variant="primary"
+                  className="w-full py-6 text-lg font-semibold"
+                  onClick={() => router.push('/admin/matches')}
+                >
+                  <div className="flex flex-col items-center gap-2">
+                    <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+                    </svg>
                     Manage Matches
-                  </Button>
-                </div>
-              </Card>
-            </div>
+                  </div>
+                </Button>
+              </div>
+            </Card>
           </>
         )}
       </div>

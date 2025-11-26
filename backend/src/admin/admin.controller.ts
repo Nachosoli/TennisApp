@@ -139,6 +139,22 @@ export class AdminController {
   }
 
   // Match Management
+  @Get('matches')
+  @ApiOperation({ summary: 'Get all matches with pagination and filters' })
+  async getAllMatches(
+    @Query('page') page?: number,
+    @Query('limit') limit?: number,
+    @Query('search') search?: string,
+    @Query('status') status?: string,
+  ) {
+    return this.adminService.getAllMatches(
+      page ? Number(page) : 1,
+      limit ? Number(limit) : 50,
+      search,
+      status as any,
+    );
+  }
+
   @Post('matches/:matchId/override-confirmation')
   @ApiOperation({ summary: 'Override match confirmation' })
   async overrideConfirmation(

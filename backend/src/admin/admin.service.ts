@@ -590,6 +590,47 @@ export class AdminService {
   }
 
   /**
+   * Get all matches with pagination and filters
+   */
+  async getAllMatches(
+    page: number = 1,
+    limit: number = 50,
+    search?: string,
+    status?: MatchStatus,
+  ): Promise<{ matches: Match[]; total: number }> {
+    const query = this.matchRepository
+      .createQueryBuilder('match')
+      .leftJoinAndSelect('match.court', 'court')
+      .leftJoinAndSelect('match.creator', 'creator')
+      .leftJoinAndSelect('creator.stats', 'creatorStats')
+      .leftJoinAndSelect('match.slots', 'slots')
+      .leftJoinAndSelect('slots.applications', 'applications')
+      .leftJoinAndSelect('applications.applicant', 'applicant');
+
+    // Search by creator name or court name
+    if (search) {
+      query.andWhere(
+        '(LOWER(creator.firstName) LIKE LOWER(:search) OR LOWER(creator.lastName) LIKE LOWER(:search) OR LOWER(court.name) LIKE LOWER(:search))',
+        { search: `%${search}%` },
+      );
+    }
+
+    // Filter by status
+    if (status) {
+      query.andWhere('match.status = :status', { status });
+    }
+
+    const [matches, total] = await query
+      .orderBy('match.date', 'DESC')
+      .addOrderBy('match.createdAt', 'DESC')
+      .skip((page - 1) * limit)
+      .take(limit)
+      .getManyAndCount();
+
+    return { matches, total };
+  }
+
+  /**
    * Log an admin action
    */
   private async logAdminAction(
