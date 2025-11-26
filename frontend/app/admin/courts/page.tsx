@@ -21,14 +21,24 @@ export default function AdminCourtsPage() {
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
   const [search, setSearch] = useState('');
+  const [editingCourt, setEditingCourt] = useState<Court | null>(null);
+  const [editForm, setEditForm] = useState({
+    name: '',
+    address: '',
+    surface: 'hard' as 'hard' | 'clay' | 'grass' | 'indoor',
+    isPublic: true,
+  });
+  const [isSaving, setIsSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const limit = 50;
 
-  useEffect(() => {
+  const loadCourts = () => {
     if (!user || !isAdmin) {
       return;
     }
 
     setIsLoading(true);
+    setError(null);
     adminApi.getAllCourts(page, limit, search || undefined)
       .then((data) => {
         setCourts(data.courts);
@@ -36,9 +46,64 @@ export default function AdminCourtsPage() {
       })
       .catch((err) => {
         console.error('Failed to load courts:', err);
+        setError('Failed to load courts. Please try again.');
       })
       .finally(() => setIsLoading(false));
+  };
+
+  useEffect(() => {
+    loadCourts();
   }, [user?.id, isAdmin, page, search]);
+
+  const handleEdit = (court: Court) => {
+    setEditingCourt(court);
+    setEditForm({
+      name: court.name,
+      address: court.address,
+      surface: court.surface || 'hard',
+      isPublic: court.isPublic ?? true,
+    });
+    setError(null);
+  };
+
+  const handleCancelEdit = () => {
+    setEditingCourt(null);
+    setEditForm({
+      name: '',
+      address: '',
+      surface: 'hard',
+      isPublic: true,
+    });
+    setError(null);
+  };
+
+  const handleSave = async () => {
+    if (!editingCourt) return;
+
+    setIsSaving(true);
+    setError(null);
+
+    try {
+      // Transform frontend format to backend format
+      const updateData: any = {
+        name: editForm.name,
+        address: editForm.address,
+        surfaceType: editForm.surface, // Backend expects surfaceType
+        isPublic: editForm.isPublic,
+      };
+
+      await adminApi.editCourt(editingCourt.id, updateData);
+      
+      // Reload courts to get updated data
+      await loadCourts();
+      setEditingCourt(null);
+    } catch (err: any) {
+      console.error('Failed to update court:', err);
+      setError(err.response?.data?.message || 'Failed to update court. Please try again.');
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   if (authLoading) {
     return (
@@ -49,25 +114,10 @@ export default function AdminCourtsPage() {
   }
 
   if (!user || !isAdmin) {
-    return null; // Redirect handled by useRequireAdmin
+    return null;
   }
 
   const totalPages = Math.ceil(total / limit);
-
-  const getSurfaceColor = (surface: string | undefined) => {
-    switch (surface?.toLowerCase()) {
-      case 'clay':
-        return 'bg-green-50 border-green-200';
-      case 'grass':
-        return 'bg-emerald-50 border-emerald-200';
-      case 'hard':
-        return 'bg-blue-50 border-blue-200';
-      case 'indoor':
-        return 'bg-amber-50 border-amber-200';
-      default:
-        return 'bg-gray-50 border-gray-200';
-    }
-  };
 
   return (
     <Layout>
@@ -79,6 +129,15 @@ export default function AdminCourtsPage() {
           </Button>
         </div>
 
+        {/* Error Display */}
+        {error && (
+          <Card>
+            <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+              <p className="text-red-800">{error}</p>
+            </div>
+          </Card>
+        )}
+
         {/* Search */}
         <Card>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -89,7 +148,7 @@ export default function AdminCourtsPage() {
                 value={search}
                 onChange={(e) => {
                   setSearch(e.target.value);
-                  setPage(1); // Reset to first page on search
+                  setPage(1);
                 }}
               />
             </div>
@@ -133,50 +192,120 @@ export default function AdminCourtsPage() {
                   <tbody className="bg-white divide-y divide-gray-200">
                     {courts.map((court) => (
                       <tr key={court.id} className="hover:bg-gray-50">
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm font-medium text-gray-900">
-                            {court.name}
-                          </div>
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="text-sm text-gray-500">{court.address}</div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span className={`px-2 py-1 text-xs rounded capitalize ${
-                            court.surface === 'clay' 
-                              ? 'bg-green-100 text-green-800'
-                              : court.surface === 'grass'
-                              ? 'bg-emerald-100 text-emerald-800'
-                              : court.surface === 'hard'
-                              ? 'bg-blue-100 text-blue-800'
-                              : court.surface === 'indoor'
-                              ? 'bg-amber-100 text-amber-800'
-                              : 'bg-gray-100 text-gray-800'
-                          }`}>
-                            {court.surface || 'N/A'}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span className={`px-2 py-1 text-xs rounded ${
-                            court.isPublic ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
-                          }`}>
-                            {court.isPublic ? 'Public' : 'Private'}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm text-gray-500">
-                            {court.createdAt ? format(new Date(court.createdAt), 'MMM d, yyyy') : 'N/A'}
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => router.push(`/courts/${court.id}`)}
-                          >
-                            View
-                          </Button>
-                        </td>
+                        {editingCourt?.id === court.id ? (
+                          // Edit Mode
+                          <>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <Input
+                                value={editForm.name}
+                                onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+                                className="w-full"
+                              />
+                            </td>
+                            <td className="px-6 py-4">
+                              <Input
+                                value={editForm.address}
+                                onChange={(e) => setEditForm({ ...editForm, address: e.target.value })}
+                                className="w-full"
+                              />
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <select
+                                value={editForm.surface}
+                                onChange={(e) => setEditForm({ ...editForm, surface: e.target.value as any })}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                              >
+                                <option value="hard">Hard</option>
+                                <option value="clay">Clay</option>
+                                <option value="grass">Grass</option>
+                                <option value="indoor">Indoor</option>
+                              </select>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <select
+                                value={editForm.isPublic ? 'public' : 'private'}
+                                onChange={(e) => setEditForm({ ...editForm, isPublic: e.target.value === 'public' })}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                              >
+                                <option value="public">Public</option>
+                                <option value="private">Private</option>
+                              </select>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <div className="text-sm text-gray-500">
+                                {court.createdAt ? format(new Date(court.createdAt), 'MMM d, yyyy') : 'N/A'}
+                              </div>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm">
+                              <div className="flex gap-2">
+                                <Button
+                                  variant="primary"
+                                  size="sm"
+                                  onClick={handleSave}
+                                  disabled={isSaving}
+                                >
+                                  {isSaving ? 'Saving...' : 'Save'}
+                                </Button>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={handleCancelEdit}
+                                  disabled={isSaving}
+                                >
+                                  Cancel
+                                </Button>
+                              </div>
+                            </td>
+                          </>
+                        ) : (
+                          // View Mode
+                          <>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <div className="text-sm font-medium text-gray-900">
+                                {court.name}
+                              </div>
+                            </td>
+                            <td className="px-6 py-4">
+                              <div className="text-sm text-gray-500">{court.address}</div>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <span className={`px-2 py-1 text-xs rounded capitalize ${
+                                court.surface === 'clay' 
+                                  ? 'bg-green-100 text-green-800'
+                                  : court.surface === 'grass'
+                                  ? 'bg-emerald-100 text-emerald-800'
+                                  : court.surface === 'hard'
+                                  ? 'bg-blue-100 text-blue-800'
+                                  : court.surface === 'indoor'
+                                  ? 'bg-amber-100 text-amber-800'
+                                  : 'bg-gray-100 text-gray-800'
+                              }`}>
+                                {court.surface || 'N/A'}
+                              </span>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <span className={`px-2 py-1 text-xs rounded ${
+                                court.isPublic ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
+                              }`}>
+                                {court.isPublic ? 'Public' : 'Private'}
+                              </span>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <div className="text-sm text-gray-500">
+                                {court.createdAt ? format(new Date(court.createdAt), 'MMM d, yyyy') : 'N/A'}
+                              </div>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleEdit(court)}
+                              >
+                                Edit
+                              </Button>
+                            </td>
+                          </>
+                        )}
                       </tr>
                     ))}
                   </tbody>
@@ -216,4 +345,3 @@ export default function AdminCourtsPage() {
     </Layout>
   );
 }
-

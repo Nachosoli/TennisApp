@@ -66,7 +66,17 @@ export const adminApi = {
   },
 
   async editCourt(courtId: string, data: Partial<Court>) {
-    const response = await apiClient.put<Court>(`/admin/courts/${courtId}`, data);
+    // Transform surface to surfaceType if needed
+    const updateData: any = { ...data };
+    if (updateData.surface && !updateData.surfaceType) {
+      updateData.surfaceType = updateData.surface;
+      delete updateData.surface;
+    }
+    // Remove location field if present (backend doesn't accept it directly)
+    if (updateData.location) {
+      delete updateData.location;
+    }
+    const response = await apiClient.put<Court>(`/admin/courts/${courtId}`, updateData);
     return response.data;
   },
 

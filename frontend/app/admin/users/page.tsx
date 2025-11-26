@@ -23,24 +23,32 @@ export default function AdminUsersPage() {
   const [search, setSearch] = useState('');
   const [roleFilter, setRoleFilter] = useState<string>('');
   const [statusFilter, setStatusFilter] = useState<string>('');
+  const [error, setError] = useState<string | null>(null);
   const limit = 50;
 
-  useEffect(() => {
+  const loadUsers = () => {
     if (!user || !isAdmin) {
       return;
     }
 
     setIsLoading(true);
+    setError(null);
     const isActive = statusFilter === 'active' ? true : statusFilter === 'inactive' ? false : undefined;
     adminApi.getAllUsers(page, limit, search || undefined, roleFilter || undefined, isActive)
       .then((data) => {
         setUsers(data.users);
         setTotal(data.total);
+        setError(null);
       })
       .catch((err) => {
         console.error('Failed to load users:', err);
+        setError('Failed to load users. Please try again.');
       })
       .finally(() => setIsLoading(false));
+  };
+
+  useEffect(() => {
+    loadUsers();
   }, [user?.id, isAdmin, page, search, roleFilter, statusFilter]);
 
   if (authLoading) {
@@ -66,6 +74,26 @@ export default function AdminUsersPage() {
             Back to Dashboard
           </Button>
         </div>
+
+        {/* Error Display */}
+        {error && (
+          <Card>
+            <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+              <p className="text-red-800">{error}</p>
+              <Button
+                variant="outline"
+                size="sm"
+                className="mt-2"
+                onClick={() => {
+                  setError(null);
+                  loadUsers();
+                }}
+              >
+                Retry
+              </Button>
+            </div>
+          </Card>
+        )}
 
         {/* Search and Filters */}
         <Card>
