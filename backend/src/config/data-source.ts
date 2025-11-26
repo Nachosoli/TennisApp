@@ -4,9 +4,22 @@ import { config } from 'dotenv';
 config();
 
 // Get database configuration
-// Prefer DATABASE_PUBLIC_URL for external access (e.g., from local machine via railway run)
-// Use DATABASE_URL when running inside Railway's network
-const databaseUrl = process.env.DATABASE_PUBLIC_URL || process.env.DATABASE_URL;
+// When running locally via Railway CLI, DATABASE_URL points to internal hostname (.railway.internal)
+// which is not accessible from local machine. In that case, prefer DATABASE_PUBLIC_URL (proxy URL).
+// When running inside Railway's network, DATABASE_URL works fine.
+const databaseUrl = (() => {
+  const dbUrl = process.env.DATABASE_URL;
+  const publicUrl = process.env.DATABASE_PUBLIC_URL;
+  
+  // If DATABASE_URL contains .railway.internal, we're likely running locally via railway run
+  // In that case, use DATABASE_PUBLIC_URL (proxy) if available
+  if (dbUrl && dbUrl.includes('.railway.internal') && publicUrl) {
+    return publicUrl;
+  }
+  
+  // Otherwise, prefer DATABASE_URL (for Railway services) or fall back to DATABASE_PUBLIC_URL
+  return dbUrl || publicUrl;
+})();
 
 let dataSourceConfig: any;
 

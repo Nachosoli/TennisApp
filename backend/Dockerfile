@@ -14,9 +14,12 @@ COPY . .
 # Build the application
 RUN npm run build
 
+# Make startup script executable
+RUN chmod +x ./scripts/start.sh
+
 # Expose port
 EXPOSE 3001
 
-# Start the application
-CMD ["npm", "run", "start:prod"]
+# Start the application (runs migrations first)
+CMD ["./scripts/start.sh"]
 

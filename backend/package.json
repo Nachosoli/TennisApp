@@ -37,6 +37,9 @@
     "migration:generate": "typeorm-ts-node-commonjs migration:generate -d src/config/data-source.ts",
     "migration:run": "typeorm-ts-node-commonjs migration:run -d src/config/data-source.ts",
     "migration:revert": "typeorm-ts-node-commonjs migration:revert -d src/config/data-source.ts",
+    "migration:run:railway": "railway run npm run migration:run",
+    "migration:generate:railway": "railway run npm run migration:generate",
+    "migration:revert:railway": "railway run npm run migration:revert",
     "db:setup": "ts-node -r tsconfig-paths/register src/scripts/setup-database.ts"
   },
   "dependencies": {
