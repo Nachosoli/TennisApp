@@ -148,7 +148,7 @@ export class ChatService {
     return this.chatMessageRepository.find({
       where: { matchId },
       relations: ['user'],
-      order: { createdAt: 'DESC' }, // Newest first for message board style
+      order: { createdAt: 'ASC' }, // Oldest first for chat UI (older on top, newer on bottom)
     });
   }
 
