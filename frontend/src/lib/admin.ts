@@ -3,9 +3,20 @@ import { User, Court, Match, Report } from '@/types';
 
 export const adminApi = {
   // User Management
-  async getAllUsers(page: number = 1, limit: number = 50) {
+  async getAllUsers(
+    page: number = 1,
+    limit: number = 50,
+    search?: string,
+    role?: string,
+    isActive?: boolean,
+  ) {
+    const params: any = { page, limit };
+    if (search) params.search = search;
+    if (role) params.role = role;
+    if (isActive !== undefined) params.isActive = isActive.toString();
+    
     const response = await apiClient.get<{ users: User[]; total: number }>('/admin/users', {
-      params: { page, limit },
+      params,
     });
     return response.data;
   },
@@ -101,13 +112,29 @@ export const adminApi = {
 
   // Analytics
   async getAnalytics() {
-    const response = await apiClient.get('/admin/analytics');
+    const response = await apiClient.get('/analytics/dashboard');
     return response.data;
   },
 
   // Admin Actions
   async getAdminActions(limit: number = 100) {
     const response = await apiClient.get('/admin/actions', { params: { limit } });
+    return response.data;
+  },
+
+  // User Management - Additional Methods
+  async setUserHomeCourt(userId: string, courtId: string): Promise<User> {
+    const response = await apiClient.post<User>(`/admin/users/${userId}/home-court`, { courtId });
+    return response.data;
+  },
+
+  async getUserMatches(userId: string): Promise<Match[]> {
+    const response = await apiClient.get<Match[]>(`/admin/users/${userId}/matches`);
+    return response.data;
+  },
+
+  async getUserStats(userId: string) {
+    const response = await apiClient.get(`/admin/users/${userId}/stats`);
     return response.data;
   },
 };
