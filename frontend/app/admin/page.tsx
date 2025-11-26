@@ -265,7 +265,7 @@ export default function AdminDashboard() {
             </div>
 
             {/* ELO Distribution */}
-            {eloDistribution && (
+            {eloDistribution && eloDistribution.singles && eloDistribution.doubles && (
               <Card title="ELO Distribution">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
@@ -281,7 +281,7 @@ export default function AdminDashboard() {
                           {eloDistribution.singles?.min || 0} - {eloDistribution.singles?.max || 0}
                         </span>
                       </div>
-                      {eloDistribution.singles?.distribution && (
+                      {eloDistribution.singles?.distribution && Array.isArray(eloDistribution.singles.distribution) && (
                         <div className="mt-4 space-y-1">
                           {eloDistribution.singles.distribution.map((dist: any, index: number) => (
                             <div key={index} className="flex items-center justify-between text-xs">
@@ -306,7 +306,7 @@ export default function AdminDashboard() {
                           {eloDistribution.doubles?.min || 0} - {eloDistribution.doubles?.max || 0}
                         </span>
                       </div>
-                      {eloDistribution.doubles?.distribution && (
+                      {eloDistribution.doubles?.distribution && Array.isArray(eloDistribution.doubles.distribution) && (
                         <div className="mt-4 space-y-1">
                           {eloDistribution.doubles.distribution.map((dist: any, index: number) => (
                             <div key={index} className="flex items-center justify-between text-xs">
