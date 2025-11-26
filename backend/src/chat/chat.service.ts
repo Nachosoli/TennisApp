@@ -48,14 +48,6 @@ export class ChatService {
 
     const savedMessage = await this.chatMessageRepository.save(message);
     
-    // Load the message with user relation for frontend display
-    const messageWithUser = await this.chatMessageRepository.findOne({
-      where: { id: savedMessage.id },
-      relations: ['user'],
-    });
-    
-    return messageWithUser || savedMessage;
-
     // Get match participants and notify them (except sender)
     const matchWithRelations = await this.matchRepository.findOne({
       where: { id: createDto.matchId },
@@ -71,21 +63,25 @@ export class ChatService {
       }
 
       // Add applicants (handle multiple applications per slot)
-      matchWithRelations.slots.forEach((slot) => {
-        if (slot.applications && slot.applications.length > 0) {
-          slot.applications.forEach((application) => {
-            if (application.applicantUserId && application.applicantUserId !== userId) {
-              if (!participants.includes(application.applicantUserId)) {
-                participants.push(application.applicantUserId);
+      if (matchWithRelations.slots) {
+        matchWithRelations.slots.forEach((slot) => {
+          if (slot.applications && slot.applications.length > 0) {
+            slot.applications.forEach((application) => {
+              if (application.applicantUserId && application.applicantUserId !== userId) {
+                if (!participants.includes(application.applicantUserId)) {
+                  participants.push(application.applicantUserId);
+                }
               }
-            }
-          });
-        }
-      });
+            });
+          }
+        });
+      }
 
       // Send notifications to all participants
       const sender = await this.userRepository.findOne({ where: { id: userId } });
-      const senderName = sender ? `${sender.firstName} ${sender.lastName}` : 'Someone';
+      const senderName = sender && sender.firstName && sender.lastName 
+        ? `${sender.firstName} ${sender.lastName}` 
+        : 'Someone';
 
       for (const participantId of participants) {
         await this.notificationsService.createNotification(
@@ -95,15 +91,25 @@ export class ChatService {
           {
             senderName,
             courtName: matchWithRelations.court?.name || 'Court',
-            date: matchWithRelations.date.toLocaleDateString(),
+            date: matchWithRelations.date 
+              ? (matchWithRelations.date instanceof Date 
+                  ? matchWithRelations.date.toLocaleDateString()
+                  : new Date(matchWithRelations.date).toLocaleDateString())
+              : 'Unknown date',
             messagePreview: createDto.message.substring(0, 50),
             matchId: matchWithRelations.id,
           },
         );
       }
     }
-
-    return savedMessage;
+    
+    // Load the message with user relation for frontend display
+    const messageWithUser = await this.chatMessageRepository.findOne({
+      where: { id: savedMessage.id },
+      relations: ['user'],
+    });
+    
+    return messageWithUser || savedMessage;
   }
 
   async verifyMatchAccess(userId: string, matchId: string): Promise<boolean> {
