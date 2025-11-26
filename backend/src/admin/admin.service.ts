@@ -711,14 +711,14 @@ export class AdminService {
       }
     }
 
-    // Log admin action
-    await this.logAdminAction(
-      adminId,
-      ActionType.DELETE_USER, // Using existing action type
-      TargetType.USER, // Using existing target type
-      'database-wipe',
-      { deletionResults, message: 'Database wipe - deleted all data except courts and users' },
-    );
+    // Log admin action (skip logging since we're deleting admin_actions table anyway)
+    // await this.logAdminAction(
+    //   adminId,
+    //   ActionType.DELETE_USER,
+    //   TargetType.USER,
+    //   'database-wipe',
+    //   { deletionResults, message: 'Database wipe - deleted all data except courts and users' },
+    // );
 
     const totalDeleted = deletionResults.reduce((sum, r) => sum + r.count, 0);
 
