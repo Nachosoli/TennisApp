@@ -198,6 +198,20 @@ export default function DashboardPage() {
           </Card>
         )}
 
+        {/* Performance Overview Section */}
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-xl font-semibold text-gray-900">Performance Overview</h2>
+          <Link 
+            href="/stats" 
+            className="text-sm text-gray-600 hover:text-blue-600 flex items-center space-x-1 transition-colors"
+          >
+            <span>View Full Statistics</span>
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            </svg>
+          </Link>
+        </div>
+
         {/* Statistics Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
           <Card className="bg-white">
