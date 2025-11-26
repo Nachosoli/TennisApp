@@ -219,7 +219,7 @@ export default function AdminMatchesPage() {
                   <tbody className="bg-white divide-y divide-gray-200">
                     {matches.map((match) => {
                       const confirmedApplicant = getConfirmedApplicant(match);
-                      const matchDate = match.date instanceof Date ? match.date : new Date(match.date);
+                      const matchDate = match.date ? new Date(match.date) : new Date();
                       
                       return (
                         <tr key={match.id} className="hover:bg-gray-50">
@@ -365,4 +365,7 @@ export default function AdminMatchesPage() {
     </Layout>
   );
 }
+
+
+
 
