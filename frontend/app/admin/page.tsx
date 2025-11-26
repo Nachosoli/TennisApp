@@ -91,7 +91,7 @@ export default function AdminDashboard() {
                       <p className="text-3xl font-bold text-blue-600 mt-2">
                         {userGrowth?.totalUsers || 0}
                       </p>
-                      {userGrowth?.newUsersLast30Days > 0 && (
+                      {userGrowth?.newUsersLast30Days && userGrowth.newUsersLast30Days > 0 && (
                         <p className="text-xs text-gray-500 mt-1">
                           +{userGrowth.newUsersLast30Days} this month
                         </p>
@@ -114,7 +114,7 @@ export default function AdminDashboard() {
                       <p className="text-3xl font-bold text-green-600 mt-2">
                         {userGrowth?.activeUsers || 0}
                       </p>
-                      {userGrowth?.totalUsers > 0 && (
+                      {userGrowth?.totalUsers && userGrowth.totalUsers > 0 && userGrowth?.activeUsers !== undefined && (
                         <p className="text-xs text-gray-500 mt-1">
                           {((userGrowth.activeUsers / userGrowth.totalUsers) * 100).toFixed(1)}% of total
                         </p>
@@ -137,7 +137,7 @@ export default function AdminDashboard() {
                       <p className="text-3xl font-bold text-purple-600 mt-2">
                         {matchCompletion?.totalMatches || 0}
                       </p>
-                      {matchCompletion?.completedMatches > 0 && (
+                      {matchCompletion?.completedMatches && matchCompletion.completedMatches > 0 && (
                         <p className="text-xs text-gray-500 mt-1">
                           {matchCompletion.completedMatches} completed
                         </p>
@@ -216,26 +216,30 @@ export default function AdminDashboard() {
             {/* User Growth & Popular Courts */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <Card title="User Growth (Last 6 Months)">
-                {userGrowth?.monthlyGrowth && userGrowth.monthlyGrowth.length > 0 ? (
+                {userGrowth?.monthlyGrowth && Array.isArray(userGrowth.monthlyGrowth) && userGrowth.monthlyGrowth.length > 0 ? (
                   <div className="space-y-2">
-                    {userGrowth.monthlyGrowth.map((month: any, index: number) => (
-                      <div key={index} className="flex items-center justify-between">
-                        <span className="text-sm text-gray-600">{month.month}</span>
-                        <div className="flex items-center gap-2">
-                          <div className="w-32 bg-gray-200 rounded-full h-2">
-                            <div
-                              className="bg-blue-600 h-2 rounded-full"
-                              style={{
-                                width: `${Math.min((month.count / Math.max(...userGrowth.monthlyGrowth.map((m: any) => m.count))) * 100, 100)}%`,
-                              }}
-                            />
+                    {userGrowth.monthlyGrowth.map((month: any, index: number) => {
+                      const maxCount = Math.max(...userGrowth.monthlyGrowth.map((m: any) => m.count || 0), 1);
+                      const percentage = maxCount > 0 ? Math.min((month.count || 0) / maxCount * 100, 100) : 0;
+                      return (
+                        <div key={index} className="flex items-center justify-between">
+                          <span className="text-sm text-gray-600">{month.month}</span>
+                          <div className="flex items-center gap-2">
+                            <div className="w-32 bg-gray-200 rounded-full h-2">
+                              <div
+                                className="bg-blue-600 h-2 rounded-full"
+                                style={{
+                                  width: `${percentage}%`,
+                                }}
+                              />
+                            </div>
+                            <span className="text-sm font-medium text-gray-900 w-8 text-right">
+                              {month.count || 0}
+                            </span>
                           </div>
-                          <span className="text-sm font-medium text-gray-900 w-8 text-right">
-                            {month.count}
-                          </span>
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 ) : (
                   <p className="text-gray-500 text-sm">No growth data available</p>
@@ -328,12 +332,12 @@ export default function AdminDashboard() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
                     <h4 className="font-semibold text-gray-900 mb-3">Peak Days</h4>
-                    {peakUsage.peakDays && peakUsage.peakDays.length > 0 ? (
+                    {peakUsage.peakDays && Array.isArray(peakUsage.peakDays) && peakUsage.peakDays.length > 0 ? (
                       <div className="space-y-2">
                         {peakUsage.peakDays.map((day: any, index: number) => (
                           <div key={index} className="flex items-center justify-between">
-                            <span className="text-sm text-gray-600">{day.day}</span>
-                            <span className="text-sm font-medium text-gray-900">{day.count} matches</span>
+                            <span className="text-sm text-gray-600">{day.day || 'N/A'}</span>
+                            <span className="text-sm font-medium text-gray-900">{day.matchCount || day.count || 0} matches</span>
                           </div>
                         ))}
                       </div>
@@ -343,7 +347,7 @@ export default function AdminDashboard() {
                   </div>
                   <div>
                     <h4 className="font-semibold text-gray-900 mb-3">Peak Hours</h4>
-                    {peakUsage.peakHours && peakUsage.peakHours.length > 0 ? (
+                    {peakUsage.peakHours && Array.isArray(peakUsage.peakHours) && peakUsage.peakHours.length > 0 ? (
                       <div className="space-y-2">
                         {peakUsage.peakHours.map((hour: any, index: number) => (
                           <div key={index} className="flex items-center justify-between">
