@@ -453,7 +453,7 @@ export default function MatchDetailPage() {
 
         {/* Chat Section - Only show for confirmed matches */}
         {currentMatch.status?.toLowerCase() === 'confirmed' && (
-          <Card title="Match Chat">
+          <Card>
             <ChatWindow matchId={matchId} />
           </Card>
         )}
