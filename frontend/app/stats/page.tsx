@@ -20,6 +20,32 @@ export default function StatsPage() {
   const [matchType, setMatchType] = useState<'singles' | 'doubles' | undefined>(undefined);
   const [isLoading, setIsLoading] = useState(true);
 
+  // All hooks must be called before any conditional returns
+  useEffect(() => {
+    if (!user) {
+      return;
+    }
+
+    const loadStats = async () => {
+      setIsLoading(true);
+      try {
+        const [userStats, history] = await Promise.all([
+          statsApi.getUserStats(user.id),
+          statsApi.getEloHistory(user.id, matchType),
+        ]);
+        setStats(userStats);
+        setEloHistory(history);
+      } catch (error) {
+        console.error('Failed to load stats:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadStats();
+  }, [user, matchType]);
+
+  // Conditional returns AFTER all hooks
   if (authLoading) {
     return (
       <Layout>
@@ -31,32 +57,6 @@ export default function StatsPage() {
   if (!user) {
     return null; // Redirect handled by useRequireAuth
   }
-
-  useEffect(() => {
-    if (!user) {
-      return;
-    }
-
-    loadStats();
-  }, [user, router, matchType]);
-
-  const loadStats = async () => {
-    if (!user) return;
-    
-    setIsLoading(true);
-    try {
-      const [userStats, history] = await Promise.all([
-        statsApi.getUserStats(user.id),
-        statsApi.getEloHistory(user.id, matchType),
-      ]);
-      setStats(userStats);
-      setEloHistory(history);
-    } catch (error) {
-      console.error('Failed to load stats:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   if (isLoading) {
     return (
@@ -86,7 +86,7 @@ export default function StatsPage() {
     <Layout>
       <div className="max-w-6xl mx-auto space-y-6">
         <div className="flex justify-between items-center">
-          <h1 className="text-3xl font-bold text-gray-900">My Statistics</h1>
+          <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900">My Statistics</h1>
           <Button variant="outline" onClick={() => router.push('/profile')}>
             Back to Profile
           </Button>
