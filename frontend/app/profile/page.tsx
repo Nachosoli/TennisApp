@@ -20,6 +20,7 @@ import { useRequireAuth } from '@/hooks/useRequireAuth';
 import { PageLoader } from '@/components/ui/PageLoader';
 import { courtsApi } from '@/lib/courts';
 import { useLoadScript } from '@react-google-maps/api';
+import { getRatingValueOptions, getMaxRatingValue, getMinRatingValue, RatingType } from '@/lib/rating-utils';
 
 const profileSchema = z.object({
   firstName: z.string().min(1, 'First name is required'),
@@ -32,7 +33,7 @@ const profileSchema = z.object({
     { message: 'Please select your gender' }
   ),
   ratingType: z.enum(['utr', 'usta', 'ultimate', 'custom', '']).optional(),
-  ratingValue: z.number().min(0).max(12, 'Rating must be between 0 and 12').optional(),
+  ratingValue: z.number().min(0).max(16.5).optional(), // Max is 16.5 for UTR
 }).refine(
   (data) => {
     // Both must be empty or both must be populated
@@ -125,12 +126,33 @@ function ProfilePageContent() {
     register,
     handleSubmit,
     watch,
+    setValue,
     formState: { errors },
     reset,
     getValues,
   } = useForm<ProfileFormData>({
     resolver: zodResolver(profileSchema),
   });
+
+  const selectedRatingType = watch('ratingType') as RatingType;
+
+  // Reset rating value when rating type changes
+  useEffect(() => {
+    if (selectedRatingType && selectedRatingType !== '') {
+      const options = getRatingValueOptions(selectedRatingType);
+      if (options.length > 0) {
+        // Set to first option if current value is not valid for new type
+        const currentValue = watch('ratingValue');
+        const isValid = options.some(opt => opt.value === currentValue);
+        if (!isValid) {
+          setValue('ratingValue', options[0].value);
+        }
+      }
+    } else {
+      // Clear rating value if rating type is cleared
+      setValue('ratingValue', undefined);
+    }
+  }, [selectedRatingType, setValue, watch]);
 
   // Fetch fresh user data when component mounts to ensure phone number is loaded
   useEffect(() => {
@@ -824,7 +846,7 @@ function ProfilePageContent() {
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Rating Value {watch('ratingType') && watch('ratingType') !== '' && watch('ratingType') !== undefined ? '*' : ''}
+                  Rating Value {selectedRatingType && selectedRatingType !== '' ? '*' : ''}
                 </label>
                 <select
                   {...register('ratingValue', { 
@@ -832,17 +854,15 @@ function ProfilePageContent() {
                     valueAsNumber: true,
                   })}
                   value={watch('ratingValue')?.toString() || ''}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  disabled={!selectedRatingType || selectedRatingType === ''}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed"
                 >
                   <option value="">Select rating value</option>
-                  {Array.from({ length: 25 }, (_, i) => {
-                    const value = i * 0.5;
-                    return (
-                      <option key={value} value={value.toString()}>
-                        {value}
-                      </option>
-                    );
-                  })}
+                  {selectedRatingType && selectedRatingType !== '' && getRatingValueOptions(selectedRatingType).map((option) => (
+                    <option key={option.value} value={option.value.toString()}>
+                      {option.label}
+                    </option>
+                  ))}
                 </select>
                 {errors.ratingValue && (
                   <p className="mt-1 text-sm text-red-600">{errors.ratingValue.message}</p>

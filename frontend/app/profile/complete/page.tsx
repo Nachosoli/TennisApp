@@ -16,12 +16,24 @@ import { PhotoUpload } from '@/components/PhotoUpload';
 import { PageLoader } from '@/components/ui/PageLoader';
 import { getErrorMessage } from '@/lib/errors';
 import { Court, User } from '@/types';
+import { getRatingValueOptions, getMaxRatingValue, getMinRatingValue, RatingType } from '@/lib/rating-utils';
 
 const completeProfileSchema = z.object({
   bio: z.string().max(500, 'Bio must be 500 characters or less').optional(),
   ratingType: z.enum(['utr', 'usta', 'ultimate', 'custom', '']).optional(),
-  ratingValue: z.number().min(0).max(12, 'Rating must be between 0 and 12'),
-});
+  ratingValue: z.number().min(0).max(16.5), // Max is 16.5 for UTR
+}).refine(
+  (data) => {
+    // Both must be empty or both must be populated
+    const hasRatingType = data.ratingType !== undefined && data.ratingType !== null && data.ratingType !== '';
+    const hasRatingValue = data.ratingValue !== undefined && data.ratingValue !== null;
+    return hasRatingType === hasRatingValue;
+  },
+  {
+    message: 'Rating Type and Rating Value must both be set or both be empty',
+    path: ['ratingValue'],
+  }
+);
 
 type CompleteProfileFormData = z.infer<typeof completeProfileSchema>;
 
@@ -53,13 +65,29 @@ export default function CompleteProfilePage() {
 
   // Watch for changes
   const watchedValues = watch();
+  const selectedRatingType = watch('ratingType') as RatingType;
+  
+  // Reset rating value when rating type changes
+  useEffect(() => {
+    if (selectedRatingType) {
+      const options = getRatingValueOptions(selectedRatingType);
+      if (options.length > 0) {
+        // Set to first option if current value is not valid for new type
+        const currentValue = watch('ratingValue');
+        const isValid = options.some(opt => opt.value === currentValue);
+        if (!isValid) {
+          setValue('ratingValue', options[0].value);
+        }
+      }
+    }
+  }, [selectedRatingType, setValue, watch]);
   
   useEffect(() => {
     if (user) {
       reset({
         bio: user.bio || '',
         ratingType: user.ratingType || undefined,
-        ratingValue: user.ratingValue ?? 3.0,
+        ratingValue: user.ratingValue ?? undefined,
       });
       initialPhotoUrlRef.current = (user as any).photoUrl || null;
       setPhotoChanged(false);
@@ -202,24 +230,23 @@ export default function CompleteProfilePage() {
 
               <div>
                 <label className="block text-sm font-semibold text-gray-900 mb-1.5">
-                  Rating Value *
+                  Rating Value {selectedRatingType && selectedRatingType !== '' ? '*' : ''}
                 </label>
                 <select
                   {...register('ratingValue', { 
-                    setValueAs: (v) => v === '' ? 3.0 : parseFloat(v),
+                    setValueAs: (v) => v === '' ? undefined : parseFloat(v),
                     valueAsNumber: true,
                   })}
-                  value={watch('ratingValue')?.toString() || '3.0'}
-                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 bg-white"
+                  value={watch('ratingValue')?.toString() || ''}
+                  disabled={!selectedRatingType || selectedRatingType === ''}
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 bg-white disabled:bg-gray-100 disabled:cursor-not-allowed"
                 >
-                  {Array.from({ length: 25 }, (_, i) => {
-                    const value = i * 0.5;
-                    return (
-                      <option key={value} value={value.toString()}>
-                        {value}
-                      </option>
-                    );
-                  })}
+                  <option value="">Select rating value</option>
+                  {selectedRatingType && selectedRatingType !== '' && getRatingValueOptions(selectedRatingType).map((option) => (
+                    <option key={option.value} value={option.value.toString()}>
+                      {option.label}
+                    </option>
+                  ))}
                 </select>
                 {errors.ratingValue && (
                   <p className="mt-1.5 text-sm font-medium text-red-700">{errors.ratingValue.message}</p>

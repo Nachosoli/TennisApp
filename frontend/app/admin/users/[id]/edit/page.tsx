@@ -14,13 +14,14 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { User } from '@/types';
 import { getErrorMessage } from '@/lib/errors';
+import { getRatingValueOptions, RatingType } from '@/lib/rating-utils';
 
 const editUserSchema = z.object({
   firstName: z.string().min(1, 'First name is required').optional(),
   lastName: z.string().min(1, 'Last name is required').optional(),
   email: z.string().email('Invalid email').optional(),
   ratingType: z.enum(['utr', 'usta', 'ultimate', 'custom']).optional().or(z.literal('')),
-  ratingValue: z.number().min(0).max(12, 'Rating must be between 0 and 12').optional(),
+  ratingValue: z.number().min(0).max(16.5).optional(), // Max is 16.5 for UTR
   isActive: z.boolean().optional(),
 });
 
@@ -42,11 +43,33 @@ export default function AdminEditUserPage() {
   const {
     register,
     handleSubmit,
+    watch,
+    setValue,
     formState: { errors },
     reset,
   } = useForm<EditUserFormData>({
     resolver: zodResolver(editUserSchema),
   });
+
+  const selectedRatingType = watch('ratingType') as RatingType;
+
+  // Reset rating value when rating type changes
+  useEffect(() => {
+    if (selectedRatingType && selectedRatingType !== '') {
+      const options = getRatingValueOptions(selectedRatingType);
+      if (options.length > 0) {
+        // Set to first option if current value is not valid for new type
+        const currentValue = watch('ratingValue');
+        const isValid = options.some(opt => opt.value === currentValue);
+        if (!isValid) {
+          setValue('ratingValue', options[0].value);
+        }
+      }
+    } else {
+      // Clear rating value if rating type is cleared
+      setValue('ratingValue', undefined);
+    }
+  }, [selectedRatingType, setValue, watch]);
 
   useEffect(() => {
     if (!currentUser) return;
@@ -201,14 +224,22 @@ export default function AdminEditUserPage() {
                 <label className="block text-sm font-semibold text-gray-900 mb-1.5">
                   Rating Value
                 </label>
-                <input
-                  type="number"
-                  step="0.5"
-                  min="0"
-                  max="12"
-                  {...register('ratingValue', { valueAsNumber: true })}
-                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 bg-white"
-                />
+                <select
+                  {...register('ratingValue', { 
+                    setValueAs: (v) => v === '' ? undefined : parseFloat(v),
+                    valueAsNumber: true,
+                  })}
+                  value={watch('ratingValue')?.toString() || ''}
+                  disabled={!selectedRatingType || selectedRatingType === ''}
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 bg-white disabled:bg-gray-100 disabled:cursor-not-allowed"
+                >
+                  <option value="">Select rating value</option>
+                  {selectedRatingType && selectedRatingType !== '' && getRatingValueOptions(selectedRatingType).map((option) => (
+                    <option key={option.value} value={option.value.toString()}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
                 {errors.ratingValue && (
                   <p className="mt-1.5 text-sm font-medium text-red-700">{errors.ratingValue.message}</p>
                 )}

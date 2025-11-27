@@ -14,6 +14,7 @@ import { useRequireAuth } from '@/hooks/useRequireAuth';
 import { PageLoader } from '@/components/ui/PageLoader';
 import Link from 'next/link';
 import { Button } from '@/components/ui/Button';
+import { isRatingInSkillLevel, SkillLevel, RatingType } from '@/lib/rating-utils';
 
 export default function CalendarPage() {
   const { isLoading: authLoading, user } = useRequireAuth();
@@ -66,31 +67,22 @@ export default function CalendarPage() {
     }
   }, [authStoreUser?.homeCourtId]);
 
-  // Helper function to check if a rating falls within a skill level range
-  const isRatingInRange = (rating: number | undefined, skillLevel: string): boolean => {
-    if (rating === undefined || rating === null) return false; // Exclude matches where creator has no rating
+  // Helper function to check if a rating falls within a skill level range based on rating type
+  const isRatingInRange = (rating: number | undefined, ratingType: RatingType | undefined, skillLevel: string): boolean => {
+    if (rating === undefined || rating === null || !ratingType) return false; // Exclude matches where creator has no rating or rating type
     
-    switch (skillLevel) {
-      case 'BEGINNER':
-        return rating >= 0.5 && rating <= 3.0;
-      case 'INTERMEDIATE':
-        return rating > 3.0 && rating < 4.0; // Changed to < 4.0 so 4.0 is Advanced
-      case 'ADVANCED':
-        return rating >= 4.0 && rating <= 5.0; // Changed to >= 4.0 to include 4.0
-      case 'PRO':
-        return rating > 5.0;
-      default:
-        return true; // If no skill level filter, include all
-    }
+    // Use rating-type-aware skill level checking
+    return isRatingInSkillLevel(ratingType, rating, skillLevel as SkillLevel);
   };
 
   // Calculate match count and filtered matches based on filters
   useEffect(() => {
     const filtered = allMatches.filter(match => {
-      // Skill level filter: compare creator's rating against the selected range
+      // Skill level filter: compare creator's rating against the selected range based on their rating type
       if (filters.skillLevel) {
         const creatorRating = match.creator?.ratingValue;
-        if (!isRatingInRange(creatorRating, filters.skillLevel)) return false;
+        const creatorRatingType = match.creator?.ratingType as RatingType | undefined;
+        if (!isRatingInRange(creatorRating, creatorRatingType, filters.skillLevel)) return false;
       }
       
       // Gender filter: only apply if filter is set
