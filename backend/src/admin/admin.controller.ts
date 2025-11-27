@@ -215,4 +215,12 @@ export class AdminController {
   async getUserStats(@Param('userId') userId: string) {
     return this.adminService.getUserStats(userId);
   }
+
+  // TEMPORARY: Admin endpoint to wipe database
+  // ⚠️ REMOVE THIS ENDPOINT AFTER USE
+  @Post('wipe-database')
+  @ApiOperation({ summary: 'Wipe all database tables except courts and users (TEMPORARY)' })
+  async wipeDatabase(@CurrentUser('id') adminId: string) {
+    return this.adminService.wipeDatabase(adminId);
+  }
 }
