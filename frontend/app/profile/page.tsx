@@ -134,11 +134,11 @@ function ProfilePageContent() {
     resolver: zodResolver(profileSchema),
   });
 
-  const selectedRatingType = watch('ratingType') as RatingType;
+  const selectedRatingType = watch('ratingType');
 
   // Reset rating value when rating type changes
   useEffect(() => {
-    if (selectedRatingType && selectedRatingType !== '') {
+    if (selectedRatingType && (selectedRatingType === 'utr' || selectedRatingType === 'usta' || selectedRatingType === 'ultimate' || selectedRatingType === 'custom')) {
       const options = getRatingValueOptions(selectedRatingType);
       if (options.length > 0) {
         // Set to first option if current value is not valid for new type
@@ -846,7 +846,7 @@ function ProfilePageContent() {
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Rating Value {selectedRatingType && selectedRatingType !== '' ? '*' : ''}
+                  Rating Value {selectedRatingType && (selectedRatingType === 'utr' || selectedRatingType === 'usta' || selectedRatingType === 'ultimate' || selectedRatingType === 'custom') ? '*' : ''}
                 </label>
                 <select
                   {...register('ratingValue', { 
@@ -854,11 +854,11 @@ function ProfilePageContent() {
                     valueAsNumber: true,
                   })}
                   value={watch('ratingValue')?.toString() || ''}
-                  disabled={!selectedRatingType || selectedRatingType === ''}
+                  disabled={!selectedRatingType || (selectedRatingType !== 'utr' && selectedRatingType !== 'usta' && selectedRatingType !== 'ultimate' && selectedRatingType !== 'custom')}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed"
                 >
                   <option value="">Select rating value</option>
-                  {selectedRatingType && selectedRatingType !== '' && getRatingValueOptions(selectedRatingType).map((option) => (
+                  {selectedRatingType && (selectedRatingType === 'utr' || selectedRatingType === 'usta' || selectedRatingType === 'ultimate' || selectedRatingType === 'custom') && getRatingValueOptions(selectedRatingType as RatingType).map((option) => (
                     <option key={option.value} value={option.value.toString()}>
                       {option.label}
                     </option>
