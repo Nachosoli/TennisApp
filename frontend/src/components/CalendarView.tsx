@@ -55,9 +55,10 @@ export const CalendarView = ({ filters, onDateSelect }: CalendarViewProps) => {
       ...filters,
     })
       .then((matches) => {
-        // Filter out cancelled matches, confirmed matches (for non-creators), and user's own matches
+        // Filter out cancelled matches, completed matches, confirmed matches (for non-creators), and user's own matches
         const filtered = matches.filter(match => {
           if (match.status?.toLowerCase() === 'cancelled') return false;
+          if (match.status?.toLowerCase() === 'completed') return false;
           if (user && match.creatorUserId === user.id) return false;
           
           // Check if user has a waitlisted application for this match
@@ -323,11 +324,15 @@ export const CalendarView = ({ filters, onDateSelect }: CalendarViewProps) => {
                             <span>Format: {match.format === 'singles' ? 'Singles' : match.format === 'doubles' ? 'Doubles' : match.format || 'N/A'}</span>
                           </div>
                         )}
-                        {match.slots && match.slots.length > 0 && (
+                                        {hasUserWaitlisted ? (
+                          <div>
+                            <span className="text-orange-700 font-medium">You are already on the waitlist</span>
+                          </div>
+                        ) : match.slots && match.slots.length > 0 ? (
                           <div>
                             <span>{match.slots.length} time slot{match.slots.length !== 1 ? 's' : ''} available</span>
                           </div>
-                        )}
+                        ) : null}
                       </div>
                       <Link href={`/matches/${match.id}`}>
                         <Button 

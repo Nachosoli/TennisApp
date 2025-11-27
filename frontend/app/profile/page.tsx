@@ -316,8 +316,10 @@ function ProfilePageContent() {
       setHasSearched(false);
       setShowFacilityResults(false);
       
-      // Refresh page to show updated home court
-      router.refresh();
+      // Scroll to top of form on mobile after saving facility
+      if (window.innerWidth < 768 && formRef.current) {
+        formRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
     } catch (err: any) {
       const errorMessage = getErrorMessage(err);
       setError(errorMessage);
@@ -514,6 +516,8 @@ function ProfilePageContent() {
     );
   }
 
+  const formRef = useRef<HTMLFormElement>(null);
+
   return (
     <Layout>
       <div className="max-w-2xl mx-auto space-y-6">
@@ -531,7 +535,7 @@ function ProfilePageContent() {
         </Card>
 
         <Card title="Personal Information">
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+          <form ref={formRef} onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             {error && (
               <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
                 {error}

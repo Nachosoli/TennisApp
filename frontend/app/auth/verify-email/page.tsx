@@ -3,6 +3,7 @@
 import { useEffect, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { authApi } from '@/lib/auth';
+import { useAuthStore } from '@/stores/auth-store';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
@@ -12,6 +13,7 @@ import { getErrorMessage } from '@/lib/errors';
 function VerifyEmailPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { setUser } = useAuthStore();
   const [status, setStatus] = useState<'verifying' | 'success' | 'error'>('verifying');
   const [error, setError] = useState<string | null>(null);
 
@@ -28,6 +30,14 @@ function VerifyEmailPageContent() {
     const verifyEmail = async () => {
       try {
         await authApi.verifyEmail(email, token);
+        // Refresh user data to get updated emailVerified status
+        try {
+          const updatedUser = await authApi.getCurrentUser();
+          setUser(updatedUser);
+        } catch (refreshError) {
+          console.error('Failed to refresh user data:', refreshError);
+          // Continue anyway - user can refresh manually
+        }
         setStatus('success');
         // Redirect to profile after 3 seconds
         setTimeout(() => {
@@ -41,7 +51,7 @@ function VerifyEmailPageContent() {
     };
 
     verifyEmail();
-  }, [searchParams, router]);
+  }, [searchParams, router, setUser]);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">

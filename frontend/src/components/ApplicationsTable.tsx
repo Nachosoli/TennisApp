@@ -237,14 +237,14 @@ export const ApplicationsTable = ({ matchId, matchFormat = 'singles', matchStatu
               </div>
               {(application.status?.toLowerCase() === 'pending' || 
                 (application.status?.toLowerCase() === 'waitlisted' && matchStatus?.toLowerCase() === 'pending' && matchFormat === 'singles')) && (
-                <div className="flex flex-col gap-2 pt-2 border-t border-gray-200">
+                <div className="flex flex-row gap-2 pt-2 border-t border-gray-200">
                   {application.status?.toLowerCase() === 'pending' && (
                     <>
                       <Button
                         variant="primary"
                         size="sm"
                         onClick={() => handleConfirm(application.id)}
-                        className="w-full"
+                        className="flex-1"
                       >
                         Confirm
                       </Button>
@@ -252,7 +252,7 @@ export const ApplicationsTable = ({ matchId, matchFormat = 'singles', matchStatu
                         variant="danger"
                         size="sm"
                         onClick={() => handleReject(application.id)}
-                        className="w-full"
+                        className="flex-1"
                       >
                         Reject
                       </Button>
@@ -264,15 +264,15 @@ export const ApplicationsTable = ({ matchId, matchFormat = 'singles', matchStatu
                         variant="primary"
                         size="sm"
                         onClick={() => handleApproveFromWaitlist(application.id)}
-                        className="w-full"
+                        className="flex-1"
                       >
-                        Approve from Waitlist
+                        Approve
                       </Button>
                       <Button
                         variant="danger"
                         size="sm"
                         onClick={() => handleReject(application.id)}
-                        className="w-full"
+                        className="flex-1"
                       >
                         Reject
                       </Button>

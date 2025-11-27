@@ -49,8 +49,9 @@ export class NotificationsService {
       where: { userId, notificationType: type },
     });
 
-    // Default preferences: Critical notifications ON, others OFF
-    const isCritical = type === NotificationType.MATCH_CONFIRMED || type === NotificationType.MATCH_ACCEPTED;
+    // Default preferences: Only MATCH_CONFIRMED is ON by default, others OFF
+    // MATCH_ACCEPTED defaults to OFF (users can enable in settings if they want)
+    const isCritical = type === NotificationType.MATCH_CONFIRMED;
     const emailEnabled = preference?.emailEnabled ?? isCritical;
     const smsEnabled = preference?.smsEnabled ?? isCritical;
 

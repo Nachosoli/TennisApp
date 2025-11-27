@@ -102,14 +102,20 @@ function ScoreEntryPageContent() {
     }
   }
 
-  // Determine opponent name for display
-  const opponent = participants.find(p => p.id !== user?.id);
+  // Always show Creator vs Opponent (in that order)
+  const creator = participants.find(p => p.id === currentMatch.creatorUserId);
+  const opponent = participants.find(p => p.id !== currentMatch.creatorUserId);
+  const creatorName = creator?.name || 'Creator';
   const opponentName = opponent?.name || 'Opponent';
   
   // Determine if user is creator (player1) or applicant (player2)
   const isCreator = currentMatch.creatorUserId === user?.id;
   const player1Id = currentMatch.creatorUserId;
   const player2Id = opponent?.id || '';
+  
+  // Determine which name to show for "You" - always show creator first, then opponent
+  const player1Name = creatorName;
+  const player2Name = opponentName;
 
   // Determine winner from scores (for confirmation popup)
   const determineWinner = (data: ScoreFormData): string | null => {
@@ -204,10 +210,12 @@ function ScoreEntryPageContent() {
       }
 
       // Show confirmation popup
-      const winnerName = winnerId === user?.id ? 'You' : opponentName;
+      const winnerName = winnerId === user?.id 
+        ? (isCreator ? creatorName : opponentName)
+        : (isCreator ? opponentName : creatorName);
       const confirmationMessage = winnerId === user?.id
-        ? `You are about to report that you won the match vs ${opponentName}. Continue?`
-        : `You are about to report that ${opponentName} won the match. Continue?`;
+        ? `You are about to report that you won the match. Continue?`
+        : `You are about to report that ${winnerName} won the match. Continue?`;
       
       if (!window.confirm(confirmationMessage)) {
         setIsLoading(false);
@@ -217,7 +225,8 @@ function ScoreEntryPageContent() {
       await resultsApi.submitScore(matchId, {
         score: scoreString,
       });
-      router.push(`/matches/${matchId}`);
+      // Redirect to dashboard after successful score submission
+      router.push('/dashboard');
     } catch (err: any) {
       const errorMessage = getErrorMessage(err);
       setError(errorMessage);
@@ -246,17 +255,24 @@ function ScoreEntryPageContent() {
               </div>
             )}
 
-            {/* Player vs Opponent Display */}
+            {/* Player vs Opponent Display - Always show Creator vs Opponent */}
             <div className="flex items-center gap-4 mb-6">
               <div className="flex items-center gap-2">
                 <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center text-white font-semibold">
-                  {user?.firstName?.[0] || 'U'}
+                  {creator?.name?.[0] || 'C'}
                 </div>
-                <span className="font-medium text-gray-900">You</span>
+                <span className="font-medium text-gray-900">
+                  {isCreator ? 'You' : creatorName}
+                </span>
               </div>
               <span className="text-gray-500 text-lg">vs.</span>
               <div className="flex items-center gap-2">
-                <span className="text-blue-600 font-medium">{opponentName}</span>
+                <div className="w-10 h-10 bg-gray-400 rounded-full flex items-center justify-center text-white font-semibold">
+                  {opponent?.name?.[0] || 'O'}
+                </div>
+                <span className="font-medium text-gray-900">
+                  {!isCreator ? 'You' : opponentName}
+                </span>
               </div>
             </div>
 

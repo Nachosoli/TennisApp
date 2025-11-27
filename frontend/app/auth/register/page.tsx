@@ -118,7 +118,9 @@ function RegisterPageContent() {
           {success && (
             <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded">
               <p className="font-medium">Account created successfully!</p>
-              <p className="text-sm mt-1">A verification email has been sent to your email address. Redirecting to profile...</p>
+              <p className="text-sm mt-1">A verification email has been sent to your email address.</p>
+              <p className="text-sm mt-1 font-medium">Please check your spam folder if you don't see it in your inbox.</p>
+              <p className="text-sm mt-1">Redirecting to profile...</p>
             </div>
           )}
 

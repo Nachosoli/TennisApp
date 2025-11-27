@@ -213,59 +213,59 @@ export default function DashboardPage() {
         </div>
 
         {/* Statistics Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-          <Card className="bg-white">
-            <div className="flex items-center space-x-3">
-              <div className="bg-green-100 rounded-lg p-3">
-                <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 sm:gap-6">
+          <Card className="bg-white p-3 sm:p-4">
+            <div className="flex items-center space-x-2 sm:space-x-3">
+              <div className="bg-green-100 rounded-lg p-2 sm:p-3">
+                <svg className="w-5 h-5 sm:w-6 sm:h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
                 </svg>
               </div>
               <div>
-                <p className="text-2xl font-bold text-gray-900">{eloRating}</p>
-                <p className="text-sm text-gray-600">ELO Rating</p>
+                <p className="text-xl sm:text-2xl font-bold text-gray-900">{eloRating}</p>
+                <p className="text-xs sm:text-sm text-gray-600">ELO Rating</p>
               </div>
             </div>
           </Card>
 
-          <Card className="bg-white">
-            <div className="flex items-center space-x-3">
-              <div className="bg-green-100 rounded-lg p-3">
-                <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <Card className="bg-white p-3 sm:p-4">
+            <div className="flex items-center space-x-2 sm:space-x-3">
+              <div className="bg-green-100 rounded-lg p-2 sm:p-3">
+                <svg className="w-5 h-5 sm:w-6 sm:h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
                 </svg>
               </div>
               <div>
-                <p className="text-2xl font-bold text-gray-900">{winStreak}</p>
-                <p className="text-sm text-gray-600">Win Streak</p>
+                <p className="text-xl sm:text-2xl font-bold text-gray-900">{winStreak}</p>
+                <p className="text-xs sm:text-sm text-gray-600">Win Streak</p>
               </div>
             </div>
           </Card>
 
-          <Card className="bg-white">
-            <div className="flex items-center space-x-3">
-              <div className="bg-green-100 rounded-lg p-3">
-                <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <Card className="bg-white p-3 sm:p-4">
+            <div className="flex items-center space-x-2 sm:space-x-3">
+              <div className="bg-green-100 rounded-lg p-2 sm:p-3">
+                <svg className="w-5 h-5 sm:w-6 sm:h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
                 </svg>
               </div>
               <div>
-                <p className="text-2xl font-bold text-gray-900">{totalMatches}</p>
-                <p className="text-sm text-gray-600">Total Matches</p>
+                <p className="text-xl sm:text-2xl font-bold text-gray-900">{totalMatches}</p>
+                <p className="text-xs sm:text-sm text-gray-600">Total Matches</p>
               </div>
             </div>
           </Card>
 
-          <Card className="bg-white">
-            <div className="flex items-center space-x-3">
-              <div className="bg-green-100 rounded-lg p-3">
-                <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <Card className="bg-white p-3 sm:p-4">
+            <div className="flex items-center space-x-2 sm:space-x-3">
+              <div className="bg-green-100 rounded-lg p-2 sm:p-3">
+                <svg className="w-5 h-5 sm:w-6 sm:h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
                 </svg>
               </div>
               <div>
-                <p className="text-2xl font-bold text-gray-900">{winRate}%</p>
-                <p className="text-sm text-gray-600">Win Rate</p>
+                <p className="text-xl sm:text-2xl font-bold text-gray-900">{winRate}%</p>
+                <p className="text-xs sm:text-sm text-gray-600">Win Rate</p>
               </div>
             </div>
           </Card>
@@ -326,8 +326,13 @@ export default function DashboardPage() {
         {/* Recent Matches Section */}
         <Card className="bg-white">
           <div className="p-4 sm:p-6">
-            <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2">Matches</h2>
-            <p className="text-gray-600 mb-6">Your tennis matches</p>
+            <div className="flex items-center justify-between mb-2">
+              <h2 className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900">Matches</h2>
+              {recentMatches.length > 3 && (
+                <p className="text-xs sm:text-sm text-gray-500 italic">Scroll down for more matches</p>
+              )}
+            </div>
+            <p className="text-sm sm:text-base text-gray-600 mb-4 sm:mb-6">Your tennis matches</p>
 
             {actionError && (
               <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4">
@@ -405,13 +410,16 @@ export default function DashboardPage() {
                     
                     if (match.status?.toLowerCase() === 'completed') {
                       statusText = 'Completed';
-                      statusClass = 'bg-blue-100 text-blue-800';
+                      statusClass = 'bg-green-100 text-green-800';
                     } else if (hasPendingApplication) {
                       statusText = 'Applied';
                       statusClass = 'bg-blue-100 text-blue-800';
                     } else if (hasWaitlistedApplication) {
                       statusText = 'Waitlisted';
                       statusClass = 'bg-orange-100 text-orange-800';
+                    } else if (match.status?.toLowerCase() === 'completed') {
+                      statusText = 'Completed';
+                      statusClass = 'bg-green-100 text-green-800';
                     } else if (match.status?.toLowerCase() === 'confirmed') {
                       statusText = 'Confirmed';
                       statusClass = 'bg-green-100 text-green-800';
@@ -433,14 +441,20 @@ export default function DashboardPage() {
                       statusClass = 'bg-green-100 text-green-800';
                     }
 
-                    const hasConfirmedParticipants = match.slots?.some(slot => 
-                      slot.applications?.some(app => app.status?.toLowerCase() === 'confirmed') || 
-                      slot.status?.toLowerCase() === 'confirmed'
+                    // Check if match has any applicants (pending, confirmed, waitlisted)
+                    const hasAnyApplicants = match.slots?.some(slot => 
+                      slot.applications && slot.applications.length > 0 &&
+                      slot.applications.some(app => 
+                        app.status?.toLowerCase() === 'pending' || 
+                        app.status?.toLowerCase() === 'confirmed' || 
+                        app.status?.toLowerCase() === 'waitlisted'
+                      )
                     ) || false;
                     const isConfirmed = match.status?.toLowerCase() === 'confirmed';
                     const canReportScore = !score && isConfirmed && (isCreator || userApplication?.status?.toLowerCase() === 'confirmed');
                     const canDelete = isCreator && match.status?.toLowerCase() !== 'completed';
-                    const canEdit = isCreator && match.status?.toLowerCase() === 'pending' && !hasConfirmedParticipants;
+                    // Don't show Edit if there are any applicants - user can click row to manage
+                    const canEdit = false; // Hide Edit button - user can click row/card to access match detail page
                     const canWithdraw = !isCreator && userApplication?.status?.toLowerCase() === 'confirmed' && match.status?.toLowerCase() !== 'completed';
 
                     return (
@@ -619,7 +633,7 @@ export default function DashboardPage() {
                       
                       if (match.status?.toLowerCase() === 'completed') {
                         statusText = 'Completed';
-                        statusClass = 'bg-blue-100 text-blue-800';
+                        statusClass = 'bg-green-100 text-green-800';
                       } else if (hasPendingApplication) {
                         statusText = 'Applied';
                         statusClass = 'bg-blue-100 text-blue-800';
@@ -664,8 +678,18 @@ export default function DashboardPage() {
                       // Determine if user can delete (creator only, not completed)
                       const canDelete = isCreator && match.status?.toLowerCase() !== 'completed';
                       
-                      // Determine if user can edit (creator only, match is pending, no confirmed participants)
-                      const canEdit = isCreator && match.status?.toLowerCase() === 'pending' && !hasConfirmedParticipants;
+                      // Check if match has any applicants (pending, confirmed, waitlisted)
+                      const hasAnyApplicants = match.slots?.some(slot => 
+                        slot.applications && slot.applications.length > 0 &&
+                        slot.applications.some(app => 
+                          app.status?.toLowerCase() === 'pending' || 
+                          app.status?.toLowerCase() === 'confirmed' || 
+                          app.status?.toLowerCase() === 'waitlisted'
+                        )
+                      ) || false;
+                      
+                      // Don't show Edit if there are any applicants - user can click row to manage
+                      const canEdit = false; // Hide Edit button - user can click row/card to access match detail page
                       
                       // Determine if user can withdraw (participant with confirmed application, not completed)
                       const canWithdraw = !isCreator && userApplication?.status?.toLowerCase() === 'confirmed' && match.status?.toLowerCase() !== 'completed';

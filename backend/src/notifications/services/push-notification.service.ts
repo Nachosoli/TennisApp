@@ -38,8 +38,8 @@ export class PushNotificationService {
       return false;
     }
 
-    // Only send critical notifications via push
-    const isCritical = type === NotificationType.MATCH_CONFIRMED || type === NotificationType.MATCH_ACCEPTED;
+    // Only send critical notifications via push (MATCH_CONFIRMED only)
+    const isCritical = type === NotificationType.MATCH_CONFIRMED;
     if (!isCritical) {
       return false;
     }

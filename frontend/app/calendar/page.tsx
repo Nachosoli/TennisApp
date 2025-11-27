@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Layout } from '@/components/layout/Layout';
 import { CalendarView } from '@/components/CalendarView';
 import { MatchesMap } from '@/components/MatchesMap';
@@ -31,13 +31,16 @@ export default function CalendarPage() {
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [showMap, setShowMap] = useState(true);
   const [homeCourt, setHomeCourt] = useState<Court | null>(null);
+  const [filtersCollapsed, setFiltersCollapsed] = useState(false);
+  const matchesSectionRef = useRef<HTMLDivElement>(null);
 
   // Load all matches to calculate counts by distance
   useEffect(() => {
     matchesApi.getAll().then((matches) => {
-      // Filter out cancelled matches, confirmed matches (for non-creators), and user's own matches
+      // Filter out cancelled matches, completed matches, confirmed matches (for non-creators), and user's own matches
       const filtered = matches.filter(match => {
         if (match.status?.toLowerCase() === 'cancelled') return false;
+        if (match.status?.toLowerCase() === 'completed') return false;
         if (user && match.creatorUserId === user.id) return false;
         
         // Check if user has a waitlisted application for this match
@@ -122,20 +125,21 @@ export default function CalendarPage() {
     <Layout>
       <div className="space-y-4">
         {/* Header */}
-        <div className="flex justify-between items-center gap-4">
-          <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900">Find Tennis Matches</h1>
-          <div className="flex items-center gap-3">
-            <Link href="/matches/create">
-              <Button variant="primary" className="flex items-center gap-2">
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-4">
+          <h1 className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900">Find Tennis Matches</h1>
+          <div className="flex items-center gap-2 sm:gap-3 w-full sm:w-auto">
+            <Link href="/matches/create" className="flex-1 sm:flex-initial">
+              <Button variant="primary" className="w-full sm:w-auto flex items-center justify-center gap-2 text-sm sm:text-base px-3 sm:px-4 py-2 sm:py-2.5">
+                <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                 </svg>
-                Create Match
+                <span className="hidden sm:inline">Create Match</span>
+                <span className="sm:hidden">Create</span>
               </Button>
             </Link>
             <button
               onClick={() => setShowMap(!showMap)}
-              className="lg:hidden px-4 py-2.5 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 min-h-[44px]"
+              className="px-3 sm:px-4 py-2 sm:py-2.5 bg-white border border-gray-300 rounded-lg text-xs sm:text-sm font-medium text-gray-700 hover:bg-gray-50 min-h-[44px]"
             >
               {showMap ? 'Hide Map' : 'Show Map'}
             </button>
@@ -143,12 +147,31 @@ export default function CalendarPage() {
         </div>
 
         {/* Filters Bar - Airbnb Style */}
-        <Card className="p-4 bg-white shadow-sm">
-          <div className="space-y-4">
+        <Card className={`bg-white shadow-sm transition-all ${filtersCollapsed ? 'p-2' : 'p-3 sm:p-4'}`}>
+          <div className="space-y-3 sm:space-y-4">
+            {/* Mobile: Collapse/Expand Button */}
+            <div className="flex justify-between items-center sm:hidden">
+              <h2 className="text-sm font-semibold text-gray-700">Filters</h2>
+              <button
+                onClick={() => setFiltersCollapsed(!filtersCollapsed)}
+                className="p-2 text-gray-600 hover:text-gray-900"
+                aria-label={filtersCollapsed ? 'Expand filters' : 'Collapse filters'}
+              >
+                <svg
+                  className={`w-5 h-5 transition-transform ${filtersCollapsed ? '' : 'rotate-180'}`}
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+            </div>
+            
             {/* Top Row - Main Filters */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+            <div className={`grid grid-cols-1 md:grid-cols-4 gap-2 sm:gap-3 transition-all ${filtersCollapsed ? 'hidden' : 'block'}`}>
               <select
-                className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-shadow hover:shadow-md"
+                className="w-full px-3 sm:px-4 py-2 sm:py-2.5 text-sm sm:text-base border border-gray-300 rounded-lg text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-shadow hover:shadow-md"
                 value={filters.skillLevel || ''}
                 onChange={(e) => setFilters({ ...filters, skillLevel: e.target.value || undefined })}
               >
@@ -160,7 +183,7 @@ export default function CalendarPage() {
               </select>
 
               <select
-                className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-shadow hover:shadow-md"
+                className="w-full px-3 sm:px-4 py-2 sm:py-2.5 text-sm sm:text-base border border-gray-300 rounded-lg text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-shadow hover:shadow-md"
                 value={filters.gender || ''}
                 onChange={(e) => setFilters({ ...filters, gender: e.target.value || undefined })}
               >
@@ -171,7 +194,7 @@ export default function CalendarPage() {
               </select>
 
               <select
-                className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-shadow hover:shadow-md"
+                className="w-full px-3 sm:px-4 py-2 sm:py-2.5 text-sm sm:text-base border border-gray-300 rounded-lg text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-shadow hover:shadow-md"
                 value={filters.surface || ''}
                 onChange={(e) => setFilters({ ...filters, surface: e.target.value || undefined })}
               >
@@ -183,8 +206,8 @@ export default function CalendarPage() {
               </select>
 
               {/* Match Count Display */}
-              <div className="flex items-center justify-center px-4 py-2.5 bg-blue-50 border border-blue-200 rounded-lg">
-                <span className="text-sm font-semibold text-blue-700">
+              <div className="flex items-center justify-center px-3 sm:px-4 py-2 sm:py-2.5 bg-blue-50 border border-blue-200 rounded-lg">
+                <span className="text-xs sm:text-sm font-semibold text-blue-700">
                   {matchCount} {matchCount === 1 ? 'match' : 'matches'}
                 </span>
               </div>
@@ -195,8 +218,16 @@ export default function CalendarPage() {
         {/* Main Content - Split Layout (Airbnb Style) */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 h-[calc(100vh-280px)] min-h-[400px]">
           {/* Left Side - Calendar/List */}
-          <div className="overflow-y-auto order-2 lg:order-1">
-            <CalendarView filters={filters} onDateSelect={setSelectedDate} />
+          <div ref={matchesSectionRef} className="overflow-y-auto order-2 lg:order-1">
+            <CalendarView filters={filters} onDateSelect={(date) => {
+              setSelectedDate(date);
+              // Scroll to matches section when date with matches is selected
+              if (date && matchesSectionRef.current) {
+                setTimeout(() => {
+                  matchesSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }, 100);
+              }
+            }} />
           </div>
 
           {/* Right Side - Map */}

@@ -261,9 +261,9 @@ export class ChatService {
     const timeSlot = `${formatTime(confirmedSlot.startTime)} - ${formatTime(confirmedSlot.endTime)}`;
     const courtName = match.court?.name || 'Court';
 
-    // Build message: "Sender's Name, Wednesday 9/24): Your match is scheduled! Date at Time Slot at Court"
+    // Build message: "Sender's Name (Wednesday 9/24): Your match is scheduled! Date at Time Slot at Court"
     const senderName = `${sender.firstName} ${sender.lastName}`;
-    const messageText = `${senderName}, ${datePrefix}): Your match is scheduled! ${fullDate} at ${timeSlot} at ${courtName}`;
+    const messageText = `${senderName} (${datePrefix}): Your match is scheduled! ${fullDate} at ${timeSlot} at ${courtName}`;
 
     // Create the message
     const message = this.chatMessageRepository.create({

@@ -1,6 +1,5 @@
 'use client';
 
-import { useNotifications } from '@/hooks/useNotifications';
 import { Layout } from '@/components/layout/Layout';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
@@ -9,14 +8,21 @@ import Link from 'next/link';
 import { useRequireAuth } from '@/hooks/useRequireAuth';
 import { PageLoader } from '@/components/ui/PageLoader';
 import { useNotificationsStore } from '@/stores/notifications-store';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 export default function NotificationsPage() {
   const { isLoading: authLoading, user } = useRequireAuth();
-  const { notifications, markAsRead } = useNotifications();
+  const { notifications, markAsRead, fetchNotifications } = useNotificationsStore();
   const { deleteNotification, clearAll } = useNotificationsStore();
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [isClearing, setIsClearing] = useState(false);
+
+  // Fetch notifications on mount
+  useEffect(() => {
+    if (user) {
+      fetchNotifications();
+    }
+  }, [user, fetchNotifications]);
 
   if (authLoading) {
     return (

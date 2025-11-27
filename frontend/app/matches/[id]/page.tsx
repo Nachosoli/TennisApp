@@ -415,54 +415,79 @@ export default function MatchDetailPage() {
                             {formatSlotTime(slot.startTime)} - {formatSlotTime(slot.endTime)}
                           </p>
                           <p className="text-sm text-gray-600 capitalize">
-                            {isConfirmed ? 'Confirmed' : isAvailable ? 'Available' : slot.status || 'Unknown'}
+                            {(() => {
+                              // Check if user has waitlisted application for this slot
+                              const hasWaitlistedApp = user && slot.applications?.some(app =>
+                                (app.applicantUserId === user.id || app.userId === user.id) &&
+                                app.status?.toLowerCase() === 'waitlisted'
+                              );
+                              if (hasWaitlistedApp) return 'Waitlisted';
+                              if (isConfirmed) return 'Confirmed';
+                              if (isAvailable) return 'Available';
+                              return slot.status || 'Unknown';
+                            })()}
                           </p>
                           {isAvailable && !isCreator && !hasApplicationForSlot && (
                             <p className="text-xs text-blue-600 mt-1">Click Apply to join this time slot</p>
                           )}
                         </div>
                         {!isCreator && isAvailable && isMatchPending && (
-                          hasApplicationForSlot ? (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              disabled
-                              className="opacity-50 cursor-not-allowed"
-                            >
-                              Applied
-                            </Button>
-                          ) : (
-                            <Button
-                              variant="primary"
-                              size="sm"
-                              isLoading={applyingSlotId === slot.id}
-                              onClick={async () => {
+                          (() => {
+                            // Check if user has any application to any slot of this match
+                            const hasAnyApplication = user && currentMatch.slots?.some(s =>
+                              s.applications?.some(app =>
+                                (app.applicantUserId === user.id || app.userId === user.id) &&
+                                (app.status?.toLowerCase() === 'pending' || app.status?.toLowerCase() === 'waitlisted' || app.status?.toLowerCase() === 'confirmed')
+                              )
+                            );
+                            
+                            if (hasApplicationForSlot || hasAnyApplication) {
+                              return (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  disabled
+                                  className="opacity-50 cursor-not-allowed"
+                                >
+                                  {hasApplicationForSlot ? 'Applied' : 'Already Applied'}
+                                </Button>
+                              );
+                            }
+                            
+                            return (
+                              <Button
+                                variant="primary"
+                                size="sm"
+                                isLoading={applyingSlotId === slot.id}
+                                onClick={async () => {
                                 try {
                                   setApplyError(null);
                                   setApplySuccess(null);
                                   setApplyingSlotId(slot.id);
+                                  // Optimistic UI update - immediately refresh match data
                                   await applicationsApi.applyToSlot({ matchSlotId: slot.id });
                                   setApplySuccess('Application submitted successfully! The match creator will review your request.');
-                                  // Force immediate refresh to update Apply button state
-                                  setTimeout(() => {
-                                    fetchMatchById(matchId);
-                                  }, 500);
+                                  // Immediately refresh to update Apply button state
+                                  await fetchMatchById(matchId);
                                   // Clear success message after 5 seconds
                                   setTimeout(() => setApplySuccess(null), 5000);
                                 } catch (error: any) {
                                   console.error('Failed to apply:', error);
                                   const errorMessage = error?.response?.data?.message || error?.message || 'Failed to submit application. Please try again.';
                                   setApplyError(errorMessage);
+                                  // Refresh to ensure UI is in sync
+                                  await fetchMatchById(matchId);
                                   // Clear error message after 5 seconds
                                   setTimeout(() => setApplyError(null), 5000);
                                 } finally {
                                   setApplyingSlotId(null);
                                 }
                               }}
-                            >
-                              Apply
-                            </Button>
-                          )
+                              >
+                                Apply
+                              </Button>
+                            );
+                          })()
                         )}
                         {isCreator && isAvailable && (
                           <span className="text-xs text-gray-500">Waiting for applications</span>
@@ -498,20 +523,43 @@ export default function MatchDetailPage() {
           </ErrorBoundary>
         )}
 
-        {/* Chat Section - Only show for confirmed matches */}
-        {currentMatch.status?.toLowerCase() === 'confirmed' && (
-          <Card>
-            <ChatWindow matchId={matchId} />
-          </Card>
-        )}
+        {/* Chat Section - Only show for creator or confirmed applicant */}
+        {(() => {
+          const isCreator = currentMatch.creatorUserId === user?.id;
+          const hasConfirmedApplication = user && currentMatch.slots?.some(slot =>
+            slot.applications?.some(app =>
+              (app.applicantUserId === user.id || app.userId === user.id) &&
+              app.status?.toLowerCase() === 'confirmed'
+            )
+          );
+          const shouldShowChat = currentMatch.status?.toLowerCase() === 'confirmed' && (isCreator || hasConfirmedApplication);
+          
+          return shouldShowChat ? (
+            <Card>
+              <ChatWindow matchId={matchId} />
+            </Card>
+          ) : null;
+        })()}
 
-        {currentMatch.status?.toLowerCase() === 'confirmed' && (
-          <Card title="Match Actions">
-            <Link href={`/matches/${matchId}/score`}>
-              <Button variant="primary" className="w-full">Enter Score</Button>
-            </Link>
-          </Card>
-        )}
+        {/* Report Score - Only show for creator or confirmed applicant */}
+        {(() => {
+          const isCreator = currentMatch.creatorUserId === user?.id;
+          const hasConfirmedApplication = user && currentMatch.slots?.some(slot =>
+            slot.applications?.some(app =>
+              (app.applicantUserId === user.id || app.userId === user.id) &&
+              app.status?.toLowerCase() === 'confirmed'
+            )
+          );
+          const shouldShowReport = currentMatch.status?.toLowerCase() === 'confirmed' && (isCreator || hasConfirmedApplication);
+          
+          return shouldShowReport ? (
+            <Card title="Match Actions">
+              <Link href={`/matches/${matchId}/score`}>
+                <Button variant="primary" className="w-full">Enter Score</Button>
+              </Link>
+            </Card>
+          ) : null;
+        })()}
 
         <div className="flex gap-4">
           <Button variant="outline" onClick={() => router.push('/dashboard')}>

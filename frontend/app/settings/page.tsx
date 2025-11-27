@@ -96,8 +96,8 @@ export default function SettingsPage() {
   const { isLoading: authLoading, user } = useRequireAuth();
   const [preferences, setPreferences] = useState<Record<NotificationType, NotificationPreferenceState>>({
     match_created: { enabled: false, method: 'email' },
-    match_accepted: { enabled: false, method: 'email' },
-    match_confirmed: { enabled: false, method: 'email' },
+    match_accepted: { enabled: false, method: 'email' }, // Default OFF - users can enable if they want
+    match_confirmed: { enabled: true, method: 'email' }, // Default ON - critical notification
     court_changes: { enabled: false, method: 'email' },
     score_reminder: { enabled: false, method: 'email' },
     new_chat: { enabled: false, method: 'email' },
