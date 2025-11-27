@@ -669,6 +669,7 @@ export class AdminService {
         'admin_actions',
         'payment_methods',
         'push_subscriptions',
+        'users', // Also delete users
       ];
       const deletionResults: Array<{ table: string; count: number; error?: string }> = [];
 
@@ -702,7 +703,7 @@ export class AdminService {
         message: 'Database wipe completed successfully',
         totalRecordsDeleted: totalDeleted,
         breakdown: deletionResults.filter((r) => r.count > 0),
-        tablesKept: ['courts', 'users'],
+        tablesKept: ['courts'], // Only keep courts
       };
     } catch (error: any) {
       console.error('Database wipe error:', error);
