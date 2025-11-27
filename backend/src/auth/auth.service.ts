@@ -64,8 +64,8 @@ export class AuthService {
       phone: registerDto.phone,
       firstName: registerDto.firstName,
       lastName: registerDto.lastName,
-      phoneVerified: true, // TODO: Set to false once Twilio is configured
-      emailVerified: true, // TODO: Set to false once SendGrid is configured
+      phoneVerified: false, // Users must verify their phone via SMS
+      emailVerified: false, // Users must verify their email via the verification link
       gender: Gender.OTHER, // Default to 'other' during registration, user can update on profile page
       role: UserRole.USER,
     });
