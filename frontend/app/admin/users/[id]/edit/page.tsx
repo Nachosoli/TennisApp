@@ -51,12 +51,13 @@ export default function AdminEditUserPage() {
     resolver: zodResolver(editUserSchema),
   });
 
-  const selectedRatingType = watch('ratingType') as RatingType;
+  const selectedRatingType = watch('ratingType');
 
   // Reset rating value when rating type changes
   useEffect(() => {
-    if (selectedRatingType && selectedRatingType !== '') {
-      const options = getRatingValueOptions(selectedRatingType);
+    const ratingType = selectedRatingType;
+    if (ratingType && ratingType !== '' && ['utr', 'usta', 'ultimate', 'custom'].includes(ratingType)) {
+      const options = getRatingValueOptions(ratingType as RatingType);
       if (options.length > 0) {
         // Set to first option if current value is not valid for new type
         const currentValue = watch('ratingValue');
@@ -234,7 +235,7 @@ export default function AdminEditUserPage() {
                   className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 bg-white disabled:bg-gray-100 disabled:cursor-not-allowed"
                 >
                   <option value="">Select rating value</option>
-                  {selectedRatingType && selectedRatingType !== '' && getRatingValueOptions(selectedRatingType).map((option) => (
+                  {selectedRatingType && selectedRatingType !== '' && ['utr', 'usta', 'ultimate', 'custom'].includes(selectedRatingType) && getRatingValueOptions(selectedRatingType as RatingType).map((option) => (
                     <option key={option.value} value={option.value.toString()}>
                       {option.label}
                     </option>
