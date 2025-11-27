@@ -169,9 +169,11 @@ export default function AdminUserDetailPage() {
                 <div>
                   <span className="font-medium text-gray-700">Phone:</span>{' '}
                   <span className="text-gray-900">{user.phone}</span>
+                  {/* Commented out until Twilio phone verification is enabled
                   {user.phoneVerified && (
                     <span className="ml-2 text-xs text-green-600">✓ Verified</span>
                   )}
+                  */}
                 </div>
               )}
               <div>
