@@ -495,7 +495,7 @@ function ProfilePageContent() {
   return (
     <Layout>
       <div className="max-w-2xl mx-auto space-y-6">
-        <h1 className="text-3xl font-bold text-gray-900">Profile</h1>
+        <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900">Profile</h1>
 
         {/* Photo Upload */}
         <Card title="Profile Photo">

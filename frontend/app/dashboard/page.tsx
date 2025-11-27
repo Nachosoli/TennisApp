@@ -162,10 +162,10 @@ export default function DashboardPage() {
       <div className="space-y-6">
         {/* Welcome Section */}
         <div>
-          <h1 className="text-4xl font-bold text-gray-900">
+          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900">
             Welcome back, {user.firstName}!
           </h1>
-          <p className="text-lg text-gray-600 mt-2">Ready to play some tennis?</p>
+          <p className="text-base sm:text-lg text-gray-600 mt-2">Ready to play some tennis?</p>
         </div>
 
         {/* Home Court Warning */}
@@ -200,7 +200,7 @@ export default function DashboardPage() {
 
         {/* Performance Overview Section */}
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-semibold text-gray-900">Performance Overview</h2>
+          <h2 className="text-lg sm:text-xl font-semibold text-gray-900">Performance Overview</h2>
           <Link 
             href="/stats" 
             className="text-sm text-gray-600 hover:text-blue-600 flex items-center space-x-1 transition-colors"
@@ -273,7 +273,7 @@ export default function DashboardPage() {
 
         {/* Action Sections */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <Card className="bg-white p-6">
+          <Card className="bg-white p-4 sm:p-6">
             <div className="flex items-start space-x-4">
               <div className="bg-green-100 rounded-lg p-3">
                 <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -303,7 +303,7 @@ export default function DashboardPage() {
             </div>
           </Card>
 
-          <Card className="bg-white p-6">
+          <Card className="bg-white p-4 sm:p-6">
             <div className="flex items-start space-x-4">
               <div className="bg-green-100 rounded-lg p-3">
                 <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -325,8 +325,8 @@ export default function DashboardPage() {
 
         {/* Recent Matches Section */}
         <Card className="bg-white">
-          <div className="p-6">
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">Matches</h2>
+          <div className="p-4 sm:p-6">
+            <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2">Matches</h2>
             <p className="text-gray-600 mb-6">Your tennis matches</p>
 
             {actionError && (
@@ -350,8 +350,200 @@ export default function DashboardPage() {
                 <p className="text-sm text-gray-500">Create your first match to get started!</p>
               </div>
             ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full">
+              <>
+                {/* Mobile Card View */}
+                <div className="md:hidden space-y-4">
+                  {recentMatches.map((match) => {
+                    // Determine opponent
+                    const isCreator = match.creatorUserId === user?.id;
+                    let opponent: User | null = null;
+                    let opponentName = 'TBD';
+                    
+                    if (isCreator) {
+                      const confirmedSlot = match.slots?.find(slot => 
+                        slot.status?.toLowerCase() === 'confirmed'
+                      );
+                      if (confirmedSlot?.applications) {
+                        const confirmedApplication = confirmedSlot.applications.find(app => 
+                          app.status?.toLowerCase() === 'confirmed'
+                        );
+                        if (confirmedApplication?.applicant) {
+                          opponent = confirmedApplication.applicant;
+                          opponentName = `${opponent.firstName} ${opponent.lastName}`;
+                        } else if (confirmedApplication?.user) {
+                          opponent = confirmedApplication.user;
+                          opponentName = `${opponent.firstName} ${opponent.lastName}`;
+                        }
+                      }
+                    } else {
+                      if (match.creator) {
+                        opponent = match.creator;
+                        opponentName = `${opponent.firstName} ${opponent.lastName}`;
+                      }
+                    }
+
+                    const result = match.results?.[0];
+                    const score = result?.score || '';
+                    const isHomeCourt = match.courtId === user?.homeCourtId;
+                    let userApplication = null;
+                    for (const slot of match.slots || []) {
+                      if (slot.applications) {
+                        userApplication = slot.applications.find(app => 
+                          app.applicantUserId === user?.id
+                        );
+                        if (userApplication) break;
+                      }
+                    }
+
+                    const hasWaitlistedApplication = userApplication?.status?.toLowerCase() === 'waitlisted';
+                    const hasPendingApplication = userApplication?.status?.toLowerCase() === 'pending';
+                    const matchDate = parseLocalDate(match.date);
+                    const now = new Date();
+                    const isPast = matchDate < now;
+                    let statusText: string = match.status;
+                    let statusClass = 'bg-gray-100 text-gray-800';
+                    
+                    if (match.status?.toLowerCase() === 'completed') {
+                      statusText = 'Completed';
+                      statusClass = 'bg-blue-100 text-blue-800';
+                    } else if (hasPendingApplication) {
+                      statusText = 'Applied';
+                      statusClass = 'bg-blue-100 text-blue-800';
+                    } else if (hasWaitlistedApplication) {
+                      statusText = 'Waitlisted';
+                      statusClass = 'bg-orange-100 text-orange-800';
+                    } else if (match.status?.toLowerCase() === 'confirmed') {
+                      statusText = 'Confirmed';
+                      statusClass = 'bg-green-100 text-green-800';
+                    } else if (isPast) {
+                      statusText = 'Report Score';
+                      statusClass = 'bg-yellow-100 text-yellow-800';
+                    } else if (match.status?.toLowerCase() === 'pending') {
+                      const pendingApplicationsCount = isCreator && match.slots?.reduce((count, slot) => {
+                        return count + (slot.applications?.filter(app => app.status?.toLowerCase() === 'pending').length || 0);
+                      }, 0) || 0;
+                      if (pendingApplicationsCount > 0) {
+                        statusText = `Pending (${pendingApplicationsCount} application${pendingApplicationsCount > 1 ? 's' : ''})`;
+                      } else {
+                        statusText = 'Pending';
+                      }
+                      statusClass = 'bg-yellow-100 text-yellow-800';
+                    } else {
+                      statusText = 'Upcoming';
+                      statusClass = 'bg-green-100 text-green-800';
+                    }
+
+                    const hasConfirmedParticipants = match.slots?.some(slot => 
+                      slot.applications?.some(app => app.status?.toLowerCase() === 'confirmed') || 
+                      slot.status?.toLowerCase() === 'confirmed'
+                    ) || false;
+                    const isConfirmed = match.status?.toLowerCase() === 'confirmed';
+                    const canReportScore = !score && isConfirmed && (isCreator || userApplication?.status?.toLowerCase() === 'confirmed');
+                    const canDelete = isCreator && match.status?.toLowerCase() !== 'completed';
+                    const canEdit = isCreator && match.status?.toLowerCase() === 'pending' && !hasConfirmedParticipants;
+                    const canWithdraw = !isCreator && userApplication?.status?.toLowerCase() === 'confirmed' && match.status?.toLowerCase() !== 'completed';
+
+                    return (
+                      <div
+                        key={match.id}
+                        className="bg-white border border-gray-200 rounded-lg p-4 space-y-3"
+                        onClick={() => router.push(`/matches/${match.id}`)}
+                      >
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-2">
+                              <span className={`px-2 py-1 rounded-full text-xs font-medium ${statusClass}`}>
+                                {statusText}
+                              </span>
+                              <span className="text-sm text-gray-900">
+                                {parseLocalDate(match.date).toLocaleDateString('en-US', {
+                                  month: 'short',
+                                  day: 'numeric',
+                                  year: 'numeric'
+                                })}
+                              </span>
+                            </div>
+                            <h3 className="font-semibold text-gray-900 mb-1">{match.court?.name || 'Court'}</h3>
+                            <div className="flex items-center text-sm text-gray-600">
+                              {isHomeCourt && (
+                                <svg className="w-4 h-4 mr-1 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+                                  <path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z" />
+                                </svg>
+                              )}
+                              <span>vs {opponentName}</span>
+                            </div>
+                            {score && (
+                              <p className="text-sm text-gray-700 mt-1">Score: {score}</p>
+                            )}
+                          </div>
+                        </div>
+                        {!score && (
+                          <div className="flex flex-wrap gap-2 pt-2 border-t border-gray-200" onClick={(e) => e.stopPropagation()}>
+                            {canReportScore && (
+                              <Link href={`/matches/${match.id}/score`} className="flex-1 min-w-[120px]">
+                                <Button variant="primary" size="sm" className="w-full">
+                                  Report Score
+                                </Button>
+                              </Link>
+                            )}
+                            {canEdit && (
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={() => router.push(`/matches/${match.id}/edit`)}
+                                className="flex-1 min-w-[100px]"
+                              >
+                                Edit
+                              </Button>
+                            )}
+                            {canWithdraw && userApplication && (
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setShowWithdrawConfirm(userApplication.id)}
+                                isLoading={withdrawingApplicationId === userApplication.id}
+                                disabled={withdrawingApplicationId === userApplication.id}
+                                className="flex-1 min-w-[120px]"
+                              >
+                                Remove
+                              </Button>
+                            )}
+                            {(isCreator || userApplication?.status?.toLowerCase() === 'confirmed') && match.status?.toLowerCase() === 'confirmed' && (
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={() => router.push(`/matches/${match.id}`)}
+                                className="flex-1 min-w-[100px]"
+                              >
+                                Chat
+                              </Button>
+                            )}
+                            {canDelete && (
+                              <Button
+                                type="button"
+                                variant="danger"
+                                size="sm"
+                                onClick={() => setShowDeleteConfirm(match.id)}
+                                isLoading={deletingMatchId === match.id}
+                                disabled={deletingMatchId === match.id}
+                                className="flex-1 min-w-[100px]"
+                              >
+                                Delete
+                              </Button>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Desktop Table View */}
+                <div className="hidden md:block overflow-x-auto">
+                  <table className="w-full">
                   <thead className="bg-blue-600 text-white">
                     <tr>
                       <th className="px-4 py-3 text-left text-sm font-medium">Date</th>
@@ -588,7 +780,8 @@ export default function DashboardPage() {
                     })}
                   </tbody>
                 </table>
-              </div>
+                </div>
+              </>
             )}
           </div>
         </Card>
@@ -596,9 +789,9 @@ export default function DashboardPage() {
 
       {/* Delete Confirmation Modal */}
       {showDeleteConfirm && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
-            <h2 className="text-xl font-bold text-gray-900 mb-4">Delete Match</h2>
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg p-4 sm:p-6 max-w-md w-full max-h-[90vh] overflow-y-auto">
+            <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-4">Delete Match</h2>
             {(() => {
               const match = recentMatches.find(m => m.id === showDeleteConfirm);
               const hasConfirmed = match?.slots?.some(slot => 
@@ -614,14 +807,14 @@ export default function DashboardPage() {
             <p className="text-gray-700 mb-6">
               Are you sure you want to delete this match? This action cannot be undone.
             </p>
-            <div className="flex gap-3">
+            <div className="flex flex-col sm:flex-row gap-3">
               <Button
                 type="button"
                 variant="danger"
                 onClick={() => handleDeleteMatch(showDeleteConfirm)}
                 isLoading={deletingMatchId === showDeleteConfirm}
                 disabled={deletingMatchId === showDeleteConfirm}
-                className="flex-1"
+                className="flex-1 w-full sm:w-auto"
               >
                 Delete
               </Button>
@@ -630,7 +823,7 @@ export default function DashboardPage() {
                 variant="outline"
                 onClick={() => setShowDeleteConfirm(null)}
                 disabled={deletingMatchId === showDeleteConfirm}
-                className="flex-1"
+                className="flex-1 w-full sm:w-auto"
               >
                 Cancel
               </Button>
@@ -641,20 +834,20 @@ export default function DashboardPage() {
 
       {/* Withdraw Confirmation Modal */}
       {showWithdrawConfirm && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
-            <h2 className="text-xl font-bold text-gray-900 mb-4">Remove Yourself from Match</h2>
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg p-4 sm:p-6 max-w-md w-full max-h-[90vh] overflow-y-auto">
+            <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-4">Remove Yourself from Match</h2>
             <p className="text-gray-700 mb-6">
               Are you sure you want to remove yourself from this match? This will free up the slot for other players.
             </p>
-            <div className="flex gap-3">
+            <div className="flex flex-col sm:flex-row gap-3">
               <Button
                 type="button"
                 variant="primary"
                 onClick={() => handleWithdrawFromMatch(showWithdrawConfirm)}
                 isLoading={withdrawingApplicationId === showWithdrawConfirm}
                 disabled={withdrawingApplicationId === showWithdrawConfirm}
-                className="flex-1"
+                className="flex-1 w-full sm:w-auto"
               >
                 Remove Myself
               </Button>
@@ -663,7 +856,7 @@ export default function DashboardPage() {
                 variant="outline"
                 onClick={() => setShowWithdrawConfirm(null)}
                 disabled={withdrawingApplicationId === showWithdrawConfirm}
-                className="flex-1"
+                className="flex-1 w-full sm:w-auto"
               >
                 Cancel
               </Button>

@@ -131,7 +131,7 @@ export default function CalendarPage() {
       <div className="space-y-4">
         {/* Header */}
         <div className="flex justify-between items-center gap-4">
-          <h1 className="text-3xl font-bold text-gray-900">Find Tennis Matches</h1>
+          <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900">Find Tennis Matches</h1>
           <div className="flex items-center gap-3">
             <Link href="/matches/create">
               <Button variant="primary" className="flex items-center gap-2">
@@ -143,7 +143,7 @@ export default function CalendarPage() {
             </Link>
             <button
               onClick={() => setShowMap(!showMap)}
-              className="md:hidden px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50"
+              className="lg:hidden px-4 py-2.5 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 min-h-[44px]"
             >
               {showMap ? 'Hide Map' : 'Show Map'}
             </button>
@@ -201,14 +201,14 @@ export default function CalendarPage() {
         </Card>
 
         {/* Main Content - Split Layout (Airbnb Style) */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 h-[calc(100vh-280px)]">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 h-[calc(100vh-280px)] min-h-[400px]">
           {/* Left Side - Calendar/List */}
-          <div className="overflow-y-auto">
+          <div className="overflow-y-auto order-2 lg:order-1">
             <CalendarView filters={filters} onDateSelect={setSelectedDate} />
           </div>
 
           {/* Right Side - Map */}
-          <div className={`${showMap ? 'block' : 'hidden'} md:block lg:sticky lg:top-4 lg:h-[calc(100vh-280px)]`}>
+          <div className={`${showMap ? 'block' : 'hidden'} lg:block lg:sticky lg:top-4 lg:h-[calc(100vh-280px)] order-1 lg:order-2`}>
             <Card className="h-full overflow-hidden">
               <MatchesMap 
                 matches={filteredMatches} 

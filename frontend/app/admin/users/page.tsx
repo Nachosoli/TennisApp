@@ -69,7 +69,7 @@ export default function AdminUsersPage() {
     <Layout>
       <div className="space-y-6">
         <div className="flex justify-between items-center">
-          <h1 className="text-3xl font-bold text-gray-900">User Management</h1>
+          <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900">User Management</h1>
           <Button variant="outline" onClick={() => router.push('/admin')}>
             Back to Dashboard
           </Button>

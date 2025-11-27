@@ -55,7 +55,8 @@ export const NotificationBell = () => {
     <div className="relative">
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="relative p-2 text-gray-600 hover:text-gray-900"
+        className="relative p-2.5 text-gray-600 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 rounded-md min-w-[44px] min-h-[44px] flex items-center justify-center"
+        aria-label={`Notifications${unreadCount > 0 ? ` (${unreadCount} unread)` : ''}`}
       >
         <svg
           className="w-6 h-6"
@@ -71,17 +72,17 @@ export const NotificationBell = () => {
           />
         </svg>
         {unreadCount > 0 && (
-          <span className="absolute top-0 right-0 block h-2 w-2 rounded-full bg-red-600 ring-2 ring-white" />
+          <span className="absolute top-1 right-1 block h-2.5 w-2.5 rounded-full bg-red-600 ring-2 ring-white" />
         )}
       </button>
 
       {isOpen && (
         <>
           <div
-            className="fixed inset-0 z-10"
+            className="fixed inset-0 z-10 bg-black bg-opacity-25 sm:bg-transparent"
             onClick={() => setIsOpen(false)}
           />
-          <div className="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-lg border border-gray-200 z-20 max-h-96 overflow-y-auto">
+          <div className="absolute right-0 mt-2 w-[calc(100vw-2rem)] sm:w-80 max-w-sm bg-white rounded-lg shadow-lg border border-gray-200 z-20 max-h-[calc(100vh-8rem)] overflow-y-auto">
             <div className="p-4 border-b border-gray-200">
               <h3 className="text-lg font-semibold text-gray-900">Notifications</h3>
             </div>
@@ -94,7 +95,7 @@ export const NotificationBell = () => {
                 notifications.slice(0, 5).map((notification) => (
                   <div
                     key={notification.id}
-                    className="p-4 hover:bg-gray-50 cursor-pointer"
+                    className="p-4 hover:bg-gray-50 cursor-pointer min-h-[60px] flex flex-col justify-center"
                     onClick={() => {
                       markAsRead(notification.id);
                       setIsOpen(false);
@@ -113,7 +114,7 @@ export const NotificationBell = () => {
                 <Link
                   href="/notifications"
                   onClick={() => setIsOpen(false)}
-                  className="flex-1 text-center px-3 py-2 text-sm text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded transition-colors"
+                  className="flex-1 text-center px-3 py-3 text-sm font-medium text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded transition-colors min-h-[44px] flex items-center justify-center"
                 >
                   View All
                 </Link>
@@ -134,7 +135,7 @@ export const NotificationBell = () => {
                     }
                   }}
                   disabled={isClearing}
-                  className="flex-1 px-3 py-2 text-sm text-red-600 hover:text-red-700 hover:bg-red-50 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="flex-1 px-3 py-3 text-sm font-medium text-red-600 hover:text-red-700 hover:bg-red-50 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px] flex items-center justify-center"
                 >
                   {isClearing ? 'Clearing...' : 'Clear All'}
                 </button>

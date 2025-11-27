@@ -211,7 +211,7 @@ export default function MatchDetailPage() {
       <div className="max-w-4xl mx-auto space-y-6">
         <div className="flex justify-between items-start">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">{currentMatch.court?.name}</h1>
+            <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900">{currentMatch.court?.name}</h1>
             <p className="text-gray-600 mt-1">{currentMatch.court?.address}</p>
           </div>
           <div className="flex items-center gap-3">

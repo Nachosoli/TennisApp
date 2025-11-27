@@ -25,12 +25,12 @@ export const Header = () => {
                     </svg>
                   </div>
                 </div>
-                <span className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-indigo-700 bg-clip-text text-transparent">
+                <span className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-blue-600 to-indigo-700 bg-clip-text text-transparent">
                   CourtBuddy
                 </span>
               </Link>
             </div>
-            <div className="flex items-center space-x-2 sm:space-x-4">
+            <div className="flex items-center space-x-1 sm:space-x-2 md:space-x-4">
               {isAuthenticated ? (
                 <>
                   <NotificationBell />
@@ -39,10 +39,10 @@ export const Header = () => {
               ) : (
                 <>
                   <Link href="/auth/login">
-                    <Button variant="outline" size="sm" className="text-xs sm:text-sm">Login</Button>
+                    <Button variant="outline" size="sm" className="text-xs sm:text-sm min-h-[44px] px-3 sm:px-4">Login</Button>
                   </Link>
                   <Link href="/auth/register">
-                    <Button variant="primary" size="sm" className="text-xs sm:text-sm">Sign Up</Button>
+                    <Button variant="primary" size="sm" className="text-xs sm:text-sm min-h-[44px] px-3 sm:px-4">Sign Up</Button>
                   </Link>
                 </>
               )}

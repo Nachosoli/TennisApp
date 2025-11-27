@@ -38,11 +38,11 @@ export function UserDropdown() {
     <div ref={dropdownRef} className="relative">
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:text-blue-600 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
+        className="flex items-center space-x-1 sm:space-x-2 px-2 sm:px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:text-blue-600 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors min-h-[44px]"
       >
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center space-x-1 sm:space-x-2">
           {/* User Avatar */}
-          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-semibold text-sm">
+          <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-semibold text-sm">
             {user.firstName?.[0]?.toUpperCase() || user.email?.[0]?.toUpperCase() || 'U'}
           </div>
           <span className="hidden sm:inline">
@@ -51,7 +51,7 @@ export function UserDropdown() {
         </div>
         {/* Dropdown Icon */}
         <svg
-          className={`w-4 h-4 transition-transform ${isOpen ? 'rotate-180' : ''}`}
+          className={`w-4 h-4 transition-transform hidden sm:block ${isOpen ? 'rotate-180' : ''}`}
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
@@ -61,7 +61,13 @@ export function UserDropdown() {
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-50">
+        <>
+          {/* Backdrop for mobile */}
+          <div
+            className="fixed inset-0 bg-black bg-opacity-25 z-40 sm:hidden"
+            onClick={() => setIsOpen(false)}
+          />
+          <div className="absolute right-0 mt-2 w-56 sm:w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-50 sm:z-50">
           <div className="py-1" role="menu" aria-orientation="vertical">
             {/* User Info */}
             <div className="px-4 py-3 border-b border-gray-200">
@@ -75,7 +81,7 @@ export function UserDropdown() {
             <Link
               href="/dashboard"
               onClick={() => setIsOpen(false)}
-              className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900 transition-colors"
+              className="block px-4 py-3 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900 transition-colors min-h-[44px] flex items-center"
               role="menuitem"
             >
               <div className="flex items-center space-x-2">
@@ -90,7 +96,7 @@ export function UserDropdown() {
             <Link
               href="/profile"
               onClick={() => setIsOpen(false)}
-              className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900 transition-colors"
+              className="block px-4 py-3 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900 transition-colors min-h-[44px] flex items-center"
               role="menuitem"
             >
               <div className="flex items-center space-x-2">
@@ -105,7 +111,7 @@ export function UserDropdown() {
             <Link
               href="/calendar"
               onClick={() => setIsOpen(false)}
-              className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900 transition-colors"
+              className="block px-4 py-3 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900 transition-colors min-h-[44px] flex items-center"
               role="menuitem"
             >
               <div className="flex items-center space-x-2">
@@ -121,7 +127,7 @@ export function UserDropdown() {
             <Link
               href="/settings"
               onClick={() => setIsOpen(false)}
-              className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900 transition-colors"
+              className="block px-4 py-3 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900 transition-colors min-h-[44px] flex items-center"
               role="menuitem"
             >
               <div className="flex items-center space-x-2">
@@ -140,7 +146,7 @@ export function UserDropdown() {
                 <Link
                   href="/admin"
                   onClick={() => setIsOpen(false)}
-                  className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900 transition-colors"
+                  className="block px-4 py-3 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900 transition-colors min-h-[44px] flex items-center"
                   role="menuitem"
                 >
                   <div className="flex items-center space-x-2">
@@ -157,7 +163,7 @@ export function UserDropdown() {
             <div className="border-t border-gray-200 my-1"></div>
             <button
               onClick={handleLogout}
-              className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 hover:text-red-700 transition-colors"
+              className="block w-full text-left px-4 py-3 text-sm text-red-600 hover:bg-red-50 hover:text-red-700 transition-colors min-h-[44px] flex items-center"
               role="menuitem"
             >
               <div className="flex items-center space-x-2">
@@ -169,6 +175,7 @@ export function UserDropdown() {
             </button>
           </div>
         </div>
+        </>
       )}
     </div>
   );

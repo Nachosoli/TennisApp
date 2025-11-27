@@ -184,8 +184,110 @@ export const ApplicationsTable = ({ matchId, matchFormat = 'singles', matchStatu
   }
 
   return (
-    <div className="overflow-x-auto">
-      <table className="min-w-full divide-y divide-gray-200">
+    <>
+      {/* Mobile Card View */}
+      <div className="md:hidden space-y-4">
+        {applications.map((application) => {
+          const user = application.user || application.applicant;
+          if (!user) return null;
+
+          return (
+            <div key={application.id} className="bg-white border border-gray-200 rounded-lg p-4 space-y-3">
+              <div className="flex items-start justify-between">
+                <div className="flex-1">
+                  <h3 className="font-semibold text-gray-900">
+                    {user.firstName} {user.lastName}
+                  </h3>
+                  <div className="mt-2 space-y-1 text-sm text-gray-600">
+                    {application.matchSlot && (
+                      <div>
+                        <span className="font-medium">Time:</span> {formatSlotTime(application.matchSlot.startTime)} - {formatSlotTime(application.matchSlot.endTime)}
+                      </div>
+                    )}
+                    {formatRating(user) && (
+                      <div>
+                        <span className="font-medium">Rating:</span> {formatRating(user)}
+                      </div>
+                    )}
+                    {formatElo(user) && (
+                      <div>
+                        <span className="font-medium">ELO:</span> {formatElo(user)}
+                      </div>
+                    )}
+                    {formatWinRate(user) && (
+                      <div>
+                        <span className="font-medium">Win Rate:</span> {formatWinRate(user)}
+                      </div>
+                    )}
+                    {formatCancellationRate(user) && (
+                      <div>
+                        <span className="font-medium">Cancellation Rate:</span> {formatCancellationRate(user)}
+                      </div>
+                    )}
+                  </div>
+                </div>
+                <span className={`px-2 py-1 text-xs font-medium rounded-full ${
+                  application.status?.toLowerCase() === 'confirmed' ? 'bg-green-100 text-green-800' :
+                  application.status?.toLowerCase() === 'rejected' ? 'bg-red-100 text-red-800' :
+                  application.status?.toLowerCase() === 'waitlisted' ? 'bg-orange-100 text-orange-800' :
+                  'bg-yellow-100 text-yellow-800'
+                }`}>
+                  {application.status}
+                </span>
+              </div>
+              {(application.status?.toLowerCase() === 'pending' || 
+                (application.status?.toLowerCase() === 'waitlisted' && matchStatus?.toLowerCase() === 'pending' && matchFormat === 'singles')) && (
+                <div className="flex flex-col gap-2 pt-2 border-t border-gray-200">
+                  {application.status?.toLowerCase() === 'pending' && (
+                    <>
+                      <Button
+                        variant="primary"
+                        size="sm"
+                        onClick={() => handleConfirm(application.id)}
+                        className="w-full"
+                      >
+                        Confirm
+                      </Button>
+                      <Button
+                        variant="danger"
+                        size="sm"
+                        onClick={() => handleReject(application.id)}
+                        className="w-full"
+                      >
+                        Reject
+                      </Button>
+                    </>
+                  )}
+                  {application.status?.toLowerCase() === 'waitlisted' && matchStatus?.toLowerCase() === 'pending' && matchFormat === 'singles' && (
+                    <>
+                      <Button
+                        variant="primary"
+                        size="sm"
+                        onClick={() => handleApproveFromWaitlist(application.id)}
+                        className="w-full"
+                      >
+                        Approve from Waitlist
+                      </Button>
+                      <Button
+                        variant="danger"
+                        size="sm"
+                        onClick={() => handleReject(application.id)}
+                        className="w-full"
+                      >
+                        Reject
+                      </Button>
+                    </>
+                  )}
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Desktop Table View */}
+      <div className="hidden md:block overflow-x-auto">
+        <table className="min-w-full divide-y divide-gray-200">
         <thead className="bg-gray-50">
           <tr>
             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
@@ -288,7 +390,8 @@ export const ApplicationsTable = ({ matchId, matchFormat = 'singles', matchStatu
           })}
         </tbody>
       </table>
-    </div>
+      </div>
+    </>
   );
 };
 
