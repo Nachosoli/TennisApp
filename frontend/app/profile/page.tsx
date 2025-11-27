@@ -556,7 +556,6 @@ function ProfilePageContent() {
               {...register('email')}
               error={errors.email?.message}
             />
-            {/* Commented out until SendGrid email verification is enabled
             {user?.emailVerified && (
               <p className="text-sm text-green-600 -mt-2 flex items-center">
                 <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
@@ -565,7 +564,6 @@ function ProfilePageContent() {
                 Email verified
               </p>
             )}
-            */}
 
             <div>
               <div className="flex items-center gap-2">
