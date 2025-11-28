@@ -118,6 +118,9 @@ export class ApplicationsService {
 
       const savedApplication = await this.applicationRepository.save(application);
 
+      // Clear match cache to force refresh on frontend
+      await this.matchesService.clearMatchCache(slot.match.id);
+
       // Notify match creator about new waitlist application
       const matchDate = slot.match.date instanceof Date 
         ? slot.match.date.toLocaleDateString() 
@@ -195,6 +198,9 @@ export class ApplicationsService {
     });
 
     const savedApplication = await this.applicationRepository.save(application);
+
+    // Clear match cache to force refresh on frontend
+    await this.matchesService.clearMatchCache(slot.match.id);
 
     // Notify match creator about new application
     const matchDate = slot.match.date instanceof Date 

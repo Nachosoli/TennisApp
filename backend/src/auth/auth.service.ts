@@ -4,11 +4,14 @@ import {
   ConflictException,
   BadRequestException,
   Logger,
+  Inject,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ConfigService } from '@nestjs/config';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import type { Cache } from 'cache-manager';
 import { User, UserRole, Gender } from '../entities/user.entity';
 import { UserStats } from '../entities/user-stats.entity';
 import { PasswordService } from './services/password.service';
@@ -36,6 +39,7 @@ export class AuthService {
     private emailService: EmailService,
     private jwtService: JwtService,
     private configService: ConfigService,
+    @Inject(CACHE_MANAGER) private cacheManager: Cache,
   ) {}
 
   async register(registerDto: RegisterDto): Promise<{
@@ -181,27 +185,46 @@ export class AuthService {
   }
 
   async verifyEmail(email: string, token: string): Promise<void> {
+    this.logger.log(`Email verification attempt for: ${email}`);
+    
     const user = await this.userRepository.findOne({
       where: { email },
     });
 
     if (!user) {
+      this.logger.warn(`Email verification failed: User not found for email ${email}`);
       throw new UnauthorizedException('User not found');
     }
 
     if (user.emailVerified) {
+      this.logger.warn(`Email verification failed: Email already verified for user ${user.id}`);
       throw new BadRequestException('Email is already verified');
     }
 
     const isValid = await this.emailVerificationService.verifyEmailToken(email, token);
 
     if (!isValid) {
+      this.logger.warn(`Email verification failed: Invalid or expired token for email ${email}, user ${user.id}`);
       throw new BadRequestException('Invalid or expired verification token');
     }
 
-    user.emailVerified = true;
-    await this.userRepository.save(user);
-    this.logger.log(`Email verified for user ${user.id}`);
+    this.logger.log(`Token validated successfully for user ${user.id}, updating database...`);
+    
+    try {
+      user.emailVerified = true;
+      await this.userRepository.save(user);
+      
+      // Invalidate user cache so the updated emailVerified status is reflected immediately
+      const cacheKey = `user:${user.id}`;
+      await this.cacheManager.del(cacheKey);
+      this.logger.log(`User cache invalidated for user ${user.id}`);
+      
+      this.logger.log(`Email verified successfully for user ${user.id} (${email})`);
+    } catch (error) {
+      this.logger.error(`Failed to save email verification status for user ${user.id}:`, error);
+      // Token was already deleted, so user will need to request a new verification email
+      throw new BadRequestException('Failed to verify email. Please request a new verification email.');
+    }
   }
 
   async resendVerificationEmail(userId: string): Promise<void> {
