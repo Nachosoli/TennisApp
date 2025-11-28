@@ -21,7 +21,7 @@ This document tracks all reported bugs and their fixes.
 ## Issue 2: Navigation
 
 ### 2.a - Mobile Navigation Background
-**Status:** Pending  
+**Status:** Fixed  
 **Description:** On mobile, left-hand navigation shows a black background on the right. Should be a "drop left" overlay on the current page. Currently looks like a new page with black background.  
 **Files Affected:** `frontend/src/components/layout/NavigationBar.tsx`  
 **Fix Required:** Change mobile menu to overlay instead of full-screen with black background.
@@ -49,7 +49,7 @@ This document tracks all reported bugs and their fixes.
 **Fix Required:** Ensure notifications array is cleared and empty state is shown.
 
 ### 3.d - Mobile Notification Dropdown
-**Status:** Pending  
+**Status:** Fixed  
 **Description:** On mobile, notification dropdown looks ugly, like the left navigation. Not centered and has a black background. Should display over the current page.  
 **Files Affected:** `frontend/src/components/NotificationBell.tsx`  
 **Fix Required:** Fix mobile styling to overlay properly without black background.
@@ -59,7 +59,7 @@ This document tracks all reported bugs and their fixes.
 ## Issue 4: Create User / Email Verification
 
 ### 4.a - Email Verification Message for Social Accounts
-**Status:** Pending  
+**Status:** Fixed  
 **Description:** When user creates a new account, we show a message about sending email to verify email address. Do not show this message to social account creation. For regular accounts, add a copy message saying something about checking spam folder.  
 **Files Affected:** `frontend/app/auth/register/page.tsx`, `frontend/app/auth/callback/page.tsx`  
 **Fix Required:** Conditionally show email verification message only for regular accounts, add spam folder message.
@@ -75,13 +75,13 @@ This document tracks all reported bugs and their fixes.
 ## Issue 5: Calendar Page
 
 ### 5.a - Mobile Calendar Page Size
-**Status:** Pending  
+**Status:** Fixed  
 **Description:** Mobile - the whole page is too big for mobile. Create Match and Hide Map buttons are too big.  
 **Files Affected:** `frontend/app/calendar/page.tsx`  
 **Fix Required:** Reduce button sizes and overall page spacing on mobile.
 
 ### 5.b - Filters Space on Mobile
-**Status:** Pending  
+**Status:** Fixed  
 **Description:** Mobile - Filters occupy too much space by default.  
 **Files Affected:** `frontend/app/calendar/page.tsx`  
 **Fix Required:** Make filters more compact on mobile, possibly collapsible.
@@ -151,7 +151,7 @@ This document tracks all reported bugs and their fixes.
 **Fix Required:** Clear or hide chat history when applicant withdraws.
 
 ### 6.g - Automated Message Formatting
-**Status:** Pending  
+**Status:** Fixed  
 **Description:** The automated message (1st message in the chat) has a closing ")" on the date, but not an opening one (mobile and desktop).  
 **Files Affected:** `backend/src/chat/chat.service.ts` or match creation service  
 **Fix Required:** Fix the automated message formatting.
@@ -167,7 +167,7 @@ This document tracks all reported bugs and their fixes.
 ## Issue 7: Dashboard
 
 ### 7.a - Mobile Dashboard Size
-**Status:** Pending  
+**Status:** Fixed  
 **Description:** Mobile - The whole dashboard is too big, cards are too big. Needs to be revamped for Mobile UX.  
 **Files Affected:** `frontend/app/dashboard/page.tsx`  
 **Fix Required:** Reduce card sizes, spacing, and overall layout for mobile.
@@ -195,7 +195,7 @@ This document tracks all reported bugs and their fixes.
 ## Issue 8: Report Score
 
 ### 8.1 - Score Report Player Order
-**Status:** Pending  
+**Status:** Fixed  
 **Description:** Report score screen should always show "Creator vs Opponent", using the real names, but in that order. If I am opponent I should see "Creator's name vs My Name". Right now, shows Current user 1st vs the other user 2nd (mobile and desktop).  
 **Files Affected:** `frontend/app/matches/[id]/score/page.tsx` (if exists)  
 **Fix Required:** Always show creator first, then opponent, regardless of who is viewing.
