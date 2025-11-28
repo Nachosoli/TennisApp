@@ -215,6 +215,7 @@ export default function CalendarPage() {
               </button>
             </div>
           </div>
+        </div>
 
         {/* Filters Bar - Compact when collapsed, hidden on mobile when collapsed */}
         {!filtersCollapsed && (
@@ -276,15 +277,16 @@ export default function CalendarPage() {
                 <option value="indoor">Indoor</option>
               </select>
 
-              {/* Match Count Display */}
-              <div className="flex items-center justify-center px-3 sm:px-4 py-2 sm:py-2.5 bg-blue-50 border border-blue-200 rounded-lg">
-                <span className="text-xs sm:text-sm font-semibold text-blue-700">
-                  {matchCount} {matchCount === 1 ? 'match' : 'matches'}
-                </span>
+                {/* Match Count Display */}
+                <div className="flex items-center justify-center px-3 sm:px-4 py-2 sm:py-2.5 bg-blue-50 border border-blue-200 rounded-lg">
+                  <span className="text-xs sm:text-sm font-semibold text-blue-700">
+                    {matchCount} {matchCount === 1 ? 'match' : 'matches'}
+                  </span>
+                </div>
               </div>
             </div>
-          </div>
-        </Card>
+          </Card>
+        )}
 
         {/* Main Content - Split Layout (Airbnb Style) */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 h-[calc(100vh-280px)] min-h-[400px]">
