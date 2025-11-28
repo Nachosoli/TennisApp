@@ -32,7 +32,7 @@ export default function CalendarPage() {
   // Hide map by default on mobile, show on desktop
   const [showMap, setShowMap] = useState(false);
   const [homeCourt, setHomeCourt] = useState<Court | null>(null);
-  const [filtersCollapsed, setFiltersCollapsed] = useState(false);
+  const [filtersCollapsed, setFiltersCollapsed] = useState(true);
   const matchesSectionRef = useRef<HTMLDivElement>(null);
   const lastScrollY = useRef(0);
   const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -174,41 +174,38 @@ export default function CalendarPage() {
   return (
     <Layout>
       <div className="space-y-4">
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-4">
-          <h1 className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900">Find Tennis Matches</h1>
-          <div className="flex items-center gap-2 sm:gap-3 w-full sm:w-auto">
-            <Link href="/matches/create" className="flex-1 sm:flex-initial">
-              <Button variant="primary" className="w-full sm:w-auto flex items-center justify-center gap-2 text-sm sm:text-base px-3 sm:px-4 py-2 sm:py-2.5">
-                <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                </svg>
-                <span className="hidden sm:inline">Create Match</span>
-                <span className="sm:hidden">Create</span>
-              </Button>
-            </Link>
-            <button
-              onClick={() => setShowMap(!showMap)}
-              className="px-3 sm:px-4 py-2 sm:py-2.5 bg-white border border-gray-300 rounded-lg text-xs sm:text-sm font-medium text-gray-700 hover:bg-gray-50 min-h-[44px]"
-            >
-              {showMap ? 'Hide Map' : 'Show Map'}
-            </button>
-          </div>
-        </div>
-
-        {/* Filters Bar - Airbnb Style */}
-        <Card className={`bg-white shadow-sm transition-all ${filtersCollapsed ? 'p-2' : 'p-2 sm:p-4'}`}>
-          <div className="space-y-2 sm:space-y-4">
-            {/* Mobile: Collapse/Expand Button */}
-            <div className="flex justify-between items-center sm:hidden">
-              <h2 className="text-sm font-semibold text-gray-700">Filters</h2>
+        {/* Header with Filters Toggle */}
+        <div className="flex flex-col gap-2 sm:gap-4">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-4">
+            <h1 className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900">Find Tennis Matches</h1>
+            <div className="flex items-center gap-2 sm:gap-3 w-full sm:w-auto">
+              <Link href="/matches/create" className="flex-1 sm:flex-initial">
+                <Button variant="primary" className="w-full sm:w-auto flex items-center justify-center gap-2 text-sm sm:text-base px-3 sm:px-4 py-2 sm:py-2.5">
+                  <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                  </svg>
+                  <span className="hidden sm:inline">Create Match</span>
+                  <span className="sm:hidden">Create</span>
+                </Button>
+              </Link>
+              <button
+                onClick={() => setShowMap(!showMap)}
+                className="px-3 sm:px-4 py-2 sm:py-2.5 bg-white border border-gray-300 rounded-lg text-xs sm:text-sm font-medium text-gray-700 hover:bg-gray-50 min-h-[44px]"
+              >
+                {showMap ? 'Hide Map' : 'Show Map'}
+              </button>
+              {/* Mobile: Filters Toggle Button */}
               <button
                 onClick={() => setFiltersCollapsed(!filtersCollapsed)}
-                className="p-2 text-gray-600 hover:text-gray-900"
+                className="sm:hidden px-3 py-2 bg-white border border-gray-300 rounded-lg text-xs font-medium text-gray-700 hover:bg-gray-50 min-h-[44px] flex items-center justify-center gap-1"
                 aria-label={filtersCollapsed ? 'Expand filters' : 'Collapse filters'}
               >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+                </svg>
+                <span>Filters</span>
                 <svg
-                  className={`w-5 h-5 transition-transform ${filtersCollapsed ? '' : 'rotate-180'}`}
+                  className={`w-4 h-4 transition-transform ${filtersCollapsed ? '' : 'rotate-180'}`}
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -217,9 +214,33 @@ export default function CalendarPage() {
                 </svg>
               </button>
             </div>
+          </div>
+
+        {/* Filters Bar - Compact when collapsed, hidden on mobile when collapsed */}
+        {!filtersCollapsed && (
+          <Card className="bg-white shadow-sm p-2 sm:p-4">
+            <div className="space-y-2 sm:space-y-4">
+              {/* Desktop: Collapse/Expand Button */}
+              <div className="hidden sm:flex justify-between items-center">
+                <h2 className="text-sm font-semibold text-gray-700">Filters</h2>
+                <button
+                  onClick={() => setFiltersCollapsed(!filtersCollapsed)}
+                  className="p-2 text-gray-600 hover:text-gray-900"
+                  aria-label={filtersCollapsed ? 'Expand filters' : 'Collapse filters'}
+                >
+                  <svg
+                    className={`w-5 h-5 transition-transform ${filtersCollapsed ? '' : 'rotate-180'}`}
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
+              </div>
             
-            {/* Top Row - Main Filters */}
-            <div className={`grid grid-cols-1 md:grid-cols-4 gap-1.5 sm:gap-3 transition-all ${filtersCollapsed ? 'hidden' : 'block'}`}>
+              {/* Top Row - Main Filters */}
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-1.5 sm:gap-3">
               <select
                 className="w-full px-2.5 sm:px-4 py-2 sm:py-2.5 text-sm border border-gray-300 rounded-lg text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-shadow hover:shadow-md"
                 value={filters.skillLevel || ''}
