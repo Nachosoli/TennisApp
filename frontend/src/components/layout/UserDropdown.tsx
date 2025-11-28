@@ -62,12 +62,13 @@ export function UserDropdown() {
 
       {isOpen && (
         <>
-          {/* Backdrop for mobile */}
+          {/* Backdrop - iOS-compatible rgba for better transparency rendering */}
           <div
-            className="fixed inset-0 bg-black bg-opacity-25 z-40 sm:hidden"
+            className="fixed inset-0 z-40 sm:bg-transparent"
+            style={{ backgroundColor: 'rgba(0, 0, 0, 0.05)' }}
             onClick={() => setIsOpen(false)}
           />
-          <div className="absolute right-0 mt-2 w-56 sm:w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-50 sm:z-50">
+          <div className="absolute right-1/2 sm:right-0 translate-x-1/2 sm:translate-x-0 mt-2 w-[calc(100vw-2rem)] sm:w-56 max-w-sm rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-50">
           <div className="py-1" role="menu" aria-orientation="vertical">
             {/* User Info */}
             <div className="px-4 py-3 border-b border-gray-200">

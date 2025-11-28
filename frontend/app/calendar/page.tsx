@@ -29,12 +29,21 @@ export default function CalendarPage() {
   const [filteredMatches, setFilteredMatches] = useState<Match[]>([]);
   const [matchCount, setMatchCount] = useState(0);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
-  const [showMap, setShowMap] = useState(true);
+  // Hide map by default on mobile, show on desktop
+  const [showMap, setShowMap] = useState(false);
   const [homeCourt, setHomeCourt] = useState<Court | null>(null);
   const [filtersCollapsed, setFiltersCollapsed] = useState(false);
   const matchesSectionRef = useRef<HTMLDivElement>(null);
   const lastScrollY = useRef(0);
   const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Set showMap based on screen size on mount
+  useEffect(() => {
+    // On desktop (lg breakpoint and above), show map by default
+    if (window.innerWidth >= 1024) {
+      setShowMap(true);
+    }
+  }, []);
 
   // Load all matches to calculate counts by distance
   useEffect(() => {

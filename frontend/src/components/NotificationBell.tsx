@@ -111,11 +111,11 @@ export const NotificationBell = () => {
               )}
             </div>
             {notifications.length > 0 && (
-              <div className="px-3 py-2 border-t border-gray-200 bg-gray-50 flex items-center justify-between gap-3">
+              <div className="px-3 py-2 border-t border-gray-200 bg-gray-50 flex items-center gap-2">
                 <Link
                   href="/notifications"
                   onClick={() => setIsOpen(false)}
-                  className="px-4 py-2 text-sm font-medium text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded transition-colors min-h-[44px] flex items-center justify-center"
+                  className="flex-1 px-3 py-2 text-sm font-medium text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded transition-colors min-h-[44px] flex items-center justify-center"
                 >
                   View All
                 </Link>
@@ -136,7 +136,7 @@ export const NotificationBell = () => {
                     }
                   }}
                   disabled={isClearing}
-                  className="px-4 py-2 text-sm font-medium text-red-600 hover:text-red-700 hover:bg-red-50 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px] flex items-center justify-center"
+                  className="flex-1 px-3 py-2 text-sm font-medium text-red-600 hover:text-red-700 hover:bg-red-50 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px] flex items-center justify-center"
                 >
                   {isClearing ? 'Clearing...' : 'Clear'}
                 </button>
