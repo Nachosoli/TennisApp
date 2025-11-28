@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -86,7 +86,8 @@ function ProfilePageContent() {
   const formRef = useRef<HTMLFormElement>(null);
   
   // Google Maps - useLoadScript must be called unconditionally
-  const googleMapsApiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || '';
+  // Memoize API key to ensure stable reference
+  const googleMapsApiKey = useMemo(() => process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || '', []);
   const { isLoaded: isGoogleMapsLoaded } = useLoadScript({
     googleMapsApiKey,
     libraries: ['places'],
