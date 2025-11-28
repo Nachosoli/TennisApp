@@ -405,6 +405,7 @@ export default function MatchDetailPage() {
                       key={slot.id}
                       className={`p-3 rounded-lg border ${
                         isConfirmed ? 'bg-green-50 border-green-200' :
+                        shouldGreyOut ? 'bg-gray-100 border-gray-300 opacity-60' :
                         isAvailable ? 'bg-blue-50 border-blue-200' :
                         'bg-gray-50 border-gray-200'
                       }`}
@@ -427,11 +428,14 @@ export default function MatchDetailPage() {
                               return slot.status || 'Unknown';
                             })()}
                           </p>
-                          {isAvailable && !isCreator && !hasApplicationForSlot && (
+                          {isAvailable && !isCreator && !hasApplicationForSlot && !shouldGreyOut && (
                             <p className="text-xs text-blue-600 mt-1">Click Apply to join this time slot</p>
                           )}
+                          {shouldGreyOut && (
+                            <p className="text-xs text-gray-500 mt-1">Match is confirmed</p>
+                          )}
                         </div>
-                        {!isCreator && isAvailable && isMatchPending && (
+                        {!isCreator && isAvailable && isMatchPending && !shouldGreyOut && (
                           (() => {
                             // Check if user has any application to any slot of this match
                             const hasAnyApplication = user && currentMatch.slots?.some(s =>
