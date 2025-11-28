@@ -83,6 +83,7 @@ function ProfilePageContent() {
   const autocompleteRef = useRef<google.maps.places.Autocomplete | null>(null);
   const facilityInputRef = useRef<HTMLInputElement>(null);
   const facilityDropdownRef = useRef<HTMLDivElement>(null);
+  const formRef = useRef<HTMLFormElement>(null);
   
   // Google Maps
   const googleMapsApiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || '';
@@ -515,8 +516,6 @@ function ProfilePageContent() {
       </Layout>
     );
   }
-
-  const formRef = useRef<HTMLFormElement>(null);
 
   return (
     <Layout>

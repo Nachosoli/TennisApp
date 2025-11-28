@@ -64,7 +64,7 @@ export class AuthService {
       phone: registerDto.phone,
       firstName: registerDto.firstName,
       lastName: registerDto.lastName,
-      phoneVerified: false, // Users must verify their phone via SMS
+      phoneVerified: true, // Hardcoded to true for now
       emailVerified: false, // Users must verify their email via the verification link
       gender: Gender.OTHER, // Default to 'other' during registration, user can update on profile page
       role: UserRole.USER,
