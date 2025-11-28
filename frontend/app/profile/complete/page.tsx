@@ -52,6 +52,7 @@ export default function CompleteProfilePage() {
     handleSubmit,
     watch,
     setValue,
+    getValues,
     formState: { errors },
     reset,
   } = useForm<CompleteProfileFormData>({
@@ -73,14 +74,14 @@ export default function CompleteProfilePage() {
       const options = getRatingValueOptions(selectedRatingType);
       if (options.length > 0) {
         // Set to first option if current value is not valid for new type
-        const currentValue = watch('ratingValue');
+        const currentValue = getValues('ratingValue');
         const isValid = options.some(opt => opt.value === currentValue);
         if (!isValid) {
           setValue('ratingValue', options[0].value);
         }
       }
     }
-  }, [selectedRatingType, setValue, watch]);
+  }, [selectedRatingType, setValue, getValues]);
   
   useEffect(() => {
     if (user) {

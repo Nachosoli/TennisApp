@@ -143,7 +143,7 @@ function ProfilePageContent() {
       const options = getRatingValueOptions(selectedRatingType);
       if (options.length > 0) {
         // Set to first option if current value is not valid for new type
-        const currentValue = watch('ratingValue');
+        const currentValue = getValues('ratingValue');
         const isValid = options.some(opt => opt.value === currentValue);
         if (!isValid) {
           setValue('ratingValue', options[0].value);
@@ -153,7 +153,7 @@ function ProfilePageContent() {
       // Clear rating value if rating type is cleared
       setValue('ratingValue', undefined);
     }
-  }, [selectedRatingType, setValue, watch]);
+  }, [selectedRatingType, setValue, getValues]);
 
   // Fetch fresh user data when component mounts to ensure phone number is loaded
   useEffect(() => {
