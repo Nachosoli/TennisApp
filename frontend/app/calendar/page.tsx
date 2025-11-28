@@ -33,6 +33,10 @@ export default function CalendarPage() {
   const [homeCourt, setHomeCourt] = useState<Court | null>(null);
   const [filtersCollapsed, setFiltersCollapsed] = useState(false);
   const matchesSectionRef = useRef<HTMLDivElement>(null);
+  const lastScrollY = useRef(0);
+  const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const lastScrollY = useRef(0);
+  const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Load all matches to calculate counts by distance
   useEffect(() => {
@@ -109,6 +113,45 @@ export default function CalendarPage() {
     setMatchCount(filtered.length);
   }, [filters, allMatches]);
 
+  // Auto-collapse filters on mobile when scrolling down
+  useEffect(() => {
+    const handleScroll = () => {
+      // Only on mobile
+      if (window.innerWidth >= 640) return; // sm breakpoint
+      
+      const currentScrollY = window.scrollY;
+      
+      // Clear existing timeout
+      if (scrollTimeoutRef.current) {
+        clearTimeout(scrollTimeoutRef.current);
+      }
+      
+      // If scrolling down significantly, collapse filters
+      if (currentScrollY > lastScrollY.current + 50 && !filtersCollapsed) {
+        setFiltersCollapsed(true);
+      }
+      // If scrolling up significantly, expand filters
+      else if (currentScrollY < lastScrollY.current - 50 && filtersCollapsed) {
+        setFiltersCollapsed(false);
+      }
+      
+      lastScrollY.current = currentScrollY;
+      
+      // Reset after scroll stops
+      scrollTimeoutRef.current = setTimeout(() => {
+        // Keep collapsed state as user left it
+      }, 150);
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      if (scrollTimeoutRef.current) {
+        clearTimeout(scrollTimeoutRef.current);
+      }
+    };
+  }, [filtersCollapsed]);
+
   if (authLoading) {
     return (
       <Layout>
@@ -147,8 +190,8 @@ export default function CalendarPage() {
         </div>
 
         {/* Filters Bar - Airbnb Style */}
-        <Card className={`bg-white shadow-sm transition-all ${filtersCollapsed ? 'p-2' : 'p-3 sm:p-4'}`}>
-          <div className="space-y-3 sm:space-y-4">
+        <Card className={`bg-white shadow-sm transition-all ${filtersCollapsed ? 'p-2' : 'p-2 sm:p-4'}`}>
+          <div className="space-y-2 sm:space-y-4">
             {/* Mobile: Collapse/Expand Button */}
             <div className="flex justify-between items-center sm:hidden">
               <h2 className="text-sm font-semibold text-gray-700">Filters</h2>
@@ -169,9 +212,9 @@ export default function CalendarPage() {
             </div>
             
             {/* Top Row - Main Filters */}
-            <div className={`grid grid-cols-1 md:grid-cols-4 gap-2 sm:gap-3 transition-all ${filtersCollapsed ? 'hidden' : 'block'}`}>
+            <div className={`grid grid-cols-1 md:grid-cols-4 gap-1.5 sm:gap-3 transition-all ${filtersCollapsed ? 'hidden' : 'block'}`}>
               <select
-                className="w-full px-3 sm:px-4 py-2 sm:py-2.5 text-sm sm:text-base border border-gray-300 rounded-lg text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-shadow hover:shadow-md"
+                className="w-full px-2.5 sm:px-4 py-2 sm:py-2.5 text-sm border border-gray-300 rounded-lg text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-shadow hover:shadow-md"
                 value={filters.skillLevel || ''}
                 onChange={(e) => setFilters({ ...filters, skillLevel: e.target.value || undefined })}
               >
@@ -183,7 +226,7 @@ export default function CalendarPage() {
               </select>
 
               <select
-                className="w-full px-3 sm:px-4 py-2 sm:py-2.5 text-sm sm:text-base border border-gray-300 rounded-lg text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-shadow hover:shadow-md"
+                className="w-full px-2.5 sm:px-4 py-2 sm:py-2.5 text-sm border border-gray-300 rounded-lg text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-shadow hover:shadow-md"
                 value={filters.gender || ''}
                 onChange={(e) => setFilters({ ...filters, gender: e.target.value || undefined })}
               >
@@ -194,7 +237,7 @@ export default function CalendarPage() {
               </select>
 
               <select
-                className="w-full px-3 sm:px-4 py-2 sm:py-2.5 text-sm sm:text-base border border-gray-300 rounded-lg text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-shadow hover:shadow-md"
+                className="w-full px-2.5 sm:px-4 py-2 sm:py-2.5 text-sm border border-gray-300 rounded-lg text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-shadow hover:shadow-md"
                 value={filters.surface || ''}
                 onChange={(e) => setFilters({ ...filters, surface: e.target.value || undefined })}
               >

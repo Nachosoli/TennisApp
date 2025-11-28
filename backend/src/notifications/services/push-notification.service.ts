@@ -79,7 +79,8 @@ export class PushNotificationService {
   generatePushTitle(type: NotificationType): string {
     const titles = {
       [NotificationType.MATCH_CONFIRMED]: 'Match Confirmed!',
-      [NotificationType.MATCH_ACCEPTED]: 'New Application',
+      [NotificationType.MATCH_ACCEPTED]: 'Application Accepted',
+      [NotificationType.MATCH_APPLICANT]: 'New Application',
       [NotificationType.MATCH_CREATED]: 'New Match',
       [NotificationType.COURT_CHANGES]: 'Court Updated',
       [NotificationType.SCORE_REMINDER]: 'Score Reminder',
@@ -93,6 +94,8 @@ export class PushNotificationService {
       case NotificationType.MATCH_CONFIRMED:
         return `Your match on ${metadata.matchDate || 'the scheduled date'} at ${metadata.courtName || 'the court'} is confirmed!`;
       case NotificationType.MATCH_ACCEPTED:
+        return `Your application to join a match has been accepted!`;
+      case NotificationType.MATCH_APPLICANT:
         return `${metadata.applicantName || 'Someone'} applied to your match. Confirm now!`;
       default:
         return 'You have a new notification in CourtBuddy';

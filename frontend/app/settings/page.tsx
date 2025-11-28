@@ -11,7 +11,7 @@ import { NotificationPreference } from '@/types';
 import { PageLoader } from '@/components/ui/PageLoader';
 import { useRequireAuth } from '@/hooks/useRequireAuth';
 
-type NotificationType = 'match_created' | 'match_accepted' | 'match_confirmed' | 'court_changes' | 'score_reminder' | 'new_chat';
+type NotificationType = 'match_created' | 'match_accepted' | 'match_applicant' | 'match_confirmed' | 'court_changes' | 'score_reminder' | 'new_chat';
 
 const NOTIFICATION_TYPES: { type: NotificationType; label: string; description: string }[] = [
   {
@@ -23,6 +23,11 @@ const NOTIFICATION_TYPES: { type: NotificationType; label: string; description: 
     type: 'match_accepted',
     label: 'Match Accepted',
     description: 'When your application to join a match is accepted',
+  },
+  {
+    type: 'match_applicant',
+    label: 'Match Applicants',
+    description: 'When someone applies to your match',
   },
   {
     type: 'match_confirmed',
@@ -97,6 +102,7 @@ export default function SettingsPage() {
   const [preferences, setPreferences] = useState<Record<NotificationType, NotificationPreferenceState>>({
     match_created: { enabled: false, method: 'email' },
     match_accepted: { enabled: false, method: 'email' }, // Default OFF - users can enable if they want
+    match_applicant: { enabled: false, method: 'email' }, // Default OFF - users can enable if they want
     match_confirmed: { enabled: true, method: 'email' }, // Default ON - critical notification
     court_changes: { enabled: false, method: 'email' },
     score_reminder: { enabled: false, method: 'email' },
@@ -149,6 +155,7 @@ export default function SettingsPage() {
       const prefsMap: Record<NotificationType, NotificationPreferenceState> = {
         match_created: { enabled: false, method: 'email' },
         match_accepted: { enabled: false, method: 'email' },
+        match_applicant: { enabled: false, method: 'email' },
         match_confirmed: { enabled: false, method: 'email' },
         court_changes: { enabled: false, method: 'email' },
         score_reminder: { enabled: false, method: 'email' },

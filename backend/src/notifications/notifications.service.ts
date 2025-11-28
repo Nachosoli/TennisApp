@@ -50,7 +50,7 @@ export class NotificationsService {
     });
 
     // Default preferences: Only MATCH_CONFIRMED is ON by default, others OFF
-    // MATCH_ACCEPTED defaults to OFF (users can enable in settings if they want)
+    // MATCH_ACCEPTED and MATCH_APPLICANT default to OFF (users can enable in settings if they want)
     const isCritical = type === NotificationType.MATCH_CONFIRMED;
     const emailEnabled = preference?.emailEnabled ?? isCritical;
     const smsEnabled = preference?.smsEnabled ?? isCritical;

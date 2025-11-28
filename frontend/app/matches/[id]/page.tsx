@@ -24,7 +24,7 @@ export default function MatchDetailPage() {
   const params = useParams();
   const router = useRouter();
   const matchId = params.id as string;
-  const { currentMatch, isLoading, fetchMatchById } = useMatchesStore();
+  const { currentMatch, isLoading, fetchMatchById, optimisticallyAddApplication } = useMatchesStore();
   const { isLoading: authLoading, user } = useRequireAuth();
   const socket = useSocket();
   const [error, setError] = useState<string | null>(null);
@@ -464,18 +464,26 @@ export default function MatchDetailPage() {
                                   setApplyError(null);
                                   setApplySuccess(null);
                                   setApplyingSlotId(slot.id);
-                                  // Optimistic UI update - immediately refresh match data
+                                  
+                                  // Optimistic UI update - immediately update button state
+                                  if (user?.id) {
+                                    optimisticallyAddApplication(matchId, slot.id, user.id);
+                                  }
+                                  
+                                  // Then make API call
                                   await applicationsApi.applyToSlot({ matchSlotId: slot.id });
                                   setApplySuccess('Application submitted successfully! The match creator will review your request.');
-                                  // Immediately refresh to update Apply button state
+                                  
+                                  // Refresh to get actual application data from server
                                   await fetchMatchById(matchId);
+                                  
                                   // Clear success message after 5 seconds
                                   setTimeout(() => setApplySuccess(null), 5000);
                                 } catch (error: any) {
                                   console.error('Failed to apply:', error);
                                   const errorMessage = error?.response?.data?.message || error?.message || 'Failed to submit application. Please try again.';
                                   setApplyError(errorMessage);
-                                  // Refresh to ensure UI is in sync
+                                  // Refresh to ensure UI is in sync and revert optimistic update
                                   await fetchMatchById(matchId);
                                   // Clear error message after 5 seconds
                                   setTimeout(() => setApplyError(null), 5000);

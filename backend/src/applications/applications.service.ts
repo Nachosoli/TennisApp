@@ -7,7 +7,7 @@ import {
   forwardRef,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, MoreThan } from 'typeorm';
+import { Repository, MoreThan, In } from 'typeorm';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import type { Cache } from 'cache-manager';
 import { Application, ApplicationStatus } from '../entities/application.entity';
@@ -125,7 +125,7 @@ export class ApplicationsService {
       
       await this.notificationsService.createNotification(
         slot.match.creatorUserId,
-        NotificationType.MATCH_ACCEPTED,
+        NotificationType.MATCH_APPLICANT,
         `${user.firstName} ${user.lastName} has joined the waitlist for your match`,
         {
           applicantName: `${user.firstName} ${user.lastName}`,
@@ -157,17 +157,21 @@ export class ApplicationsService {
       throw new BadRequestException('Match is not accepting applications');
     }
 
-    // Check if user already has a pending application for this match
+    // Check if user already has any application (pending, waitlisted, or confirmed) for this match
     const existingApplication = await this.applicationRepository.findOne({
       where: {
         applicantUserId: userId,
-        status: ApplicationStatus.PENDING,
+        status: In([
+          ApplicationStatus.PENDING,
+          ApplicationStatus.WAITLISTED,
+          ApplicationStatus.CONFIRMED,
+        ]),
       },
       relations: ['matchSlot', 'matchSlot.match'],
     });
 
     if (existingApplication && existingApplication.matchSlot.match.id === slot.match.id) {
-      throw new BadRequestException('You already have a pending application for this match');
+      throw new BadRequestException('You already have an application for this match');
     }
 
     // Check for time overlap with confirmed matches only (allow pending overlaps)
@@ -199,7 +203,7 @@ export class ApplicationsService {
     
     await this.notificationsService.createNotification(
       slot.match.creatorUserId,
-      NotificationType.MATCH_ACCEPTED,
+      NotificationType.MATCH_APPLICANT,
       `${user.firstName} ${user.lastName} has applied to your match`,
       {
         applicantName: `${user.firstName} ${user.lastName}`,

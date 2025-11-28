@@ -110,9 +110,10 @@ export function NavigationBar() {
       {/* Mobile Slide-in Drawer */}
       {isMobileMenuOpen && (
         <>
-          {/* Backdrop - reduced opacity for overlay effect */}
+          {/* Backdrop - iOS-compatible rgba for better transparency rendering */}
           <div
-            className="fixed inset-0 bg-black bg-opacity-30 z-40 md:hidden"
+            className="fixed inset-0 z-40 md:hidden"
+            style={{ backgroundColor: 'rgba(0, 0, 0, 0.05)' }}
             onClick={() => setIsMobileMenuOpen(false)}
           />
           {/* Drawer - overlay instead of full screen */}

@@ -299,6 +299,9 @@ function ProfilePageContent() {
         isPublic: true,
       });
 
+      // Preserve current form values before updating user (to prevent form reset)
+      const currentFormValues = getValues();
+      
       // Update user's home court
       const updatedUser = await authApi.updateProfile({
         homeCourtId: newCourt.id,
@@ -317,6 +320,23 @@ function ProfilePageContent() {
       setShowFacilityDropdown(false);
       setHasSearched(false);
       setShowFacilityResults(false);
+      
+      // Restore form values after user update to prevent form reset
+      // Use setTimeout to ensure this runs after the useEffect that resets the form
+      setTimeout(() => {
+        reset({
+          ...currentFormValues, // Preserve user's current input
+          // Only update fields from backend if form doesn't have values
+          firstName: currentFormValues.firstName || updatedUser.firstName,
+          lastName: currentFormValues.lastName || updatedUser.lastName,
+          email: currentFormValues.email || updatedUser.email,
+          phone: currentFormValues.phone || updatedUser.phone || '',
+          bio: currentFormValues.bio || updatedUser.bio || '',
+          gender: currentFormValues.gender || (updatedUser.gender === 'male' || updatedUser.gender === 'female' ? updatedUser.gender : ''),
+          ratingType: currentFormValues.ratingType || updatedUser.ratingType || '',
+          ratingValue: currentFormValues.ratingValue ?? updatedUser.ratingValue ?? undefined,
+        });
+      }, 0);
       
       // Scroll to top of form on mobile after saving facility
       if (window.innerWidth < 768 && formRef.current) {

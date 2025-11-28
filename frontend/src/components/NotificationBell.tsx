@@ -79,10 +79,11 @@ export const NotificationBell = () => {
       {isOpen && (
         <>
           <div
-            className="fixed inset-0 z-10 bg-black bg-opacity-20 sm:bg-transparent"
+            className="fixed inset-0 z-10 sm:bg-transparent"
+            style={{ backgroundColor: 'rgba(0, 0, 0, 0.05)' }}
             onClick={() => setIsOpen(false)}
           />
-          <div className="absolute right-0 mt-2 w-[calc(100vw-2rem)] sm:w-80 max-w-sm bg-white rounded-lg shadow-2xl border border-gray-200 z-20 max-h-[calc(100vh-8rem)] overflow-y-auto">
+          <div className="absolute right-1/2 sm:right-0 translate-x-1/2 sm:translate-x-0 mt-2 w-[calc(100vw-2rem)] sm:w-80 max-w-sm bg-white rounded-lg shadow-2xl border border-gray-200 z-20 max-h-[calc(100vh-8rem)] overflow-y-auto">
             <div className="p-4 border-b border-gray-200">
               <h3 className="text-lg font-semibold text-gray-900">Notifications</h3>
             </div>
