@@ -271,51 +271,50 @@ export default function DashboardPage() {
           </Card>
         </div>
 
-        {/* Action Sections */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <Card className="bg-white p-4 sm:p-6">
-            <div className="flex items-start space-x-4">
-              <div className="bg-green-100 rounded-lg p-3">
-                <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        {/* Action Sections - Compact 2-column layout */}
+        <div className="grid grid-cols-2 gap-3 sm:gap-4">
+          <Card className="bg-white p-3 sm:p-4">
+            <div className="flex flex-col items-center text-center space-y-2">
+              <div className="bg-green-100 rounded-lg p-2 sm:p-2.5">
+                <svg className="w-5 h-5 sm:w-6 sm:h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                 </svg>
               </div>
-              <div className="flex-1">
-                <h3 className="text-xl font-bold text-gray-900 mb-2">Create New Match</h3>
-                <p className="text-gray-600 mb-4">Set up a new match and find opponents</p>
+              <div className="flex-1 w-full">
+                <h3 className="text-sm sm:text-base font-bold text-gray-900 mb-1">Create Match</h3>
                 {user.homeCourtId ? (
                   <Link href="/matches/create">
-                    <Button variant="primary" className="bg-green-600 hover:bg-green-700">
-                      Create Match
+                    <Button variant="primary" size="sm" className="w-full bg-green-600 hover:bg-green-700 text-xs sm:text-sm">
+                      Create
                     </Button>
                   </Link>
                 ) : (
                   <Button 
                     variant="primary" 
-                    className="bg-gray-400 hover:bg-gray-400 cursor-not-allowed" 
+                    size="sm"
+                    className="w-full bg-gray-400 hover:bg-gray-400 cursor-not-allowed text-xs sm:text-sm" 
                     disabled
                     title="Please set a home court in your profile to create matches"
                   >
-                    Create Match
+                    Create
                   </Button>
                 )}
               </div>
             </div>
           </Card>
 
-          <Card className="bg-white p-4 sm:p-6">
-            <div className="flex items-start space-x-4">
-              <div className="bg-green-100 rounded-lg p-3">
-                <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <Card className="bg-white p-3 sm:p-4">
+            <div className="flex flex-col items-center text-center space-y-2">
+              <div className="bg-green-100 rounded-lg p-2 sm:p-2.5">
+                <svg className="w-5 h-5 sm:w-6 sm:h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                 </svg>
               </div>
-              <div className="flex-1">
-                <h3 className="text-xl font-bold text-gray-900 mb-2">View Calendar</h3>
-                <p className="text-gray-600 mb-4">See all available matches in your area</p>
+              <div className="flex-1 w-full">
+                <h3 className="text-sm sm:text-base font-bold text-gray-900 mb-1">View Calendar</h3>
                 <Link href="/calendar">
-                  <Button variant="outline" className="border-green-600 text-green-600 hover:bg-green-50">
-                    Browse Matches
+                  <Button variant="outline" size="sm" className="w-full border-green-600 text-green-600 hover:bg-green-50 text-xs sm:text-sm">
+                    Browse
                   </Button>
                 </Link>
               </div>
