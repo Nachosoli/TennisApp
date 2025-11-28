@@ -128,7 +128,7 @@ export default function StatsPage() {
                 </svg>
               </div>
               <div>
-                <p className="text-base sm:text-2xl font-bold text-red-600">{stats.totalLosses}</p>
+                <p className="text-base sm:text-2xl font-bold text-red-600">{stats.totalLosses ?? 0}</p>
                 <p className="text-[10px] sm:text-sm text-gray-600 leading-tight">Losses</p>
               </div>
             </div>

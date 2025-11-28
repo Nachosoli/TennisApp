@@ -83,7 +83,7 @@ export const NotificationBell = () => {
             style={{ backgroundColor: 'rgba(0, 0, 0, 0.05)' }}
             onClick={() => setIsOpen(false)}
           />
-          <div className="absolute right-1/2 sm:right-0 translate-x-1/2 sm:translate-x-0 mt-2 w-[calc(100vw-2rem)] sm:w-80 max-w-sm bg-white rounded-lg shadow-2xl border border-gray-200 z-20 max-h-[calc(100vh-8rem)] overflow-y-auto">
+          <div className="absolute right-1/2 sm:right-0 translate-x-1/2 sm:translate-x-0 mt-2 w-[calc(100vw-1rem)] sm:w-80 max-w-sm bg-white rounded-lg shadow-2xl border border-gray-200 z-20 max-h-[calc(100vh-8rem)] overflow-y-auto">
             <div className="p-4 border-b border-gray-200">
               <h3 className="text-lg font-semibold text-gray-900">Notifications</h3>
             </div>
@@ -111,11 +111,11 @@ export const NotificationBell = () => {
               )}
             </div>
             {notifications.length > 0 && (
-              <div className="px-3 py-2 border-t border-gray-200 bg-gray-50 flex items-center gap-2">
+              <div className="px-2 py-2 border-t border-gray-200 bg-gray-50 flex items-center gap-2">
                 <Link
                   href="/notifications"
                   onClick={() => setIsOpen(false)}
-                  className="flex-1 px-3 py-2 text-sm font-medium text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded transition-colors min-h-[44px] flex items-center justify-center"
+                  className="flex-1 px-2 py-2 text-xs sm:text-sm font-medium text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded transition-colors min-h-[44px] flex items-center justify-center"
                 >
                   View All
                 </Link>
@@ -136,7 +136,7 @@ export const NotificationBell = () => {
                     }
                   }}
                   disabled={isClearing}
-                  className="flex-1 px-3 py-2 text-sm font-medium text-red-600 hover:text-red-700 hover:bg-red-50 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px] flex items-center justify-center"
+                  className="flex-1 px-2 py-2 text-xs sm:text-sm font-medium text-red-600 hover:text-red-700 hover:bg-red-50 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px] flex items-center justify-center"
                 >
                   {isClearing ? 'Clearing...' : 'Clear'}
                 </button>
