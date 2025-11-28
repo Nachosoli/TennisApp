@@ -85,7 +85,7 @@ function ProfilePageContent() {
   const facilityDropdownRef = useRef<HTMLDivElement>(null);
   const formRef = useRef<HTMLFormElement>(null);
   
-  // Google Maps
+  // Google Maps - useLoadScript must be called unconditionally
   const googleMapsApiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || '';
   const { isLoaded: isGoogleMapsLoaded } = useLoadScript({
     googleMapsApiKey,
