@@ -400,9 +400,10 @@ export default function MatchDetailPage() {
                      app.status?.toLowerCase() === 'confirmed')
                   ) || false;
                   
-                  // Only grey out if THIS SPECIFIC SLOT is confirmed (not if any slot is confirmed)
-                  // Users can apply to multiple slots, so we only disable the slot they've already applied to
-                  const shouldGreyOut = isConfirmed && !hasApplicationForSlot;
+                  // Grey out if:
+                  // 1. Slot is confirmed and user hasn't applied to it (other slot confirmed)
+                  // 2. User has already applied to this slot (but it's not confirmed yet)
+                  const shouldGreyOut = (isConfirmed && !hasApplicationForSlot) || (hasApplicationForSlot && !isConfirmed);
                   
                   return (
                     <div
@@ -428,6 +429,8 @@ export default function MatchDetailPage() {
                               );
                               if (hasWaitlistedApp) return 'Waitlisted';
                               if (isConfirmed) return 'Confirmed';
+                              // Show "Application sent" if user has already applied (and it's pending)
+                              if (hasApplicationForSlot && !isConfirmed) return 'Application sent';
                               if (isAvailable) return 'Available';
                               return slot.status || 'Unknown';
                             })()}
@@ -435,7 +438,10 @@ export default function MatchDetailPage() {
                           {isAvailable && !isCreator && !hasApplicationForSlot && (
                             <p className="text-xs text-blue-600 mt-1">Click Apply to join this time slot</p>
                           )}
-                          {shouldGreyOut && (
+                          {hasApplicationForSlot && !isConfirmed && !isCreator && (
+                            <p className="text-xs text-gray-500 mt-1">Application sent</p>
+                          )}
+                          {shouldGreyOut && !hasApplicationForSlot && (
                             <p className="text-xs text-gray-500 mt-1">Match is confirmed</p>
                           )}
                         </div>
