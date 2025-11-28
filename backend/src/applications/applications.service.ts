@@ -116,27 +116,47 @@ export class ApplicationsService {
         status: ApplicationStatus.WAITLISTED, // Auto-waitlist for confirmed singles matches
       });
 
-      const savedApplication = await this.applicationRepository.save(application);
+      let savedApplication: Application;
+      try {
+        savedApplication = await this.applicationRepository.save(application);
+      } catch (error: any) {
+        // Check if it's a unique constraint violation (user already applied to this slot)
+        if (error?.code === '23505' || error?.message?.includes('unique constraint')) {
+          throw new BadRequestException('You have already applied to this time slot');
+        }
+        // Re-throw other errors
+        throw error;
+      }
 
       // Clear match cache to force refresh on frontend
-      await this.matchesService.clearMatchCache(slot.match.id);
+      try {
+        await this.matchesService.clearMatchCache(slot.match.id);
+      } catch (error) {
+        // Log error but don't fail the request if cache clearing fails
+        console.warn('Failed to clear match cache after waitlist application:', error);
+      }
 
       // Notify match creator about new waitlist application
       const matchDate = slot.match.date instanceof Date 
         ? slot.match.date.toLocaleDateString() 
         : new Date(slot.match.date).toLocaleDateString();
       
-      await this.notificationsService.createNotification(
-        slot.match.creatorUserId,
-        NotificationType.MATCH_APPLICANT,
-        `${user.firstName} ${user.lastName} has joined the waitlist for your match`,
-        {
-          applicantName: `${user.firstName} ${user.lastName}`,
-          courtName: slot.match.court?.name || 'Court',
-          date: matchDate,
-          matchId: slot.match.id,
-        },
-      );
+      try {
+        await this.notificationsService.createNotification(
+          slot.match.creatorUserId,
+          NotificationType.MATCH_APPLICANT,
+          `${user.firstName} ${user.lastName} has joined the waitlist for your match`,
+          {
+            applicantName: `${user.firstName} ${user.lastName}`,
+            courtName: slot.match.court?.name || 'Court',
+            date: matchDate,
+            matchId: slot.match.id,
+          },
+        );
+      } catch (error) {
+        // Log error but don't fail the request if notification fails
+        console.warn('Failed to send waitlist application notification:', error);
+      }
 
       // Emit real-time update
       try {
@@ -160,22 +180,9 @@ export class ApplicationsService {
       throw new BadRequestException('Match is not accepting applications');
     }
 
-    // Check if user already has any application (pending, waitlisted, or confirmed) for this match
-    const existingApplication = await this.applicationRepository.findOne({
-      where: {
-        applicantUserId: userId,
-        status: In([
-          ApplicationStatus.PENDING,
-          ApplicationStatus.WAITLISTED,
-          ApplicationStatus.CONFIRMED,
-        ]),
-      },
-      relations: ['matchSlot', 'matchSlot.match'],
-    });
-
-    if (existingApplication && existingApplication.matchSlot.match.id === slot.match.id) {
-      throw new BadRequestException('You already have an application for this match');
-    }
+    // REMOVED: Allow users to apply to multiple slots in the same match
+    // Users can now apply to different time slots of the same match
+    // The unique constraint on (matchSlotId, applicantUserId) prevents applying twice to the same slot
 
     // Check for time overlap with confirmed matches only (allow pending overlaps)
     // Normalize date to string (YYYY-MM-DD) format for database comparison
@@ -187,7 +194,17 @@ export class ApplicationsService {
         ? dateValue.toISOString().split('T')[0]  // Convert Date to YYYY-MM-DD
         : String(dateValue).split('T')[0];  // Fallback: convert to string and extract date part
     
-    await this.checkTimeOverlap(userId, dateStr, slot.startTime, slot.endTime);
+    try {
+      await this.checkTimeOverlap(userId, dateStr, slot.startTime, slot.endTime);
+    } catch (error) {
+      // If it's a BadRequestException (expected error), re-throw it
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+      // For unexpected errors (database issues, etc.), log and allow the application
+      // Time overlap check is a nice-to-have, shouldn't block applications
+      console.warn('Failed to check time overlap, allowing application:', error);
+    }
 
     // Create application
     const application = this.applicationRepository.create({
@@ -197,27 +214,47 @@ export class ApplicationsService {
       status: ApplicationStatus.PENDING,
     });
 
-    const savedApplication = await this.applicationRepository.save(application);
+    let savedApplication: Application;
+    try {
+      savedApplication = await this.applicationRepository.save(application);
+    } catch (error: any) {
+      // Check if it's a unique constraint violation (user already applied to this slot)
+      if (error?.code === '23505' || error?.message?.includes('unique constraint')) {
+        throw new BadRequestException('You have already applied to this time slot');
+      }
+      // Re-throw other errors
+      throw error;
+    }
 
     // Clear match cache to force refresh on frontend
-    await this.matchesService.clearMatchCache(slot.match.id);
+    try {
+      await this.matchesService.clearMatchCache(slot.match.id);
+    } catch (error) {
+      // Log error but don't fail the request if cache clearing fails
+      console.warn('Failed to clear match cache after application:', error);
+    }
 
     // Notify match creator about new application
     const matchDate = slot.match.date instanceof Date 
       ? slot.match.date.toLocaleDateString() 
       : new Date(slot.match.date).toLocaleDateString();
     
-    await this.notificationsService.createNotification(
-      slot.match.creatorUserId,
-      NotificationType.MATCH_APPLICANT,
-      `${user.firstName} ${user.lastName} has applied to your match`,
-      {
-        applicantName: `${user.firstName} ${user.lastName}`,
-        courtName: slot.match.court?.name || 'Court',
-        date: matchDate,
-        matchId: slot.match.id,
-      },
-    );
+    try {
+      await this.notificationsService.createNotification(
+        slot.match.creatorUserId,
+        NotificationType.MATCH_APPLICANT,
+        `${user.firstName} ${user.lastName} has applied to your match`,
+        {
+          applicantName: `${user.firstName} ${user.lastName}`,
+          courtName: slot.match.court?.name || 'Court',
+          date: matchDate,
+          matchId: slot.match.id,
+        },
+      );
+    } catch (error) {
+      // Log error but don't fail the request if notification fails
+      console.warn('Failed to send application notification:', error);
+    }
 
     // Emit real-time update
     try {

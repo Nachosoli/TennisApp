@@ -392,13 +392,6 @@ export default function MatchDetailPage() {
                   const isConfirmed = slot.status?.toLowerCase() === 'confirmed';
                   const isMatchPending = currentMatch.status?.toLowerCase() === 'pending';
                   
-                  // Check if match has any confirmed slot (match is confirmed)
-                  const hasAnyConfirmedSlot = currentMatch.slots?.some(s =>
-                    s.status?.toLowerCase() === 'confirmed'
-                  ) || false;
-                  // If match has any confirmed slot, all other slots should be greyed out
-                  const shouldGreyOut = hasAnyConfirmedSlot && !isConfirmed;
-                  
                   // Check if current user already has an application for THIS SPECIFIC SLOT
                   const hasApplicationForSlot = slot.applications?.some(app => 
                     (app.applicantUserId === user?.id || app.userId === user?.id) &&
@@ -406,6 +399,10 @@ export default function MatchDetailPage() {
                      app.status?.toLowerCase() === 'waitlisted' || 
                      app.status?.toLowerCase() === 'confirmed')
                   ) || false;
+                  
+                  // Only grey out if THIS SPECIFIC SLOT is confirmed (not if any slot is confirmed)
+                  // Users can apply to multiple slots, so we only disable the slot they've already applied to
+                  const shouldGreyOut = isConfirmed && !hasApplicationForSlot;
                   
                   return (
                     <div
@@ -435,24 +432,17 @@ export default function MatchDetailPage() {
                               return slot.status || 'Unknown';
                             })()}
                           </p>
-                          {isAvailable && !isCreator && !hasApplicationForSlot && !shouldGreyOut && (
+                          {isAvailable && !isCreator && !hasApplicationForSlot && (
                             <p className="text-xs text-blue-600 mt-1">Click Apply to join this time slot</p>
                           )}
                           {shouldGreyOut && (
                             <p className="text-xs text-gray-500 mt-1">Match is confirmed</p>
                           )}
                         </div>
-                        {!isCreator && isAvailable && isMatchPending && !shouldGreyOut && (
+                        {!isCreator && isAvailable && isMatchPending && !hasApplicationForSlot && (
                           (() => {
-                            // Check if user has any application to any slot of this match
-                            const hasAnyApplication = user && currentMatch.slots?.some(s =>
-                              s.applications?.some(app =>
-                                (app.applicantUserId === user.id || app.userId === user.id) &&
-                                (app.status?.toLowerCase() === 'pending' || app.status?.toLowerCase() === 'waitlisted' || app.status?.toLowerCase() === 'confirmed')
-                              )
-                            );
-                            
-                            if (hasApplicationForSlot || hasAnyApplication) {
+                            // Users can apply to multiple slots, so only check if they've applied to THIS specific slot
+                            if (hasApplicationForSlot) {
                               return (
                                 <Button
                                   variant="outline"
@@ -460,7 +450,7 @@ export default function MatchDetailPage() {
                                   disabled
                                   className="opacity-50 cursor-not-allowed"
                                 >
-                                  {hasApplicationForSlot ? 'Applied' : 'Already Applied'}
+                                  Applied
                                 </Button>
                               );
                             }
