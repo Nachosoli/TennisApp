@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { Match } from '@/types';
+import { Match, Application } from '@/types';
 import { matchesApi } from '@/lib/matches';
 
 interface MatchesState {
@@ -70,14 +70,15 @@ export const useMatchesStore = create<MatchesState>((set, get) => ({
         if (updatedMatch.slots) {
           updatedMatch.slots = updatedMatch.slots.map((slot) => {
             if (slot.id === slotId) {
-              const newApplication = {
+              const newApplication: Application = {
                 id: `temp-${Date.now()}`,
                 matchSlotId: slotId,
                 applicantUserId: userId,
                 userId: userId,
                 status: 'pending' as const,
                 createdAt: new Date().toISOString(),
-                guestPartnerName: null,
+                updatedAt: new Date().toISOString(),
+                guestPartnerName: undefined,
               };
               return {
                 ...slot,
