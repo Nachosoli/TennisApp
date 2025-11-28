@@ -35,8 +35,6 @@ export default function CalendarPage() {
   const matchesSectionRef = useRef<HTMLDivElement>(null);
   const lastScrollY = useRef(0);
   const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const lastScrollY = useRef(0);
-  const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Load all matches to calculate counts by distance
   useEffect(() => {
