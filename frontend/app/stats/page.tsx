@@ -92,61 +92,93 @@ export default function StatsPage() {
           </Button>
         </div>
 
-        {/* Overview Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-          <Card>
-            <div className="text-center">
-              <p className="text-sm text-gray-600 mb-1">Total Matches</p>
-              <p className="text-3xl font-bold text-gray-900">{stats.totalMatches}</p>
+        {/* Overview Cards - Compact 4-in-row layout */}
+        <div className="grid grid-cols-4 gap-1.5 sm:gap-6">
+          <Card className="bg-white p-1.5 sm:p-4">
+            <div className="flex flex-col items-center justify-center text-center space-y-1">
+              <div className="bg-gray-100 rounded-lg p-1.5 sm:p-2.5">
+                <svg className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
+                </svg>
+              </div>
+              <div>
+                <p className="text-base sm:text-2xl font-bold text-gray-900">{stats.totalMatches}</p>
+                <p className="text-[10px] sm:text-sm text-gray-600 leading-tight">Matches</p>
+              </div>
             </div>
           </Card>
-          <Card>
-            <div className="text-center">
-              <p className="text-sm text-gray-600 mb-1">Total Wins</p>
-              <p className="text-3xl font-bold text-green-600">{stats.totalWins}</p>
+          <Card className="bg-white p-1.5 sm:p-4">
+            <div className="flex flex-col items-center justify-center text-center space-y-1">
+              <div className="bg-green-100 rounded-lg p-1.5 sm:p-2.5">
+                <svg className="w-4 h-4 sm:w-5 sm:h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+              <div>
+                <p className="text-base sm:text-2xl font-bold text-green-600">{stats.totalWins}</p>
+                <p className="text-[10px] sm:text-sm text-gray-600 leading-tight">Wins</p>
+              </div>
             </div>
           </Card>
-          <Card>
-            <div className="text-center">
-              <p className="text-sm text-gray-600 mb-1">Total Losses</p>
-              <p className="text-3xl font-bold text-red-600">{stats.totalLosses}</p>
+          <Card className="bg-white p-1.5 sm:p-4">
+            <div className="flex flex-col items-center justify-center text-center space-y-1">
+              <div className="bg-red-100 rounded-lg p-1.5 sm:p-2.5">
+                <svg className="w-4 h-4 sm:w-5 sm:h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+              <div>
+                <p className="text-base sm:text-2xl font-bold text-red-600">{stats.totalLosses}</p>
+                <p className="text-[10px] sm:text-sm text-gray-600 leading-tight">Losses</p>
+              </div>
             </div>
           </Card>
-          <Card>
-            <div className="text-center">
-              <p className="text-sm text-gray-600 mb-1">Win Rate</p>
-              <p className="text-3xl font-bold text-blue-600">{winRate}%</p>
+          <Card className="bg-white p-1.5 sm:p-4">
+            <div className="flex flex-col items-center justify-center text-center space-y-1">
+              <div className="bg-blue-100 rounded-lg p-1.5 sm:p-2.5">
+                <svg className="w-4 h-4 sm:w-5 sm:h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                </svg>
+              </div>
+              <div>
+                <p className="text-base sm:text-2xl font-bold text-blue-600">{winRate}%</p>
+                <p className="text-[10px] sm:text-sm text-gray-600 leading-tight">Win Rate</p>
+              </div>
             </div>
           </Card>
         </div>
 
-        {/* ELO Ratings */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <Card title="Singles ELO">
-            <div className="space-y-4">
-              <div>
-                <p className="text-sm text-gray-600 mb-1">Current ELO</p>
-                <p className="text-4xl font-bold text-gray-900">{stats.singlesElo}</p>
+        {/* ELO Ratings - Compact 2-column layout */}
+        <div className="grid grid-cols-2 gap-3 sm:gap-4">
+          <Card className="bg-white p-3 sm:p-4">
+            <div className="flex flex-col items-center text-center space-y-2">
+              <div className="bg-green-100 rounded-lg p-2 sm:p-2.5">
+                <svg className="w-5 h-5 sm:w-6 sm:h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
+                </svg>
               </div>
-              <div>
-                <p className="text-sm text-gray-600 mb-1">Win Streak</p>
-                <p className="text-2xl font-semibold text-green-600">
-                  {stats.winStreakSingles} {stats.winStreakSingles === 1 ? 'match' : 'matches'}
+              <div className="flex-1 w-full">
+                <h3 className="text-sm sm:text-base font-bold text-gray-900 mb-1">Singles ELO</h3>
+                <p className="text-xl sm:text-2xl font-bold text-gray-900 mb-1">{stats.singlesElo}</p>
+                <p className="text-xs sm:text-sm text-green-600">
+                  {stats.winStreakSingles} {stats.winStreakSingles === 1 ? 'match' : 'matches'} streak
                 </p>
               </div>
             </div>
           </Card>
 
-          <Card title="Doubles ELO">
-            <div className="space-y-4">
-              <div>
-                <p className="text-sm text-gray-600 mb-1">Current ELO</p>
-                <p className="text-4xl font-bold text-gray-900">{stats.doublesElo}</p>
+          <Card className="bg-white p-3 sm:p-4">
+            <div className="flex flex-col items-center text-center space-y-2">
+              <div className="bg-green-100 rounded-lg p-2 sm:p-2.5">
+                <svg className="w-5 h-5 sm:w-6 sm:h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                </svg>
               </div>
-              <div>
-                <p className="text-sm text-gray-600 mb-1">Win Streak</p>
-                <p className="text-2xl font-semibold text-green-600">
-                  {stats.winStreakDoubles} {stats.winStreakDoubles === 1 ? 'match' : 'matches'}
+              <div className="flex-1 w-full">
+                <h3 className="text-sm sm:text-base font-bold text-gray-900 mb-1">Doubles ELO</h3>
+                <p className="text-xl sm:text-2xl font-bold text-gray-900 mb-1">{stats.doublesElo}</p>
+                <p className="text-xs sm:text-sm text-green-600">
+                  {stats.winStreakDoubles} {stats.winStreakDoubles === 1 ? 'match' : 'matches'} streak
                 </p>
               </div>
             </div>
