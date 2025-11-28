@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { matchesApi } from '@/lib/matches';
 import { Match } from '@/types';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, isSameMonth, startOfDay } from 'date-fns';
@@ -26,6 +26,7 @@ export const CalendarView = ({ filters, onDateSelect }: CalendarViewProps) => {
   const [isLoading, setIsLoading] = useState(true);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const user = useAuthStore((state) => state.user);
+  const matchesCardRef = useRef<HTMLDivElement>(null);
   
   // Helper function to get surface color
   const getSurfaceColor = (surface?: string): string => {
@@ -120,6 +121,23 @@ export const CalendarView = ({ filters, onDateSelect }: CalendarViewProps) => {
 
   const selectedDayMatches = selectedDate ? getMatchesForDay(selectedDate) : [];
 
+  // Auto-scroll to game cards when a date with matches is selected (mobile only)
+  useEffect(() => {
+    // Only scroll on mobile devices (screen width < 1024px, which is the lg breakpoint)
+    const isMobile = window.innerWidth < 1024;
+    
+    if (isMobile && selectedDate && selectedDayMatches.length > 0 && matchesCardRef.current) {
+      // Small delay to ensure the card is rendered
+      setTimeout(() => {
+        matchesCardRef.current?.scrollIntoView({ 
+          behavior: 'smooth', 
+          block: 'start',
+          inline: 'nearest'
+        });
+      }, 100);
+    }
+  }, [selectedDate, selectedDayMatches.length]);
+
   return (
     <>
       <Card>
@@ -204,8 +222,9 @@ export const CalendarView = ({ filters, onDateSelect }: CalendarViewProps) => {
 
       {/* Selected Day Matches List */}
       {selectedDate && selectedDayMatches.length > 0 && (
-        <Card>
-          <div className="p-6">
+        <div ref={matchesCardRef}>
+          <Card>
+            <div className="p-6">
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-xl font-semibold text-gray-900">
                 Matches on {format(selectedDate, 'MMMM d, yyyy')}
@@ -350,6 +369,7 @@ export const CalendarView = ({ filters, onDateSelect }: CalendarViewProps) => {
             </div>
           </div>
         </Card>
+        </div>
       )}
     </>
   );
