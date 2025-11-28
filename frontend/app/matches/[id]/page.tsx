@@ -392,6 +392,13 @@ export default function MatchDetailPage() {
                   const isConfirmed = slot.status?.toLowerCase() === 'confirmed';
                   const isMatchPending = currentMatch.status?.toLowerCase() === 'pending';
                   
+                  // Check if match has any confirmed slot (match is confirmed)
+                  const hasAnyConfirmedSlot = currentMatch.slots?.some(s =>
+                    s.status?.toLowerCase() === 'confirmed'
+                  ) || false;
+                  // If match has any confirmed slot, all other slots should be greyed out
+                  const shouldGreyOut = hasAnyConfirmedSlot && !isConfirmed;
+                  
                   // Check if current user already has an application for THIS SPECIFIC SLOT
                   const hasApplicationForSlot = slot.applications?.some(app => 
                     (app.applicantUserId === user?.id || app.userId === user?.id) &&
