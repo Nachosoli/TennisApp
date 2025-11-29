@@ -424,8 +424,8 @@ export default function DashboardPage() {
                     if (match.status?.toLowerCase() === 'completed') {
                       statusText = 'Completed';
                       statusClass = 'bg-gray-700 text-white';
-                    } else if (hasConfirmedApplication || (match.status?.toLowerCase() === 'confirmed' && userApplication?.status?.toLowerCase() === 'confirmed')) {
-                      // User has confirmed application OR match is confirmed and user's application is confirmed
+                    } else if (match.status?.toLowerCase() === 'confirmed' || hasConfirmedApplication) {
+                      // Match is confirmed (for both creator and applicant) OR user has a confirmed application
                       statusText = 'Confirmed';
                       statusClass = 'bg-green-100 text-green-800';
                     } else if (hasPendingApplication) {
@@ -683,8 +683,8 @@ export default function DashboardPage() {
                       if (match.status?.toLowerCase() === 'completed') {
                         statusText = 'Completed';
                         statusClass = 'bg-gray-700 text-white';
-                      } else if (hasConfirmedApplication || (match.status?.toLowerCase() === 'confirmed' && userApplication?.status?.toLowerCase() === 'confirmed')) {
-                        // User has confirmed application OR match is confirmed and user's application is confirmed
+                      } else if (match.status?.toLowerCase() === 'confirmed' || hasConfirmedApplication) {
+                        // Match is confirmed (for both creator and applicant) OR user has a confirmed application
                         statusText = 'Confirmed';
                         statusClass = 'bg-green-100 text-green-800';
                       } else if (hasPendingApplication) {
