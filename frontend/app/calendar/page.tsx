@@ -177,7 +177,7 @@ export default function CalendarPage() {
         {/* Header with Filters Toggle */}
         <div className="flex flex-col gap-2 sm:gap-4">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-4">
-            <h1 className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900">Find Tennis Matches</h1>
+            <h1 className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900">Find Matches</h1>
             <div className="flex items-center gap-2 sm:gap-3 w-full sm:w-auto">
               <Link href="/matches/create" className="flex-1 sm:flex-initial">
                 <Button variant="primary" className="w-full sm:w-auto flex items-center justify-center gap-2 text-sm sm:text-base px-3 sm:px-4 py-2 sm:py-2.5">
