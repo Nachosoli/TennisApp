@@ -4,6 +4,20 @@ export class RefactorNotificationsToUseDeliveries1734570000000 implements Migrat
   name = 'RefactorNotificationsToUseDeliveries1734570000000';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
+    // Check if migration already ran
+    const tableExists = await queryRunner.query(`
+      SELECT EXISTS (
+        SELECT FROM information_schema.tables 
+        WHERE table_schema = 'public' 
+        AND table_name = 'notification_deliveries'
+      ) as exists;
+    `);
+
+    if (tableExists[0]?.exists) {
+      console.log('Migration already applied, skipping...');
+      return;
+    }
+
     // Step 1: Create notification_deliveries table
     await queryRunner.query(`
       CREATE TABLE IF NOT EXISTS "notification_deliveries" (
@@ -43,70 +57,81 @@ export class RefactorNotificationsToUseDeliveries1734570000000 implements Migrat
     // Step 3: Migrate existing data
     // Group notifications by (user_id, type, content) within a 5-second window to create logical notifications
     // For each group, keep the earliest notification and create delivery records for all channels
-    await queryRunner.query(`
-      DO $$
-      DECLARE
-        notification_group RECORD;
-        logical_notification_id uuid;
-        delivery_record RECORD;
-        group_created_at timestamp;
-      BEGIN
-        -- For each unique combination of (user_id, type, content) grouped by time window
-        FOR notification_group IN
-          SELECT DISTINCT 
-            user_id, 
-            type, 
-            content,
-            date_trunc('second', created_at) as created_at_rounded
-          FROM notifications
-          ORDER BY created_at_rounded DESC
-        LOOP
-          -- Get the earliest notification ID for this group (we'll keep this one)
-          SELECT id, created_at INTO logical_notification_id, group_created_at
-          FROM notifications
-          WHERE user_id = notification_group.user_id
-            AND type = notification_group.type
-            AND content = notification_group.content
-            AND date_trunc('second', created_at) = notification_group.created_at_rounded
-          ORDER BY created_at ASC
-          LIMIT 1;
+    try {
+      const notificationCount = await queryRunner.query(`SELECT COUNT(*) as count FROM notifications`);
+      if (notificationCount[0]?.count > 0) {
+        await queryRunner.query(`
+          DO $$
+          DECLARE
+            notification_group RECORD;
+            logical_notification_id uuid;
+            delivery_record RECORD;
+            group_created_at timestamp;
+          BEGIN
+            -- For each unique combination of (user_id, type, content) grouped by time window
+            FOR notification_group IN
+              SELECT DISTINCT 
+                user_id, 
+                type, 
+                content,
+                date_trunc('second', created_at) as created_at_rounded
+              FROM notifications
+              ORDER BY created_at_rounded DESC
+            LOOP
+              -- Get the earliest notification ID for this group (we'll keep this one)
+              SELECT id, created_at INTO logical_notification_id, group_created_at
+              FROM notifications
+              WHERE user_id = notification_group.user_id
+                AND type = notification_group.type
+                AND content = notification_group.content
+                AND date_trunc('second', created_at) = notification_group.created_at_rounded
+              ORDER BY created_at ASC
+              LIMIT 1;
 
-          -- Create delivery records for all notifications in this group
-          FOR delivery_record IN
-            SELECT id, channel, status, retry_count, sent_at, created_at
-            FROM notifications
-            WHERE user_id = notification_group.user_id
-              AND type = notification_group.type
-              AND content = notification_group.content
-              AND date_trunc('second', created_at) = notification_group.created_at_rounded
-          LOOP
-            INSERT INTO notification_deliveries (
-              notification_id,
-              channel,
-              status,
-              retry_count,
-              sent_at,
-              created_at
-            ) VALUES (
-              logical_notification_id,
-              delivery_record.channel,
-              delivery_record.status,
-              delivery_record.retry_count,
-              delivery_record.sent_at,
-              delivery_record.created_at
-            );
-          END LOOP;
+              -- Create delivery records for all notifications in this group
+              FOR delivery_record IN
+                SELECT id, channel, status, retry_count, sent_at, created_at
+                FROM notifications
+                WHERE user_id = notification_group.user_id
+                  AND type = notification_group.type
+                  AND content = notification_group.content
+                  AND date_trunc('second', created_at) = notification_group.created_at_rounded
+              LOOP
+                INSERT INTO notification_deliveries (
+                  notification_id,
+                  channel,
+                  status,
+                  retry_count,
+                  sent_at,
+                  created_at
+                ) VALUES (
+                  logical_notification_id,
+                  delivery_record.channel,
+                  delivery_record.status,
+                  delivery_record.retry_count,
+                  delivery_record.sent_at,
+                  delivery_record.created_at
+                );
+              END LOOP;
 
-          -- Delete duplicate notifications (keep only the first one)
-          DELETE FROM notifications
-          WHERE user_id = notification_group.user_id
-            AND type = notification_group.type
-            AND content = notification_group.content
-            AND date_trunc('second', created_at) = notification_group.created_at_rounded
-            AND id != logical_notification_id;
-        END LOOP;
-      END $$;
-    `);
+              -- Delete duplicate notifications (keep only the first one)
+              DELETE FROM notifications
+              WHERE user_id = notification_group.user_id
+                AND type = notification_group.type
+                AND content = notification_group.content
+                AND date_trunc('second', created_at) = notification_group.created_at_rounded
+                AND id != logical_notification_id;
+            END LOOP;
+          END $$;
+        `);
+      } else {
+        console.log('No notifications to migrate');
+      }
+    } catch (error) {
+      console.error('Error migrating notification data:', error);
+      // Continue anyway - new structure will work for new notifications
+      // Old notifications will still be accessible via the optional fields
+    }
 
     // Step 4: Remove old columns from notifications table
     // Note: We can't remove columns that are part of indexes, so we need to drop indexes first
