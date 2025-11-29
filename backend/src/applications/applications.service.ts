@@ -286,7 +286,7 @@ export class ApplicationsService {
   ): Promise<Application> {
     const application = await this.applicationRepository.findOne({
       where: { id: applicationId },
-      relations: ['matchSlot', 'matchSlot.match', 'applicant'],
+      relations: ['matchSlot', 'matchSlot.match', 'matchSlot.match.court', 'applicant'],
     });
 
     if (!application) {
@@ -350,14 +350,19 @@ export class ApplicationsService {
           await this.applicationRepository.save(otherApp);
           
           // Notify waitlisted applicant
-          await this.notificationsService.createNotification(
-            otherApp.applicantUserId,
-            NotificationType.MATCH_ACCEPTED,
-            `Your application has been waitlisted for this match. You may be selected if the confirmed participant withdraws.`,
-            {
-              matchId: currentMatch.id,
-            },
-          );
+          try {
+            await this.notificationsService.createNotification(
+              otherApp.applicantUserId,
+              NotificationType.MATCH_ACCEPTED,
+              `Your application has been waitlisted for this match. You may be selected if the confirmed participant withdraws.`,
+              {
+                matchId: currentMatch.id,
+              },
+            );
+          } catch (error) {
+            console.warn(`Failed to send waitlist notification to user ${otherApp.applicantUserId}:`, error);
+            // Don't fail confirmation if notification fails
+          }
         }
       } else {
         // Not enough confirmed applications yet, keep match as pending
@@ -388,14 +393,19 @@ export class ApplicationsService {
         await this.applicationRepository.save(otherApp);
         
         // Notify waitlisted applicant
-        await this.notificationsService.createNotification(
-          otherApp.applicantUserId,
-          NotificationType.MATCH_ACCEPTED,
-          `Your application has been waitlisted for this match. You may be selected if the confirmed participant withdraws.`,
-          {
-            matchId: currentMatch.id,
-          },
-        );
+        try {
+          await this.notificationsService.createNotification(
+            otherApp.applicantUserId,
+            NotificationType.MATCH_ACCEPTED,
+            `Your application has been waitlisted for this match. You may be selected if the confirmed participant withdraws.`,
+            {
+              matchId: currentMatch.id,
+            },
+          );
+        } catch (error) {
+          console.warn(`Failed to send waitlist notification to user ${otherApp.applicantUserId}:`, error);
+          // Don't fail confirmation if notification fails
+        }
       }
     }
     
@@ -443,14 +453,19 @@ export class ApplicationsService {
       await this.applicationRepository.save(overlappingApp);
       
       // Notify applicant about removed application
-      await this.notificationsService.createNotification(
-        overlappingApp.applicantUserId,
-        NotificationType.MATCH_ACCEPTED,
-        `Your application was automatically removed due to time conflict with a confirmed match`,
-        {
-          matchId: overlappingApp.matchSlot.match.id,
-        },
-      );
+      try {
+        await this.notificationsService.createNotification(
+          overlappingApp.applicantUserId,
+          NotificationType.MATCH_ACCEPTED,
+          `Your application was automatically removed due to time conflict with a confirmed match`,
+          {
+            matchId: overlappingApp.matchSlot.match.id,
+          },
+        );
+      } catch (error) {
+        console.warn(`Failed to send overlap notification to user ${overlappingApp.applicantUserId}:`, error);
+        // Don't fail confirmation if notification fails
+      }
     }
 
     // Notify applicant about match confirmation
@@ -464,32 +479,43 @@ export class ApplicationsService {
       ? notificationMatch.date.toLocaleDateString() 
       : new Date(notificationMatch.date).toLocaleDateString();
     
-    await this.notificationsService.createNotification(
-      application.applicantUserId,
-      NotificationType.MATCH_CONFIRMED,
-      `Your application has been confirmed!`,
-      {
-        opponentName: creator ? `${creator.firstName} ${creator.lastName}` : 'Match Creator',
-        courtName: notificationMatch.court?.name || 'Court',
-        date: matchDate,
-        time: `${application.matchSlot.startTime} - ${application.matchSlot.endTime}`,
-        matchId: notificationMatch.id,
-      },
-    );
+    // Send notifications - wrap in try-catch to prevent confirmation failure if notifications fail
+    try {
+      await this.notificationsService.createNotification(
+        application.applicantUserId,
+        NotificationType.MATCH_CONFIRMED,
+        `Your application has been confirmed!`,
+        {
+          opponentName: creator ? `${creator.firstName} ${creator.lastName}` : 'Match Creator',
+          courtName: notificationMatch.court?.name || 'Court',
+          date: matchDate,
+          time: `${application.matchSlot.startTime} - ${application.matchSlot.endTime}`,
+          matchId: notificationMatch.id,
+        },
+      );
+    } catch (error) {
+      console.warn('Failed to send notification to applicant:', error);
+      // Don't fail confirmation if notification fails
+    }
 
     // Also notify creator
-    await this.notificationsService.createNotification(
-      creatorUserId,
-      NotificationType.MATCH_CONFIRMED,
-      `Match confirmed with ${application.applicant.firstName} ${application.applicant.lastName}`,
-      {
-        opponentName: `${application.applicant.firstName} ${application.applicant.lastName}`,
-        courtName: notificationMatch.court?.name || 'Court',
-        date: matchDate,
-        time: `${application.matchSlot.startTime} - ${application.matchSlot.endTime}`,
-        matchId: notificationMatch.id,
-      },
-    );
+    try {
+      await this.notificationsService.createNotification(
+        creatorUserId,
+        NotificationType.MATCH_CONFIRMED,
+        `Match confirmed with ${application.applicant.firstName} ${application.applicant.lastName}`,
+        {
+          opponentName: `${application.applicant.firstName} ${application.applicant.lastName}`,
+          courtName: notificationMatch.court?.name || 'Court',
+          date: matchDate,
+          time: `${application.matchSlot.startTime} - ${application.matchSlot.endTime}`,
+          matchId: notificationMatch.id,
+        },
+      );
+    } catch (error) {
+      console.warn('Failed to send notification to creator:', error);
+      // Don't fail confirmation if notification fails
+    }
 
     // Create automatic match confirmation messages for both participants
     try {
