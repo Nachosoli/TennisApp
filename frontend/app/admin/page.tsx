@@ -17,6 +17,8 @@ export default function AdminDashboard() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const hasLoadedRef = useRef<string | null>(null);
+  const [migrationLoading, setMigrationLoading] = useState(false);
+  const [migrationMessage, setMigrationMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   useEffect(() => {
     if (!user || !isAdmin) {
@@ -403,6 +405,77 @@ export default function AdminDashboard() {
                     Manage Matches
                   </div>
                 </Button>
+              </div>
+            </Card>
+
+            {/* Database Migrations */}
+            <Card title="Database Migrations">
+              <div className="space-y-4">
+                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                  <p className="text-sm text-yellow-800">
+                    <strong>Warning:</strong> Database migrations modify the database schema. Only run migrations when necessary.
+                  </p>
+                </div>
+
+                {migrationMessage && (
+                  <div
+                    className={`rounded-md p-4 ${
+                      migrationMessage.type === 'success'
+                        ? 'bg-green-50 text-green-800 border border-green-200'
+                        : 'bg-red-50 text-red-800 border border-red-200'
+                    }`}
+                  >
+                    {migrationMessage.text}
+                  </div>
+                )}
+
+                <div className="border border-gray-200 rounded-lg p-4">
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <h3 className="text-lg font-semibold text-gray-900 mb-1">
+                        Add match_applicant to Notification Enums
+                      </h3>
+                      <p className="text-sm text-gray-600 mb-3">
+                        Adds the 'match_applicant' value to the notification enum types in the database.
+                        This fixes the "Match Applicants" notification toggle error.
+                      </p>
+                    </div>
+                    <Button
+                      variant="primary"
+                      onClick={async () => {
+                        setMigrationLoading(true);
+                        setMigrationMessage(null);
+                        try {
+                          const result = await adminApi.runMatchApplicantMigration();
+                          if (result.success) {
+                            setMigrationMessage({
+                              type: 'success',
+                              text: result.message || 'Migration completed successfully!',
+                            });
+                          } else {
+                            setMigrationMessage({
+                              type: 'error',
+                              text: result.message || 'Migration failed. Please check the logs.',
+                            });
+                          }
+                        } catch (error: any) {
+                          setMigrationMessage({
+                            type: 'error',
+                            text: error.response?.data?.message || error.message || 'Failed to run migration. Please try again.',
+                          });
+                        } finally {
+                          setMigrationLoading(false);
+                          // Clear message after 10 seconds
+                          setTimeout(() => setMigrationMessage(null), 10000);
+                        }
+                      }}
+                      isLoading={migrationLoading}
+                      disabled={migrationLoading}
+                    >
+                      Run Migration
+                    </Button>
+                  </div>
+                </div>
               </div>
             </Card>
           </>
