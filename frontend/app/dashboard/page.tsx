@@ -412,9 +412,32 @@ export default function DashboardPage() {
                     // Use confirmed application if available, otherwise use first found
                     userApplication = confirmedApplication || userApplication;
 
-                    const hasWaitlistedApplication = userApplication?.status?.toLowerCase() === 'waitlisted';
-                    const hasPendingApplication = userApplication?.status?.toLowerCase() === 'pending';
+                    // Check for confirmed application first (highest priority for applicants)
                     const hasConfirmedApplication = confirmedApplication !== null;
+                    
+                    // Check for waitlisted application (only if no confirmed)
+                    const hasWaitlistedApplication = !hasConfirmedApplication && match.slots?.some(slot =>
+                      slot.applications?.some(app =>
+                        (app.applicantUserId === user?.id || app.userId === user?.id) &&
+                        app.status?.toLowerCase() === 'waitlisted'
+                      )
+                    ) || false;
+                    
+                    // Check for pending application (only if match is still pending)
+                    const hasPendingApplication = match.status?.toLowerCase() === 'pending' && match.slots?.some(slot =>
+                      slot.applications?.some(app =>
+                        (app.applicantUserId === user?.id || app.userId === user?.id) &&
+                        app.status?.toLowerCase() === 'pending'
+                      )
+                    ) || false;
+                    
+                    // Check if user has any applications
+                    const hasAnyUserApplications = match.slots?.some(slot =>
+                      slot.applications?.some(app =>
+                        (app.applicantUserId === user?.id || app.userId === user?.id)
+                      )
+                    ) || false;
+                    
                     const matchDate = parseLocalDate(match.date);
                     const now = new Date();
                     const isPast = matchDate < now;
@@ -424,22 +447,25 @@ export default function DashboardPage() {
                     if (match.status?.toLowerCase() === 'completed') {
                       statusText = 'Completed';
                       statusClass = 'bg-gray-700 text-white';
-                    } else if (match.status?.toLowerCase() === 'confirmed' || hasConfirmedApplication) {
-                      // Match is confirmed (for both creator and applicant) OR user has a confirmed application
+                    } else if (hasWaitlistedApplication || (match.status?.toLowerCase() === 'confirmed' && !hasConfirmedApplication && hasAnyUserApplications)) {
+                      // Waitlisted: user has waitlisted app (and no confirmed) OR match is confirmed (not with them) and they have applications
+                      statusText = 'Waitlisted';
+                      statusClass = 'bg-orange-100 text-orange-800';
+                    } else if (hasConfirmedApplication || (isCreator && match.status?.toLowerCase() === 'confirmed')) {
+                      // Confirmed: user has confirmed app OR creator of confirmed match
                       statusText = 'Confirmed';
                       statusClass = 'bg-green-100 text-green-800';
                     } else if (hasPendingApplication) {
+                      // Applied: only if match is still pending
                       statusText = 'Applied';
                       statusClass = 'bg-blue-100 text-blue-800';
-                    } else if (hasWaitlistedApplication) {
-                      statusText = 'Waitlisted';
-                      statusClass = 'bg-orange-100 text-orange-800';
-                    } else if (isPast) {
+                    } else if (!score && (match.status?.toLowerCase() === 'confirmed' || match.status?.toLowerCase() === 'completed') && (isCreator || hasConfirmedApplication)) {
+                      // Report Score: confirmed/completed match without score
                       statusText = 'Report Score';
                       statusClass = 'bg-yellow-100 text-yellow-800';
-                    } else if (match.status?.toLowerCase() === 'pending') {
-                      // Count only pending and waitlisted applicants (not confirmed, as confirmed matches show "Confirmed" status)
-                      const pendingAndWaitlistedCount = isCreator && match.slots?.reduce((count, slot) => {
+                    } else if (match.status?.toLowerCase() === 'pending' && isCreator) {
+                      // Pending: for creators only
+                      const pendingAndWaitlistedCount = match.slots?.reduce((count, slot) => {
                         return count + (slot.applications?.filter(app => {
                           const status = app.status?.toLowerCase();
                           return status === 'pending' || status === 'waitlisted';
@@ -470,12 +496,25 @@ export default function DashboardPage() {
                     const isCompletedWithScore = isCompleted && score;
                     
                     // Update canReportScore to include completed matches without score
-                    const canReportScore = !score && (isConfirmed || isCompleted) && (isCreator || hasConfirmedApplication || userApplication?.status?.toLowerCase() === 'confirmed');
-                    const canDelete = isCreator && !isCompleted;
+                    const canReportScore = !score && (isConfirmed || isCompleted) && (isCreator || hasConfirmedApplication);
+                    
+                    // Cancel (renamed from Delete): creator can cancel non-completed matches
+                    const canCancel = isCreator && !isCompleted;
+                    
                     // Show Edit if pending and no applicants, Manage if pending with applicants
                     const canEdit = isCreator && match.status?.toLowerCase() === 'pending' && !hasAnyApplicants;
                     const canManage = isCreator && match.status?.toLowerCase() === 'pending' && hasAnyApplicants;
-                    const canWithdraw = !isCreator && (hasConfirmedApplication || userApplication?.status?.toLowerCase() === 'confirmed') && !isCompleted;
+                    
+                    // Withdraw: show for all applicants (pending, waitlisted, confirmed) if match not completed
+                    const hasAnyUserApplication = match.slots?.some(slot =>
+                      slot.applications?.some(app =>
+                        (app.applicantUserId === user?.id || app.userId === user?.id) &&
+                        (app.status?.toLowerCase() === 'pending' || 
+                         app.status?.toLowerCase() === 'waitlisted' || 
+                         app.status?.toLowerCase() === 'confirmed')
+                      )
+                    ) || false;
+                    const canWithdraw = !isCreator && hasAnyUserApplication && !isCompleted;
 
                     return (
                       <div
@@ -556,7 +595,7 @@ export default function DashboardPage() {
                                 disabled={withdrawingApplicationId === userApplication.id}
                                 className="flex-1 min-w-[120px]"
                               >
-                                Remove
+                                Withdraw
                               </Button>
                             )}
                             {(isCreator || hasConfirmedApplication || userApplication?.status?.toLowerCase() === 'confirmed') && match.status?.toLowerCase() === 'confirmed' && (
@@ -570,7 +609,7 @@ export default function DashboardPage() {
                                 Chat
                               </Button>
                             )}
-                            {canDelete && (
+                            {canCancel && (
                               <Button
                                 type="button"
                                 variant="danger"
@@ -580,7 +619,7 @@ export default function DashboardPage() {
                                 disabled={deletingMatchId === match.id}
                                 className="flex-1 min-w-[100px]"
                               >
-                                Delete
+                                Cancel
                               </Button>
                             )}
                           </div>
@@ -664,14 +703,31 @@ export default function DashboardPage() {
                       // Use confirmed application if available, otherwise use first found
                       userApplication = confirmedApplication || userApplication;
 
-                      // Check if user has waitlisted application (needed for status display)
-                      const hasWaitlistedApplication = userApplication?.status?.toLowerCase() === 'waitlisted';
-                      
-                      // Check if user has pending application
-                      const hasPendingApplication = userApplication?.status?.toLowerCase() === 'pending';
-                      
-                      // Check if user has confirmed application
+                      // Check for confirmed application first (highest priority for applicants)
                       const hasConfirmedApplication = confirmedApplication !== null;
+                      
+                      // Check for waitlisted application (only if no confirmed)
+                      const hasWaitlistedApplication = !hasConfirmedApplication && match.slots?.some(slot =>
+                        slot.applications?.some(app =>
+                          (app.applicantUserId === user?.id || app.userId === user?.id) &&
+                          app.status?.toLowerCase() === 'waitlisted'
+                        )
+                      ) || false;
+                      
+                      // Check for pending application (only if match is still pending)
+                      const hasPendingApplication = match.status?.toLowerCase() === 'pending' && match.slots?.some(slot =>
+                        slot.applications?.some(app =>
+                          (app.applicantUserId === user?.id || app.userId === user?.id) &&
+                          app.status?.toLowerCase() === 'pending'
+                        )
+                      ) || false;
+                      
+                      // Check if user has any applications
+                      const hasAnyUserApplications = match.slots?.some(slot =>
+                        slot.applications?.some(app =>
+                          (app.applicantUserId === user?.id || app.userId === user?.id)
+                        )
+                      ) || false;
 
                       // Determine status
                       const matchDate = parseLocalDate(match.date);
@@ -683,22 +739,25 @@ export default function DashboardPage() {
                       if (match.status?.toLowerCase() === 'completed') {
                         statusText = 'Completed';
                         statusClass = 'bg-gray-700 text-white';
-                      } else if (match.status?.toLowerCase() === 'confirmed' || hasConfirmedApplication) {
-                        // Match is confirmed (for both creator and applicant) OR user has a confirmed application
+                      } else if (hasWaitlistedApplication || (match.status?.toLowerCase() === 'confirmed' && !hasConfirmedApplication && hasAnyUserApplications)) {
+                        // Waitlisted: user has waitlisted app (and no confirmed) OR match is confirmed (not with them) and they have applications
+                        statusText = 'Waitlisted';
+                        statusClass = 'bg-orange-100 text-orange-800';
+                      } else if (hasConfirmedApplication || (isCreator && match.status?.toLowerCase() === 'confirmed')) {
+                        // Confirmed: user has confirmed app OR creator of confirmed match
                         statusText = 'Confirmed';
                         statusClass = 'bg-green-100 text-green-800';
                       } else if (hasPendingApplication) {
+                        // Applied: only if match is still pending
                         statusText = 'Applied';
                         statusClass = 'bg-blue-100 text-blue-800';
-                      } else if (hasWaitlistedApplication) {
-                        statusText = 'Waitlisted';
-                        statusClass = 'bg-orange-100 text-orange-800';
-                      } else if (isPast) {
+                      } else if (!score && (match.status?.toLowerCase() === 'confirmed' || match.status?.toLowerCase() === 'completed') && (isCreator || hasConfirmedApplication)) {
+                        // Report Score: confirmed/completed match without score
                         statusText = 'Report Score';
                         statusClass = 'bg-yellow-100 text-yellow-800';
-                      } else if (match.status?.toLowerCase() === 'pending') {
-                        // Count only pending and waitlisted applicants (not confirmed, as confirmed matches show "Confirmed" status)
-                        const pendingAndWaitlistedCount = isCreator && match.slots?.reduce((count, slot) => {
+                      } else if (match.status?.toLowerCase() === 'pending' && isCreator) {
+                        // Pending: for creators only
+                        const pendingAndWaitlistedCount = match.slots?.reduce((count, slot) => {
                           return count + (slot.applications?.filter(app => {
                             const status = app.status?.toLowerCase();
                             return status === 'pending' || status === 'waitlisted';
@@ -728,10 +787,10 @@ export default function DashboardPage() {
                       const isConfirmed = match.status?.toLowerCase() === 'confirmed';
                       const isCompleted = match.status?.toLowerCase() === 'completed';
                       const isCompletedWithScore = isCompleted && score;
-                      const canReportScore = !score && (isConfirmed || isCompleted) && (isCreator || hasConfirmedApplication || userApplication?.status?.toLowerCase() === 'confirmed');
+                      const canReportScore = !score && (isConfirmed || isCompleted) && (isCreator || hasConfirmedApplication);
                       
-                      // Determine if user can delete (creator only, not completed)
-                      const canDelete = isCreator && !isCompleted;
+                      // Cancel (renamed from Delete): creator can cancel non-completed matches
+                      const canCancel = isCreator && !isCompleted;
                       
                       // Check if match has any applicants (pending, confirmed, waitlisted)
                       const hasAnyApplicants = match.slots?.some(slot => 
@@ -747,8 +806,16 @@ export default function DashboardPage() {
                       const canEdit = isCreator && match.status?.toLowerCase() === 'pending' && !hasAnyApplicants;
                       const canManage = isCreator && match.status?.toLowerCase() === 'pending' && hasAnyApplicants;
                       
-                      // Determine if user can withdraw (participant with confirmed application, not completed)
-                      const canWithdraw = !isCreator && (hasConfirmedApplication || userApplication?.status?.toLowerCase() === 'confirmed') && match.status?.toLowerCase() !== 'completed';
+                      // Withdraw: show for all applicants (pending, waitlisted, confirmed) if match not completed
+                      const hasAnyUserApplication = match.slots?.some(slot =>
+                        slot.applications?.some(app =>
+                          (app.applicantUserId === user?.id || app.userId === user?.id) &&
+                          (app.status?.toLowerCase() === 'pending' || 
+                           app.status?.toLowerCase() === 'waitlisted' || 
+                           app.status?.toLowerCase() === 'confirmed')
+                        )
+                      ) || false;
+                      const canWithdraw = !isCreator && hasAnyUserApplication && !isCompleted;
 
                       return (
                         <tr
@@ -834,7 +901,7 @@ export default function DashboardPage() {
                                       isLoading={withdrawingApplicationId === userApplication.id}
                                       disabled={withdrawingApplicationId === userApplication.id}
                                     >
-                                      Remove Myself
+                                      Withdraw
                                     </Button>
                                   )}
                                   {/* Chat button for confirmed matches */}
@@ -848,8 +915,8 @@ export default function DashboardPage() {
                                       Chat
                                     </Button>
                                   )}
-                                  {/* Delete button should always be last */}
-                                  {canDelete && (
+                                  {/* Cancel button should always be last */}
+                                  {canCancel && (
                                     <Button
                                       type="button"
                                       variant="danger"
@@ -858,7 +925,7 @@ export default function DashboardPage() {
                                       isLoading={deletingMatchId === match.id}
                                       disabled={deletingMatchId === match.id}
                                     >
-                                      Delete
+                                      Cancel
                                     </Button>
                                   )}
                                 </>
@@ -877,11 +944,11 @@ export default function DashboardPage() {
         </Card>
       </div>
 
-      {/* Delete Confirmation Modal */}
+      {/* Cancel Match Confirmation Modal */}
       {showDeleteConfirm && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg p-4 sm:p-6 max-w-md w-full max-h-[90vh] overflow-y-auto">
-            <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-4">Delete Match</h2>
+            <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-4">Cancel Match</h2>
             {(() => {
               const match = recentMatches.find(m => m.id === showDeleteConfirm);
               const hasConfirmed = match?.slots?.some(slot => 
@@ -895,7 +962,7 @@ export default function DashboardPage() {
               );
             })()}
             <p className="text-gray-700 mb-6">
-              Are you sure you want to delete this match? This action cannot be undone.
+              Are you sure you want to cancel this match? This action cannot be undone.
             </p>
             <div className="flex flex-col sm:flex-row gap-3">
               <Button
@@ -906,7 +973,7 @@ export default function DashboardPage() {
                 disabled={deletingMatchId === showDeleteConfirm}
                 className="flex-1 w-full sm:w-auto"
               >
-                Delete
+                Cancel Match
               </Button>
               <Button
                 type="button"
@@ -926,9 +993,9 @@ export default function DashboardPage() {
       {showWithdrawConfirm && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg p-4 sm:p-6 max-w-md w-full max-h-[90vh] overflow-y-auto">
-            <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-4">Remove Yourself from Match</h2>
+            <h2 className="text-lg sm:text-xl font-bold text-gray-900 mb-4">Withdraw from Match</h2>
             <p className="text-gray-700 mb-6">
-              Are you sure you want to remove yourself from this match? This will free up the slot for other players.
+              Are you sure you want to withdraw from this match? This will free up the slot for other players.
             </p>
             <div className="flex flex-col sm:flex-row gap-3">
               <Button
@@ -939,7 +1006,7 @@ export default function DashboardPage() {
                 disabled={withdrawingApplicationId === showWithdrawConfirm}
                 className="flex-1 w-full sm:w-auto"
               >
-                Remove Myself
+                Withdraw
               </Button>
               <Button
                 type="button"
