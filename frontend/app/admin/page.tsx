@@ -411,9 +411,14 @@ export default function AdminDashboard() {
             {/* Database Operations */}
             <Card title="Database Operations">
               <div className="space-y-4">
+                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                  <p className="text-sm text-yellow-800">
+                    <strong>Note:</strong> Migration operations are safe and can be run multiple times.
+                  </p>
+                </div>
                 <div className="bg-red-50 border border-red-200 rounded-lg p-4">
                   <p className="text-sm text-red-800">
-                    <strong>Warning:</strong> These operations are destructive and cannot be undone. Use with extreme caution.
+                    <strong>Warning:</strong> Wipe operations are destructive and cannot be undone. Use with extreme caution.
                   </p>
                 </div>
 
@@ -429,6 +434,64 @@ export default function AdminDashboard() {
                   </div>
                 )}
 
+                {/* Migration Operations */}
+                <div className="border border-gray-200 rounded-lg p-4">
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <h3 className="text-lg font-semibold text-gray-900 mb-1">
+                        Add match_applicant to Notification Enums
+                      </h3>
+                      <p className="text-sm text-gray-600 mb-3">
+                        Runs a database migration to add the 'match_applicant' value to notification enum types. This is safe to run multiple times.
+                      </p>
+                    </div>
+                    <Button
+                      variant="primary"
+                      onClick={async () => {
+                        const confirmed = window.confirm(
+                          'This will add "match_applicant" to the notification enum types.\n\n' +
+                          'This operation is safe and can be run multiple times.\n\n' +
+                          'Continue?'
+                        );
+                        
+                        if (!confirmed) {
+                          return;
+                        }
+
+                        setMigrationLoading(true);
+                        setMigrationMessage(null);
+                        try {
+                          const result = await adminApi.runMatchApplicantMigration();
+                          if (result.success) {
+                            setMigrationMessage({
+                              type: 'success',
+                              text: result.message || 'Migration completed successfully!',
+                            });
+                          } else {
+                            setMigrationMessage({
+                              type: 'error',
+                              text: result.message || 'Migration failed. Please check the logs.',
+                            });
+                          }
+                        } catch (error: any) {
+                          setMigrationMessage({
+                            type: 'error',
+                            text: error.response?.data?.message || error.message || 'Failed to run migration. Please try again.',
+                          });
+                        } finally {
+                          setMigrationLoading(false);
+                          setTimeout(() => setMigrationMessage(null), 10000);
+                        }
+                      }}
+                      isLoading={migrationLoading}
+                      disabled={migrationLoading}
+                    >
+                      Run Migration
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Wipe Database */}
                 <div className="border border-gray-200 rounded-lg p-4">
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
