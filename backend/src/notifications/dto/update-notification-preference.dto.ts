@@ -1,6 +1,6 @@
 import { IsBoolean, IsEnum } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
-import { NotificationType } from '../../entities/notification.entity';
+import { NotificationType } from '../../entities/notification.enums';
 
 export class UpdateNotificationPreferenceDto {
   @ApiProperty({ description: 'Notification type' })

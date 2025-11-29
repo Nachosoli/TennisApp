@@ -7,7 +7,7 @@ import { SlotStatus } from '../entities/match-slot.entity';
 import { ApplicationStatus } from '../entities/application.entity';
 import { Result } from '../entities/result.entity';
 import { NotificationsService } from '../notifications/notifications.service';
-import { NotificationType } from '../entities/notification.entity';
+import { NotificationType } from '../entities/notification.enums';
 
 @Injectable()
 export class SchedulerService {

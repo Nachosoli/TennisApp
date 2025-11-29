@@ -8,7 +8,7 @@ import { Match } from '../entities/match.entity';
 import { Application } from '../entities/application.entity';
 import { User } from '../entities/user.entity';
 import { NotificationsService } from '../notifications/notifications.service';
-import { NotificationType } from '../entities/notification.entity';
+import { NotificationType } from '../entities/notification.enums';
 
 describe('ChatService', () => {
   let service: ChatService;

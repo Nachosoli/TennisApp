@@ -2,7 +2,7 @@ import { Injectable, Logger, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { NotificationPreference } from '../entities/notification-preference.entity';
-import { NotificationType } from '../entities/notification.entity';
+import { NotificationType } from '../entities/notification.enums';
 import { UpdateNotificationPreferenceDto } from './dto/update-notification-preference.dto';
 
 @Injectable()

@@ -2,7 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User } from '../../entities/user.entity';
-import { NotificationType } from '../../entities/notification.entity';
+import { NotificationType } from '../../entities/notification.enums';
 import * as webpush from 'web-push';
 
 @Injectable()
