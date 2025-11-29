@@ -835,7 +835,7 @@ export class AdminService {
 
         // Import and run the migration
         const { RefactorNotificationsToUseDeliveries1734570000000 } = await import(
-          '../migrations/1734570000000-RefactorNotificationsToUseDeliveries'
+          '../migrations/1734570000000-RefactorNotificationsToUseDeliveries.js'
         );
         const migration = new RefactorNotificationsToUseDeliveries1734570000000();
         
@@ -850,7 +850,6 @@ export class AdminService {
       } catch (error) {
         await queryRunner.release();
         throw error;
-      }
       }
     } catch (error: any) {
       return {
