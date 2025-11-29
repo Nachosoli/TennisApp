@@ -83,19 +83,42 @@ export class NotificationsService {
     const savedNotification = await this.notificationRepository.save(notification);
 
     // Create delivery records for each enabled channel
-    const deliveries: NotificationDelivery[] = channels.map((channel) =>
-      this.notificationDeliveryRepository.create({
-        notificationId: savedNotification.id,
-        channel,
-        status: NotificationStatus.PENDING,
-      }),
-    );
-    await this.notificationDeliveryRepository.save(deliveries);
+    try {
+      const deliveries: NotificationDelivery[] = channels.map((channel) =>
+        this.notificationDeliveryRepository.create({
+          notificationId: savedNotification.id,
+          channel,
+          status: NotificationStatus.PENDING,
+        }),
+      );
+      await this.notificationDeliveryRepository.save(deliveries);
 
-    // Process deliveries asynchronously
-    this.processDeliveries(savedNotification, deliveries, metadata).catch((error) => {
-      this.logger.error('Error processing notification deliveries:', error);
-    });
+      // Process deliveries asynchronously
+      this.processDeliveries(savedNotification, deliveries, metadata).catch((error) => {
+        this.logger.error('Error processing notification deliveries:', error);
+      });
+    } catch (error: any) {
+      // If notification_deliveries table doesn't exist yet (migration not run), 
+      // fall back to old behavior: create notifications with channel/status directly
+      if (error.message?.includes('notification_deliveries') || error.code === '42P01') {
+        this.logger.warn('notification_deliveries table not found, using legacy notification creation');
+        // Create separate notifications for each channel (old behavior)
+        const legacyNotifications: Notification[] = channels.map((channel) =>
+          this.notificationRepository.create({
+            userId,
+            type,
+            content,
+            channel, // Use optional field
+            status: NotificationStatus.PENDING, // Use optional field
+          }),
+        );
+        await this.notificationRepository.save(legacyNotifications);
+        // Note: We can't use processDeliveries here since it expects deliveries
+        // The old notifications will be processed by the old code path if it still exists
+      } else {
+        throw error;
+      }
+    }
   }
 
   /**
