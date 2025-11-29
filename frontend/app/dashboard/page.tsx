@@ -423,7 +423,7 @@ export default function DashboardPage() {
                     
                     if (match.status?.toLowerCase() === 'completed') {
                       statusText = 'Completed';
-                      statusClass = 'bg-green-100 text-green-800';
+                      statusClass = 'bg-gray-700 text-white';
                     } else if (hasConfirmedApplication || (match.status?.toLowerCase() === 'confirmed' && userApplication?.status?.toLowerCase() === 'confirmed')) {
                       // User has confirmed application OR match is confirmed and user's application is confirmed
                       statusText = 'Confirmed';
@@ -466,17 +466,26 @@ export default function DashboardPage() {
                       )
                     ) || false;
                     const isConfirmed = match.status?.toLowerCase() === 'confirmed';
-                    const canReportScore = !score && isConfirmed && (isCreator || hasConfirmedApplication || userApplication?.status?.toLowerCase() === 'confirmed');
-                    const canDelete = isCreator && match.status?.toLowerCase() !== 'completed';
-                    // Don't show Edit if there are any applicants - user can click row to manage
-                    const canEdit = false; // Hide Edit button - user can click row/card to access match detail page
-                    const canWithdraw = !isCreator && (hasConfirmedApplication || userApplication?.status?.toLowerCase() === 'confirmed') && match.status?.toLowerCase() !== 'completed';
+                    const isCompleted = match.status?.toLowerCase() === 'completed';
+                    const isCompletedWithScore = isCompleted && score;
+                    
+                    // Update canReportScore to include completed matches without score
+                    const canReportScore = !score && (isConfirmed || isCompleted) && (isCreator || hasConfirmedApplication || userApplication?.status?.toLowerCase() === 'confirmed');
+                    const canDelete = isCreator && !isCompleted;
+                    // Show Edit if pending and no applicants, Manage if pending with applicants
+                    const canEdit = isCreator && match.status?.toLowerCase() === 'pending' && !hasAnyApplicants;
+                    const canManage = isCreator && match.status?.toLowerCase() === 'pending' && hasAnyApplicants;
+                    const canWithdraw = !isCreator && (hasConfirmedApplication || userApplication?.status?.toLowerCase() === 'confirmed') && !isCompleted;
 
                     return (
                       <div
                         key={match.id}
-                        className="bg-white border border-gray-200 rounded-lg p-4 space-y-3"
-                        onClick={() => router.push(`/matches/${match.id}`)}
+                        className={`bg-white border border-gray-200 rounded-lg p-4 space-y-3 ${
+                          isCompletedWithScore 
+                            ? 'opacity-60 bg-gray-50 cursor-not-allowed' 
+                            : 'cursor-pointer'
+                        }`}
+                        onClick={isCompletedWithScore ? undefined : () => router.push(`/matches/${match.id}`)}
                       >
                         <div className="flex items-start justify-between">
                           <div className="flex-1">
@@ -506,7 +515,7 @@ export default function DashboardPage() {
                             )}
                           </div>
                         </div>
-                        {!score && (
+                        {!isCompletedWithScore && (
                           <div className="flex flex-wrap gap-2 pt-2 border-t border-gray-200" onClick={(e) => e.stopPropagation()}>
                             {canReportScore && (
                               <Link href={`/matches/${match.id}/score`} className="flex-1 min-w-[120px]">
@@ -524,6 +533,17 @@ export default function DashboardPage() {
                                 className="flex-1 min-w-[100px]"
                               >
                                 Edit
+                              </Button>
+                            )}
+                            {canManage && (
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={() => router.push(`/matches/${match.id}`)}
+                                className="flex-1 min-w-[100px]"
+                              >
+                                Manage
                               </Button>
                             )}
                             {canWithdraw && userApplication && (
@@ -662,7 +682,7 @@ export default function DashboardPage() {
                       
                       if (match.status?.toLowerCase() === 'completed') {
                         statusText = 'Completed';
-                        statusClass = 'bg-green-100 text-green-800';
+                        statusClass = 'bg-gray-700 text-white';
                       } else if (hasConfirmedApplication || (match.status?.toLowerCase() === 'confirmed' && userApplication?.status?.toLowerCase() === 'confirmed')) {
                         // User has confirmed application OR match is confirmed and user's application is confirmed
                         statusText = 'Confirmed';
@@ -704,12 +724,14 @@ export default function DashboardPage() {
                       ) || false;
 
                       // Determine if user can report score
-                      // Allow reporting for confirmed matches (even if not past date yet)
+                      // Allow reporting for confirmed matches (even if not past date yet) and completed matches without score
                       const isConfirmed = match.status?.toLowerCase() === 'confirmed';
-                      const canReportScore = !score && isConfirmed && (isCreator || hasConfirmedApplication || userApplication?.status?.toLowerCase() === 'confirmed');
+                      const isCompleted = match.status?.toLowerCase() === 'completed';
+                      const isCompletedWithScore = isCompleted && score;
+                      const canReportScore = !score && (isConfirmed || isCompleted) && (isCreator || hasConfirmedApplication || userApplication?.status?.toLowerCase() === 'confirmed');
                       
                       // Determine if user can delete (creator only, not completed)
-                      const canDelete = isCreator && match.status?.toLowerCase() !== 'completed';
+                      const canDelete = isCreator && !isCompleted;
                       
                       // Check if match has any applicants (pending, confirmed, waitlisted)
                       const hasAnyApplicants = match.slots?.some(slot => 
@@ -721,8 +743,9 @@ export default function DashboardPage() {
                         )
                       ) || false;
                       
-                      // Don't show Edit if there are any applicants - user can click row to manage
-                      const canEdit = false; // Hide Edit button - user can click row/card to access match detail page
+                      // Show Edit if pending and no applicants, Manage if pending with applicants
+                      const canEdit = isCreator && match.status?.toLowerCase() === 'pending' && !hasAnyApplicants;
+                      const canManage = isCreator && match.status?.toLowerCase() === 'pending' && hasAnyApplicants;
                       
                       // Determine if user can withdraw (participant with confirmed application, not completed)
                       const canWithdraw = !isCreator && (hasConfirmedApplication || userApplication?.status?.toLowerCase() === 'confirmed') && match.status?.toLowerCase() !== 'completed';
@@ -730,8 +753,8 @@ export default function DashboardPage() {
                       return (
                         <tr
                           key={match.id}
-                          className="hover:bg-gray-50 cursor-pointer"
-                          onClick={() => router.push(`/matches/${match.id}`)}
+                          className={isCompletedWithScore ? 'opacity-60 bg-gray-50 cursor-not-allowed' : 'hover:bg-gray-50 cursor-pointer'}
+                          onClick={isCompletedWithScore ? undefined : () => router.push(`/matches/${match.id}`)}
                         >
                           <td className="px-4 py-3 text-sm text-gray-900">
                             {parseLocalDate(match.date).toLocaleDateString('en-US', {
@@ -779,8 +802,8 @@ export default function DashboardPage() {
                           </td>
                           <td className="px-4 py-3">
                             <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
-                              {/* Don't show any actions if score is submitted (match is completed) */}
-                              {!score && (
+                              {/* Don't show any actions if match is completed with score */}
+                              {!isCompletedWithScore && (
                                 <>
                                   {canEdit && (
                                     <Button
@@ -790,6 +813,16 @@ export default function DashboardPage() {
                                       onClick={() => router.push(`/matches/${match.id}/edit`)}
                                     >
                                       Edit
+                                    </Button>
+                                  )}
+                                  {canManage && (
+                                    <Button
+                                      type="button"
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={() => router.push(`/matches/${match.id}`)}
+                                    >
+                                      Manage
                                     </Button>
                                   )}
                                   {canWithdraw && userApplication && (
