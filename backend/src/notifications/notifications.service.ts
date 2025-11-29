@@ -1,7 +1,8 @@
 import { Injectable, Logger, Inject, forwardRef } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, LessThan } from 'typeorm';
-import { Notification, NotificationType, NotificationChannel, NotificationStatus } from '../entities/notification.entity';
+import { Notification } from '../entities/notification.entity';
+import { NotificationType, NotificationChannel, NotificationStatus } from '../entities/notification.enums';
 import { NotificationDelivery } from '../entities/notification-delivery.entity';
 import { NotificationPreference } from '../entities/notification-preference.entity';
 import { PushSubscription } from '../entities/push-subscription.entity';

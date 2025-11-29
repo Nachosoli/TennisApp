@@ -18,7 +18,7 @@ import { EditUserDto } from './dto/edit-user.dto';
 import { AdjustScoreDto } from './dto/adjust-score.dto';
 import { WipeDatabaseDto } from './dto/wipe-database.dto';
 import { NotificationsService } from '../notifications/notifications.service';
-import { NotificationType } from '../entities/notification.entity';
+import { NotificationType } from '../entities/notification.enums';
 import { PasswordService } from '../auth/services/password.service';
 
 @Injectable()

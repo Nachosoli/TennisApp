@@ -7,12 +7,8 @@ export { ChatMessage } from './chat-message.entity';
 export { Result } from './result.entity';
 export { ELOLog, MatchType } from './elo-log.entity';
 export { UserStats } from './user-stats.entity';
-export {
-  Notification,
-  NotificationType,
-  NotificationChannel,
-  NotificationStatus,
-} from './notification.entity';
+export { Notification } from './notification.entity';
+export { NotificationType, NotificationChannel, NotificationStatus } from './notification.enums';
 export { NotificationPreference } from './notification-preference.entity';
 export { AdminAction, ActionType, TargetType } from './admin-action.entity';
 export { Report, ReportType, ReportStatus } from './report.entity';

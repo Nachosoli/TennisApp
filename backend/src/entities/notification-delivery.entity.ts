@@ -8,7 +8,7 @@ import {
   Index,
 } from 'typeorm';
 import { Notification } from './notification.entity';
-import { NotificationChannel, NotificationStatus } from './notification.entity';
+import { NotificationChannel, NotificationStatus } from './notification.enums';
 
 @Entity('notification_deliveries')
 @Index(['notificationId'])

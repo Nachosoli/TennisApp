@@ -17,7 +17,7 @@ import { User } from '../entities/user.entity';
 import { ApplyToSlotDto } from './dto/apply-to-slot.dto';
 import { ConfigService } from '@nestjs/config';
 import { NotificationsService } from '../notifications/notifications.service';
-import { NotificationType } from '../entities/notification.entity';
+import { NotificationType } from '../entities/notification.enums';
 import { MatchUpdatesGateway } from '../gateways/match-updates.gateway';
 import { ChatService } from '../chat/chat.service';
 import { MatchesService } from '../matches/matches.service';
