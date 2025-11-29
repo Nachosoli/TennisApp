@@ -700,9 +700,32 @@ export class AdminService {
       try {
         const deletedCounts: Record<string, number> = {};
 
+        // Helper function to check if table exists
+        const tableExists = async (tableName: string): Promise<boolean> => {
+          try {
+            const result = await queryRunner.query(`
+              SELECT EXISTS (
+                SELECT FROM information_schema.tables 
+                WHERE table_schema = 'public' 
+                AND table_name = '${tableName}'
+              ) as exists;
+            `);
+            return result[0]?.exists || false;
+          } catch {
+            return false;
+          }
+        };
+
         // Helper function to safely delete from a table
         const safeDelete = async (tableName: string, displayName: string) => {
           try {
+            // Check if table exists first
+            const exists = await tableExists(tableName);
+            if (!exists) {
+              deletedCounts[displayName] = 0;
+              return 0;
+            }
+
             // Get count before deletion for reporting
             const countResult = await queryRunner.query(`SELECT COUNT(*) as count FROM "${tableName}";`);
             const count = parseInt(countResult[0]?.count || '0', 10);
@@ -713,12 +736,14 @@ export class AdminService {
             deletedCounts[displayName] = count;
             return count;
           } catch (error: any) {
-            if (error.code === '42P01') {
-              // Table doesn't exist, skip it
-              deletedCounts[displayName] = 0;
-              return 0;
+            // If transaction is aborted, we need to rollback and rethrow
+            if (error.message && error.message.includes('current transaction is aborted')) {
+              throw error;
             }
-            throw error;
+            // Log error but don't abort transaction for non-critical errors
+            console.error(`Error truncating table ${tableName}:`, error.message);
+            deletedCounts[displayName] = 0;
+            return 0;
           }
         };
 
@@ -788,12 +813,13 @@ export class AdminService {
       );
 
       // Run the migration SQL directly
+      // NOTE: ALTER TYPE ADD VALUE cannot be run inside a transaction in PostgreSQL
       const queryRunner = this.dataSource.createQueryRunner();
       await queryRunner.connect();
-      await queryRunner.startTransaction();
 
       try {
         // Add 'match_applicant' to notifications_type_enum if it doesn't exist
+        // Run outside transaction as ALTER TYPE ADD VALUE has transaction restrictions
         await queryRunner.query(`
           DO $$ 
           BEGIN
@@ -825,14 +851,11 @@ export class AdminService {
           END $$;
         `);
 
-        await queryRunner.commitTransaction();
-
         return {
           success: true,
           message: 'Migration completed successfully. match_applicant has been added to notification enum types.',
         };
       } catch (error) {
-        await queryRunner.rollbackTransaction();
         throw error;
       } finally {
         await queryRunner.release();
