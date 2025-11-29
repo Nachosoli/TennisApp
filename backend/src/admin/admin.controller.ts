@@ -216,5 +216,10 @@ export class AdminController {
     return this.adminService.getUserStats(userId);
   }
 
-  // TEMPORARY: Admin endpoint to wipe database
+  // TEMPORARY: Admin endpoint to run match_applicant migration
+  @Post('migrations/run-match-applicant')
+  @ApiOperation({ summary: 'TEMPORARY: Run migration to add match_applicant to notification enums' })
+  async runMatchApplicantMigration(@CurrentUser('id') adminId: string) {
+    return this.adminService.runMatchApplicantMigration(adminId);
+  }
 }

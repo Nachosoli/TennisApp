@@ -650,4 +650,76 @@ export class AdminService {
 
     return this.adminActionRepository.save(action);
   }
+
+  /**
+   * TEMPORARY: Run migration to add match_applicant to notification enums
+   */
+  async runMatchApplicantMigration(adminId: string): Promise<{ success: boolean; message: string }> {
+    try {
+      // Log admin action
+      await this.logAdminAction(
+        adminId,
+        ActionType.EDIT_USER, // Using available action type
+        TargetType.USER,
+        adminId,
+        { action: 'run_match_applicant_migration' },
+      );
+
+      // Run the migration SQL directly
+      const queryRunner = this.dataSource.createQueryRunner();
+      await queryRunner.connect();
+      await queryRunner.startTransaction();
+
+      try {
+        // Add 'match_applicant' to notifications_type_enum if it doesn't exist
+        await queryRunner.query(`
+          DO $$ 
+          BEGIN
+            IF NOT EXISTS (
+              SELECT 1 FROM pg_enum 
+              WHERE enumlabel = 'match_applicant' 
+              AND enumtypid = (
+                SELECT oid FROM pg_type WHERE typname = 'notifications_type_enum'
+              )
+            ) THEN
+              ALTER TYPE "notifications_type_enum" ADD VALUE 'match_applicant';
+            END IF;
+          END $$;
+        `);
+
+        // Add 'match_applicant' to notification_preferences_notificationtype_enum if it doesn't exist
+        await queryRunner.query(`
+          DO $$ 
+          BEGIN
+            IF NOT EXISTS (
+              SELECT 1 FROM pg_enum 
+              WHERE enumlabel = 'match_applicant' 
+              AND enumtypid = (
+                SELECT oid FROM pg_type WHERE typname = 'notification_preferences_notificationtype_enum'
+              )
+            ) THEN
+              ALTER TYPE "notification_preferences_notificationtype_enum" ADD VALUE 'match_applicant';
+            END IF;
+          END $$;
+        `);
+
+        await queryRunner.commitTransaction();
+
+        return {
+          success: true,
+          message: 'Migration completed successfully. match_applicant has been added to notification enum types.',
+        };
+      } catch (error) {
+        await queryRunner.rollbackTransaction();
+        throw error;
+      } finally {
+        await queryRunner.release();
+      }
+    } catch (error: any) {
+      return {
+        success: false,
+        message: `Migration failed: ${error.message}`,
+      };
+    }
+  }
 }
