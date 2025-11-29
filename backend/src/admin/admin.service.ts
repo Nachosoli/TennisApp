@@ -940,7 +940,7 @@ export class AdminService {
             `);
           }
         } catch (error: any) {
-          this.logger.warn('Error migrating notification data:', error.message);
+          console.warn('Error migrating notification data:', error.message);
           // Continue anyway - new structure will work for new notifications
         }
 
