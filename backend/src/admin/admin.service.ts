@@ -839,8 +839,8 @@ export class AdminService {
           CREATE TABLE IF NOT EXISTS "notification_deliveries" (
             "id" uuid NOT NULL DEFAULT uuid_generate_v4(),
             "notification_id" uuid NOT NULL,
-            "channel" "notification_channel_enum" NOT NULL,
-            "status" "notification_status_enum" NOT NULL DEFAULT 'pending',
+            "channel" "notifications_channel_enum" NOT NULL,
+            "status" "notifications_status_enum" NOT NULL DEFAULT 'pending',
             "retry_count" integer NOT NULL DEFAULT 0,
             "sent_at" timestamp,
             "created_at" timestamp NOT NULL DEFAULT now(),
