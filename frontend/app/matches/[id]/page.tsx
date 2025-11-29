@@ -562,7 +562,7 @@ export default function MatchDetailPage() {
           ) : null;
         })()}
 
-        {/* Report Score - Only show for creator or confirmed applicant */}
+        {/* Report Score - Only show for creator or confirmed applicant, and only if match is not completed */}
         {(() => {
           const isCreator = currentMatch.creatorUserId === user?.id;
           const hasConfirmedApplication = user && currentMatch.slots?.some(slot =>
@@ -571,7 +571,11 @@ export default function MatchDetailPage() {
               app.status?.toLowerCase() === 'confirmed'
             )
           );
-          const shouldShowReport = currentMatch.status?.toLowerCase() === 'confirmed' && (isCreator || hasConfirmedApplication);
+          const matchStatus = currentMatch.status?.toLowerCase();
+          const shouldShowReport = 
+            matchStatus !== 'completed' &&
+            matchStatus === 'confirmed' && 
+            (isCreator || hasConfirmedApplication);
           
           return shouldShowReport ? (
             <Card title="Match Actions">
