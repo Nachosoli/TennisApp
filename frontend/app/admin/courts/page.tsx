@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef, useMemo } from 'react';
 import { useAuthStore } from '@/stores/auth-store';
 import { useRequireAdmin } from '@/hooks/useRequireAdmin';
 import { PageLoader } from '@/components/ui/PageLoader';
@@ -12,6 +12,9 @@ import { Input } from '@/components/ui/Input';
 import { Court } from '@/types';
 import { useRouter } from 'next/navigation';
 import { format } from 'date-fns';
+import { courtsApi } from '@/lib/courts';
+import { useLoadScript } from '@react-google-maps/api';
+import { getErrorMessage } from '@/lib/errors';
 
 export default function AdminCourtsPage() {
   const router = useRouter();
@@ -31,6 +34,55 @@ export default function AdminCourtsPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const limit = 50;
+
+  // Court creation state
+  const [showCreateForm, setShowCreateForm] = useState(false);
+  const [courtName, setCourtName] = useState('');
+  const [courtAddress, setCourtAddress] = useState('');
+  const [courtSurface, setCourtSurface] = useState<'hard' | 'clay' | 'grass' | 'indoor'>('hard');
+  const [courtIsPublic, setCourtIsPublic] = useState(true);
+  const [isCreatingCourt, setIsCreatingCourt] = useState(false);
+  const [selectedGooglePlace, setSelectedGooglePlace] = useState<google.maps.places.PlaceResult | null>(null);
+  const addressInputRef = useRef<HTMLInputElement>(null);
+  const autocompleteRef = useRef<google.maps.places.Autocomplete | null>(null);
+
+  // Google Maps - useLoadScript must be called unconditionally
+  const googleMapsApiKey = useMemo(() => process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || '', []);
+  const { isLoaded: isGoogleMapsLoaded } = useLoadScript({
+    googleMapsApiKey,
+    libraries: ['places'],
+  });
+
+  // Initialize Google Places Autocomplete
+  useEffect(() => {
+    if (isGoogleMapsLoaded && addressInputRef.current && googleMapsApiKey && !autocompleteRef.current && showCreateForm) {
+      try {
+        const autocomplete = new google.maps.places.Autocomplete(addressInputRef.current, {
+          types: ['establishment'],
+          fields: ['geometry', 'formatted_address', 'name', 'place_id'],
+        });
+
+        autocomplete.addListener('place_changed', () => {
+          const place = autocomplete.getPlace();
+          if (place && place.geometry) {
+            setSelectedGooglePlace(place);
+            setCourtAddress(place.formatted_address || '');
+          }
+        });
+
+        autocompleteRef.current = autocomplete;
+      } catch (error) {
+        console.error('Failed to initialize Google Places Autocomplete:', error);
+      }
+    }
+
+    return () => {
+      if (autocompleteRef.current) {
+        google.maps.event.clearInstanceListeners(autocompleteRef.current);
+        autocompleteRef.current = null;
+      }
+    };
+  }, [isGoogleMapsLoaded, googleMapsApiKey, showCreateForm]);
 
   const loadCourts = () => {
     if (!user || !isAdmin) {
@@ -105,6 +157,66 @@ export default function AdminCourtsPage() {
     }
   };
 
+  const handleCreateCourt = async () => {
+    if (!courtName.trim() || !courtAddress.trim() || !selectedGooglePlace) {
+      setError('Please fill in all fields and select an address from the suggestions');
+      return;
+    }
+
+    setIsCreatingCourt(true);
+    setError(null);
+
+    try {
+      const location = selectedGooglePlace.geometry?.location;
+      if (!location) {
+        throw new Error('Invalid address location');
+      }
+
+      // Create the court (or get existing one if it already exists)
+      await courtsApi.create({
+        name: courtName.trim(),
+        address: courtAddress,
+        lat: location.lat(),
+        lng: location.lng(),
+        surface: courtSurface,
+        isPublic: courtIsPublic,
+      });
+
+      // Reset form
+      setCourtName('');
+      setCourtAddress('');
+      setCourtSurface('hard');
+      setCourtIsPublic(true);
+      setSelectedGooglePlace(null);
+      setShowCreateForm(false);
+
+      // Reload courts to show the new one
+      await loadCourts();
+    } catch (err: any) {
+      console.error('Failed to create court:', err);
+      const errorMessage = getErrorMessage(err);
+      setError(errorMessage);
+    } finally {
+      setIsCreatingCourt(false);
+    }
+  };
+
+  const handleCancelCreate = () => {
+    setShowCreateForm(false);
+    setCourtName('');
+    setCourtAddress('');
+    setCourtSurface('hard');
+    setCourtIsPublic(true);
+    setSelectedGooglePlace(null);
+    setError(null);
+    
+    // Clear autocomplete
+    if (autocompleteRef.current) {
+      google.maps.event.clearInstanceListeners(autocompleteRef.current);
+      autocompleteRef.current = null;
+    }
+  };
+
   if (authLoading) {
     return (
       <Layout>
@@ -124,9 +236,16 @@ export default function AdminCourtsPage() {
       <div className="space-y-6">
         <div className="flex justify-between items-center">
           <h1 className="text-3xl font-bold text-gray-900">Court Management</h1>
-          <Button variant="outline" onClick={() => router.push('/admin')}>
-            Back to Dashboard
-          </Button>
+          <div className="flex gap-2">
+            {!showCreateForm && (
+              <Button variant="primary" onClick={() => setShowCreateForm(true)}>
+                Create New Court
+              </Button>
+            )}
+            <Button variant="outline" onClick={() => router.push('/admin')}>
+              Back to Dashboard
+            </Button>
+          </div>
         </div>
 
         {/* Error Display */}
@@ -134,6 +253,87 @@ export default function AdminCourtsPage() {
           <Card>
             <div className="bg-red-50 border border-red-200 rounded-lg p-4">
               <p className="text-red-800">{error}</p>
+            </div>
+          </Card>
+        )}
+
+        {/* Create Court Form */}
+        {showCreateForm && (
+          <Card>
+            <div className="space-y-4">
+              <div className="flex justify-between items-center">
+                <h2 className="text-xl font-semibold text-gray-900">Create New Court</h2>
+                <Button variant="outline" size="sm" onClick={handleCancelCreate}>
+                  Cancel
+                </Button>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <Input
+                  label="Court Name *"
+                  type="text"
+                  value={courtName}
+                  onChange={(e) => setCourtName(e.target.value)}
+                  placeholder="Enter court name"
+                  required
+                />
+
+                <Input
+                  ref={addressInputRef}
+                  label="Address *"
+                  type="text"
+                  value={courtAddress}
+                  onChange={(e) => setCourtAddress(e.target.value)}
+                  placeholder={isGoogleMapsLoaded ? "Search for an address..." : "Enter address"}
+                  required
+                />
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Surface Type *
+                  </label>
+                  <select
+                    value={courtSurface}
+                    onChange={(e) => setCourtSurface(e.target.value as any)}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    required
+                  >
+                    <option value="hard">Hard</option>
+                    <option value="clay">Clay</option>
+                    <option value="grass">Grass</option>
+                    <option value="indoor">Indoor</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Court Type *
+                  </label>
+                  <select
+                    value={courtIsPublic ? 'public' : 'private'}
+                    onChange={(e) => setCourtIsPublic(e.target.value === 'public')}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    required
+                  >
+                    <option value="public">Public</option>
+                    <option value="private">Private</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-2">
+                <Button variant="outline" onClick={handleCancelCreate} disabled={isCreatingCourt}>
+                  Cancel
+                </Button>
+                <Button
+                  variant="primary"
+                  onClick={handleCreateCourt}
+                  isLoading={isCreatingCourt}
+                  disabled={!courtName.trim() || !courtAddress.trim() || !selectedGooglePlace || isCreatingCourt}
+                >
+                  Create Court
+                </Button>
+              </div>
             </div>
           </Card>
         )}
