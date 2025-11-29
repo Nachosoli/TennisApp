@@ -97,6 +97,20 @@ This document tracks all reported bugs and their fixes.
 **Files Affected:** `frontend/app/matches/[id]/page.tsx`  
 **Fix Required:** Make buttons inline on mobile, reduce button sizes.
 
+### 6.i - Improve Manage Applications UI for Mobile
+**Status:** Pending  
+**Description:** The "Manage Applications" section is too crowded on mobile. The page needs optimization for better mobile UX.  
+**Files Affected:** `frontend/app/matches/[id]/page.tsx`, `frontend/src/components/ApplicationsTable.tsx`  
+**Fix Required:** 
+- Remove the informational text box: "As the match creator, you can review and manage applications from players who want to join this match." (lines 531-535 in `frontend/app/matches/[id]/page.tsx`)
+- Optimize mobile card layout:
+  - **Option 1 (Recommended):** Replace the "pending" status badge in the header with two badge icons (checkmark for Confirm, X for Reject) that are clickable. This saves vertical space and makes actions more accessible.
+  - **Option 2:** Keep buttons at bottom but make them smaller (reduce padding, use icon-only buttons with tooltips, or use compact button style)
+  - Reduce spacing between card elements
+  - Consider collapsing less critical stats (e.g., Cancellation Rate) behind a "Show more" toggle
+  - Reduce card padding on mobile
+- Ensure buttons are easily tappable (minimum 44x44px touch target)
+
 ### 6.c - Waitlist Status Display
 **Status:** Pending  
 **Description:** If user is waitlisted, the timeslot should show "Waitlist", not "Confirmed". It's misleading for that user (mobile and desktop).  
