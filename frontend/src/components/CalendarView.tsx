@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { matchesApi } from '@/lib/matches';
 import { Match } from '@/types';
-import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, isSameMonth, startOfDay } from 'date-fns';
+import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, isSameMonth, startOfDay, isBefore, startOfToday } from 'date-fns';
 import { Card } from './ui/Card';
 import { Button } from './ui/Button';
 import Link from 'next/link';
@@ -181,17 +181,20 @@ export const CalendarView = ({ filters, onDateSelect }: CalendarViewProps) => {
                 const isToday = isSameDay(day, new Date());
                 const isSelected = selectedDate && isSameDay(selectedDate, day);
                 const hasMatches = dayMatches.length > 0;
+                const isPast = isBefore(startOfDay(day), startOfToday());
                 
                 return (
                   <div
                     key={day.toISOString()}
-                    onClick={() => handleDayClick(day)}
+                    onClick={() => !isPast && handleDayClick(day)}
                     className={`p-2 min-h-[80px] border border-gray-200 ${
+                      isPast ? 'bg-gray-100 opacity-50 cursor-not-allowed' :
                       isSelected ? 'bg-blue-100 ring-2 ring-blue-500' :
                       isToday ? 'bg-blue-50' : 'bg-white'
-                    } ${hasMatches ? 'cursor-pointer hover:bg-gray-50' : ''}`}
+                    } ${hasMatches && !isPast ? 'cursor-pointer hover:bg-gray-50' : ''}`}
                   >
                     <div className={`text-sm font-medium mb-1 ${
+                      isPast ? 'text-gray-400' :
                       isSelected ? 'text-blue-700' :
                       isToday ? 'text-blue-600' : 'text-gray-900'
                     }`}>
@@ -201,13 +204,15 @@ export const CalendarView = ({ filters, onDateSelect }: CalendarViewProps) => {
                       {dayMatches.slice(0, 2).map((match) => (
                         <div
                           key={match.id}
-                          className="text-xs bg-blue-100 text-blue-800 px-1 py-0.5 rounded truncate"
+                          className={`text-xs px-1 py-0.5 rounded truncate ${
+                            isPast ? 'bg-gray-200 text-gray-500' : 'bg-blue-100 text-blue-800'
+                          }`}
                         >
                           {match.court?.name || 'Match'}
                         </div>
                       ))}
                       {dayMatches.length > 2 && (
-                        <div className="text-xs text-gray-500">
+                        <div className={`text-xs ${isPast ? 'text-gray-400' : 'text-gray-500'}`}>
                           +{dayMatches.length - 2} more
                         </div>
                       )}
