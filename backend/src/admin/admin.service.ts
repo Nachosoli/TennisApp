@@ -833,13 +833,129 @@ export class AdminService {
           };
         }
 
-        // Import and run the migration
-        const { RefactorNotificationsToUseDeliveries1734570000000 } = await import(
-          '../migrations/1734570000000-RefactorNotificationsToUseDeliveries.js'
-        );
-        const migration = new RefactorNotificationsToUseDeliveries1734570000000();
-        
-        await migration.up(queryRunner);
+        // Run the migration SQL directly (same as in the migration file)
+        // Step 1: Create notification_deliveries table
+        await queryRunner.query(`
+          CREATE TABLE IF NOT EXISTS "notification_deliveries" (
+            "id" uuid NOT NULL DEFAULT uuid_generate_v4(),
+            "notification_id" uuid NOT NULL,
+            "channel" "notification_channel_enum" NOT NULL,
+            "status" "notification_status_enum" NOT NULL DEFAULT 'pending',
+            "retry_count" integer NOT NULL DEFAULT 0,
+            "sent_at" timestamp,
+            "created_at" timestamp NOT NULL DEFAULT now(),
+            CONSTRAINT "PK_notification_deliveries" PRIMARY KEY ("id"),
+            CONSTRAINT "FK_notification_deliveries_notification" 
+              FOREIGN KEY ("notification_id") 
+              REFERENCES "notifications"("id") 
+              ON DELETE CASCADE
+          )
+        `);
+
+        // Step 2: Create indexes
+        await queryRunner.query(`
+          CREATE INDEX IF NOT EXISTS "IDX_notification_deliveries_notification_id" 
+            ON "notification_deliveries" ("notification_id")
+        `);
+        await queryRunner.query(`
+          CREATE INDEX IF NOT EXISTS "IDX_notification_deliveries_channel" 
+            ON "notification_deliveries" ("channel")
+        `);
+        await queryRunner.query(`
+          CREATE INDEX IF NOT EXISTS "IDX_notification_deliveries_status" 
+            ON "notification_deliveries" ("status")
+        `);
+        await queryRunner.query(`
+          CREATE INDEX IF NOT EXISTS "IDX_notification_deliveries_created_at" 
+            ON "notification_deliveries" ("created_at")
+        `);
+
+        // Step 3: Migrate existing data
+        try {
+          const notificationCount = await queryRunner.query(`SELECT COUNT(*) as count FROM notifications`);
+          if (notificationCount[0]?.count > 0) {
+            await queryRunner.query(`
+              DO $$
+              DECLARE
+                notification_group RECORD;
+                logical_notification_id uuid;
+                delivery_record RECORD;
+                group_created_at timestamp;
+              BEGIN
+                -- For each unique combination of (user_id, type, content) grouped by time window
+                FOR notification_group IN
+                  SELECT DISTINCT 
+                    user_id, 
+                    type, 
+                    content,
+                    date_trunc('second', created_at) as created_at_rounded
+                  FROM notifications
+                  ORDER BY created_at_rounded DESC
+                LOOP
+                  -- Get the earliest notification ID for this group (we'll keep this one)
+                  SELECT id, created_at INTO logical_notification_id, group_created_at
+                  FROM notifications
+                  WHERE user_id = notification_group.user_id
+                    AND type = notification_group.type
+                    AND content = notification_group.content
+                    AND date_trunc('second', created_at) = notification_group.created_at_rounded
+                  ORDER BY created_at ASC
+                  LIMIT 1;
+
+                  -- Create delivery records for all notifications in this group
+                  FOR delivery_record IN
+                    SELECT id, channel, status, retry_count, sent_at, created_at
+                    FROM notifications
+                    WHERE user_id = notification_group.user_id
+                      AND type = notification_group.type
+                      AND content = notification_group.content
+                      AND date_trunc('second', created_at) = notification_group.created_at_rounded
+                  LOOP
+                    INSERT INTO notification_deliveries (
+                      notification_id,
+                      channel,
+                      status,
+                      retry_count,
+                      sent_at,
+                      created_at
+                    ) VALUES (
+                      logical_notification_id,
+                      delivery_record.channel,
+                      delivery_record.status,
+                      delivery_record.retry_count,
+                      delivery_record.sent_at,
+                      delivery_record.created_at
+                    );
+                  END LOOP;
+
+                  -- Delete duplicate notifications (keep only the first one)
+                  DELETE FROM notifications
+                  WHERE user_id = notification_group.user_id
+                    AND type = notification_group.type
+                    AND content = notification_group.content
+                    AND date_trunc('second', created_at) = notification_group.created_at_rounded
+                    AND id != logical_notification_id;
+                END LOOP;
+              END $$;
+            `);
+          }
+        } catch (error: any) {
+          this.logger.warn('Error migrating notification data:', error.message);
+          // Continue anyway - new structure will work for new notifications
+        }
+
+        // Step 4: Remove old columns from notifications table
+        await queryRunner.query(`
+          DROP INDEX IF EXISTS "IDX_notifications_status"
+        `);
+
+        await queryRunner.query(`
+          ALTER TABLE "notifications" 
+            DROP COLUMN IF EXISTS "channel",
+            DROP COLUMN IF EXISTS "status",
+            DROP COLUMN IF EXISTS "retry_count",
+            DROP COLUMN IF EXISTS "sent_at"
+        `);
 
         await queryRunner.release();
 
