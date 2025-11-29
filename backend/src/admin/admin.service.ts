@@ -826,6 +826,7 @@ export class AdminService {
         `);
 
         if (tableExists[0]?.exists) {
+          await queryRunner.release();
           return {
             success: true,
             message: 'Migration already applied. notification_deliveries table already exists.',
@@ -840,14 +841,16 @@ export class AdminService {
         
         await migration.up(queryRunner);
 
+        await queryRunner.release();
+
         return {
           success: true,
           message: 'Migration completed successfully. Notifications have been refactored to use delivery records.',
         };
       } catch (error) {
-        throw error;
-      } finally {
         await queryRunner.release();
+        throw error;
+      }
       }
     } catch (error: any) {
       return {
