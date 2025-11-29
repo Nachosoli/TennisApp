@@ -35,10 +35,9 @@ export class UpdateProfileDto {
   @IsString()
   playStyle?: string;
 
-  @ApiPropertyOptional({ example: 'uuid-of-court' })
+  @ApiPropertyOptional({ example: 'uuid-of-court', nullable: true })
   @IsOptional()
-  @IsString()
-  homeCourtId?: string;
+  homeCourtId?: string | null;
 
   @ApiPropertyOptional({ enum: RatingType, example: RatingType.UTR })
   @IsOptional()

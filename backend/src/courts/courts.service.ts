@@ -61,6 +61,7 @@ export class CourtsService {
     }
 
     // Check for duplicate court by address (case-insensitive, trimmed)
+    // If court already exists, return it instead of creating a duplicate
     const existingCourt = await this.courtRepository
       .createQueryBuilder('court')
       .where('court.deletedAt IS NULL')
@@ -70,7 +71,8 @@ export class CourtsService {
       .getOne();
 
     if (existingCourt) {
-      throw new BadRequestException('A court with this address already exists');
+      // Court already exists, return it instead of creating a duplicate
+      return existingCourt;
     }
 
     // Create Point geometry

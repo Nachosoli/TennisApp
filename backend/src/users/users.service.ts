@@ -62,7 +62,15 @@ export class UsersService {
       }
     }
 
-    Object.assign(user, updateDto);
+    // Explicitly handle homeCourtId to allow clearing (null) or setting (string)
+    if ('homeCourtId' in updateDto) {
+      (user as any).homeCourtId = updateDto.homeCourtId ?? null;
+    }
+
+    // Apply other updates (excluding homeCourtId which we handled above)
+    const { homeCourtId, ...otherUpdates } = updateDto;
+    Object.assign(user, otherUpdates);
+    
     await this.userRepository.save(user);
     
     // Invalidate cache

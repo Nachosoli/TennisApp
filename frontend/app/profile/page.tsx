@@ -79,6 +79,7 @@ function ProfilePageContent() {
   const [newFacilitySurfaceType, setNewFacilitySurfaceType] = useState<'hard' | 'clay' | 'grass' | 'indoor'>('hard');
   const [selectedGooglePlace, setSelectedGooglePlace] = useState<google.maps.places.PlaceResult | null>(null);
   const [isCreatingFacility, setIsCreatingFacility] = useState(false);
+  const [isClearingHomeCourt, setIsClearingHomeCourt] = useState(false);
   const addressInputRef = useRef<HTMLInputElement>(null);
   const autocompleteRef = useRef<google.maps.places.Autocomplete | null>(null);
   const facilityInputRef = useRef<HTMLInputElement>(null);
@@ -290,6 +291,7 @@ function ProfilePageContent() {
         throw new Error('Invalid address location');
       }
 
+      // Create the court (or get existing one if it already exists)
       const newCourt = await courtsApi.create({
         name: facilityName.trim(),
         address: newFacilityAddress,
@@ -366,20 +368,34 @@ function ProfilePageContent() {
 
   const handleClearHomeCourt = async () => {
     try {
+      setIsClearingHomeCourt(true);
+      setError(null);
+      
+      // Send null to explicitly clear the home court
       const updatedUser = await authApi.updateProfile({
-        homeCourtId: undefined,
+        homeCourtId: null as any,
       });
+      
       setUser(updatedUser);
+      
+      // Reset all facility-related state to show the input form again
       setFacilityName('');
       setSelectedFacilityId(null);
       setSelectedFacilityName(null);
       setMatchingFacilities([]);
       setShowFacilityDropdown(false);
       setShowNewFacilityForm(false);
+      setNewFacilityAddress('');
+      setSelectedGooglePlace(null);
+      setHasSearched(false);
+      setShowFacilityResults(false);
+      
       router.refresh();
     } catch (err: any) {
       const errorMessage = getErrorMessage(err);
       setError(errorMessage);
+    } finally {
+      setIsClearingHomeCourt(false);
     }
   };
 
@@ -689,6 +705,8 @@ function ProfilePageContent() {
                     variant="outline"
                     size="sm"
                     onClick={handleClearHomeCourt}
+                    isLoading={isClearingHomeCourt}
+                    disabled={isClearingHomeCourt}
                   >
                     Change
                   </Button>
