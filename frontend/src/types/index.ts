@@ -12,8 +12,8 @@ export interface User {
   ratingType?: 'utr' | 'usta' | 'ultimate' | 'custom';
   ratingValue?: number;
   gender?: 'male' | 'female';
-  homeCourtId?: string;
-  homeCourt?: Court; // Home court relation
+  homeCourtId?: string | null;
+  homeCourt?: Court | null; // Home court relation
   bio?: string;
   photoUrl?: string;
   isActive?: boolean;

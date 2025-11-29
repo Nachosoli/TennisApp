@@ -382,14 +382,8 @@ function ProfilePageContent() {
       const freshUser = await authApi.getCurrentUser();
       console.log('Fresh user data:', freshUser);
       
-      // Ensure homeCourtId is explicitly set to null/undefined
-      const userWithClearedCourt = {
-        ...freshUser,
-        homeCourtId: null,
-        homeCourt: null,
-      };
-      
-      setUser(userWithClearedCourt);
+      // Use the fresh user data directly (backend should have cleared homeCourtId)
+      setUser(freshUser);
       
       // Reset all facility-related state to show the input form again
       setFacilityName('');
