@@ -3,6 +3,7 @@ import {
   NotFoundException,
   ForbiddenException,
   BadRequestException,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource } from 'typeorm';
@@ -15,8 +16,10 @@ import { AdminAction, ActionType, TargetType } from '../entities/admin-action.en
 import { SuspendUserDto } from './dto/suspend-user.dto';
 import { EditUserDto } from './dto/edit-user.dto';
 import { AdjustScoreDto } from './dto/adjust-score.dto';
+import { WipeDatabaseDto } from './dto/wipe-database.dto';
 import { NotificationsService } from '../notifications/notifications.service';
 import { NotificationType } from '../entities/notification.entity';
+import { PasswordService } from '../auth/services/password.service';
 
 @Injectable()
 export class AdminService {
@@ -32,6 +35,7 @@ export class AdminService {
     @InjectRepository(AdminAction)
     private adminActionRepository: Repository<AdminAction>,
     private notificationsService: NotificationsService,
+    private passwordService: PasswordService,
     private dataSource: DataSource,
   ) {}
 
@@ -649,6 +653,124 @@ export class AdminService {
     });
 
     return this.adminActionRepository.save(action);
+  }
+
+  /**
+   * TEMPORARY: Wipe database except courts table
+   */
+  async wipeDatabaseExceptCourts(adminId: string, wipeDto: WipeDatabaseDto): Promise<{ success: boolean; message: string; deletedCounts?: Record<string, number> }> {
+    try {
+      // Get admin user and verify password
+      const adminUser = await this.userRepository.findOne({
+        where: { id: adminId },
+      });
+
+      if (!adminUser) {
+        throw new NotFoundException('Admin user not found');
+      }
+
+      // Check if user has a password (OAuth users don't have passwords)
+      if (!adminUser.passwordHash) {
+        throw new UnauthorizedException('Password verification not available for OAuth accounts. Please use an account with a password.');
+      }
+
+      // Verify password
+      const isPasswordValid = await this.passwordService.comparePassword(
+        wipeDto.password,
+        adminUser.passwordHash,
+      );
+
+      if (!isPasswordValid) {
+        throw new UnauthorizedException('Invalid password. Please verify your password and try again.');
+      }
+
+      // Log admin action
+      await this.logAdminAction(
+        adminId,
+        ActionType.EDIT_USER, // Using available action type
+        TargetType.USER,
+        adminId,
+        { action: 'wipe_database_except_courts' },
+      );
+
+      const queryRunner = this.dataSource.createQueryRunner();
+      await queryRunner.connect();
+      await queryRunner.startTransaction();
+
+      try {
+        const deletedCounts: Record<string, number> = {};
+
+        // Helper function to safely delete from a table
+        const safeDelete = async (tableName: string, displayName: string) => {
+          try {
+            // Get count before deletion for reporting
+            const countResult = await queryRunner.query(`SELECT COUNT(*) as count FROM "${tableName}";`);
+            const count = parseInt(countResult[0]?.count || '0', 10);
+            
+            // Use TRUNCATE CASCADE for efficiency
+            await queryRunner.query(`TRUNCATE TABLE "${tableName}" CASCADE;`);
+            
+            deletedCounts[displayName] = count;
+            return count;
+          } catch (error: any) {
+            if (error.code === '42P01') {
+              // Table doesn't exist, skip it
+              deletedCounts[displayName] = 0;
+              return 0;
+            }
+            throw error;
+          }
+        };
+
+        // Delete in order to respect foreign key constraints
+        // Order matters: delete child tables first, then parent tables
+        
+        await safeDelete('applications', 'Applications');
+        await safeDelete('match_slots', 'Match Slots');
+        await safeDelete('results', 'Results');
+        await safeDelete('chat_messages', 'Chat Messages');
+        await safeDelete('matches', 'Matches');
+        await safeDelete('notifications', 'Notifications');
+        await safeDelete('notification_preferences', 'Notification Preferences');
+        await safeDelete('reports', 'Reports');
+        await safeDelete('admin_actions', 'Admin Actions');
+        await safeDelete('elo_logs', 'ELO Logs');
+        await safeDelete('user_stats', 'User Stats');
+        await safeDelete('payment_methods', 'Payment Methods');
+        await safeDelete('push_subscriptions', 'Push Subscriptions');
+        
+        // Clear home court references before deleting users
+        try {
+          await queryRunner.query('UPDATE users SET home_court_id = NULL WHERE home_court_id IS NOT NULL;');
+        } catch (error: any) {
+          if (error.code !== '42P01') {
+            throw error;
+          }
+        }
+        
+        // Delete users (but NOT courts)
+        await safeDelete('users', 'Users');
+
+        await queryRunner.commitTransaction();
+
+        const totalDeleted = Object.values(deletedCounts).reduce((sum, count) => sum + count, 0);
+        return {
+          success: true,
+          message: `Database wiped successfully. Deleted ${totalDeleted} records across ${Object.keys(deletedCounts).length} tables. Courts table preserved.`,
+          deletedCounts,
+        };
+      } catch (error) {
+        await queryRunner.rollbackTransaction();
+        throw error;
+      } finally {
+        await queryRunner.release();
+      }
+    } catch (error: any) {
+      return {
+        success: false,
+        message: `Database wipe failed: ${error.message}`,
+      };
+    }
   }
 
   /**

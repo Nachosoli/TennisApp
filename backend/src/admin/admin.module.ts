@@ -8,11 +8,13 @@ import { Match } from '../entities/match.entity';
 import { Result } from '../entities/result.entity';
 import { AdminAction } from '../entities/admin-action.entity';
 import { NotificationsModule } from '../notifications/notifications.module';
+import { AuthModule } from '../auth/auth.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([User, Court, Match, Result, AdminAction]),
     NotificationsModule,
+    AuthModule, // Import AuthModule to access PasswordService
   ],
   providers: [AdminService],
   controllers: [AdminController],

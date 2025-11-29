@@ -15,6 +15,7 @@ import { AdminService } from './admin.service';
 import { SuspendUserDto } from './dto/suspend-user.dto';
 import { EditUserDto } from './dto/edit-user.dto';
 import { AdjustScoreDto } from './dto/adjust-score.dto';
+import { WipeDatabaseDto } from './dto/wipe-database.dto';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { AdminGuard } from '../common/guards/admin.guard';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
@@ -221,5 +222,15 @@ export class AdminController {
   @ApiOperation({ summary: 'TEMPORARY: Run migration to add match_applicant to notification enums' })
   async runMatchApplicantMigration(@CurrentUser('id') adminId: string) {
     return this.adminService.runMatchApplicantMigration(adminId);
+  }
+
+  // TEMPORARY: Admin endpoint to wipe database except courts
+  @Post('wipe-database-except-courts')
+  @ApiOperation({ summary: 'TEMPORARY: Wipe all database tables except courts (requires password verification)' })
+  async wipeDatabaseExceptCourts(
+    @CurrentUser('id') adminId: string,
+    @Body() wipeDto: WipeDatabaseDto,
+  ) {
+    return this.adminService.wipeDatabaseExceptCourts(adminId, wipeDto);
   }
 }

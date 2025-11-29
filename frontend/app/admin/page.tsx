@@ -408,12 +408,12 @@ export default function AdminDashboard() {
               </div>
             </Card>
 
-            {/* Database Migrations */}
-            <Card title="Database Migrations">
+            {/* Database Operations */}
+            <Card title="Database Operations">
               <div className="space-y-4">
-                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-                  <p className="text-sm text-yellow-800">
-                    <strong>Warning:</strong> Database migrations modify the database schema. Only run migrations when necessary.
+                <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                  <p className="text-sm text-red-800">
+                    <strong>Warning:</strong> These operations are destructive and cannot be undone. Use with extreme caution.
                   </p>
                 </div>
 
@@ -433,46 +433,97 @@ export default function AdminDashboard() {
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
                       <h3 className="text-lg font-semibold text-gray-900 mb-1">
-                        Add match_applicant to Notification Enums
+                        Wipe Database (Keep Courts)
                       </h3>
                       <p className="text-sm text-gray-600 mb-3">
-                        Adds the 'match_applicant' value to the notification enum types in the database.
-                        This fixes the "Match Applicants" notification toggle error.
+                        Deletes all data from the database except the courts table. This will remove all users, matches, applications, notifications, and other data. Courts will be preserved.
                       </p>
                     </div>
                     <Button
-                      variant="primary"
+                      variant="danger"
                       onClick={async () => {
+                        const confirmed = window.confirm(
+                          '⚠️ WARNING: This will delete ALL data except courts!\n\n' +
+                          'This includes:\n' +
+                          '- All users\n' +
+                          '- All matches\n' +
+                          '- All applications\n' +
+                          '- All notifications\n' +
+                          '- All other data\n\n' +
+                          'Courts will be preserved.\n\n' +
+                          'This action CANNOT be undone!\n\n' +
+                          'Are you absolutely sure you want to continue?'
+                        );
+                        
+                        if (!confirmed) {
+                          return;
+                        }
+
+                        // Prompt for password
+                        const password = window.prompt(
+                          '🔒 Password Verification Required\n\n' +
+                          'Please enter your admin password to confirm this action:'
+                        );
+
+                        if (!password) {
+                          setMigrationMessage({
+                            type: 'error',
+                            text: 'Password verification cancelled. Database wipe aborted.',
+                          });
+                          setTimeout(() => setMigrationMessage(null), 5000);
+                          return;
+                        }
+
+                        if (password.length < 8) {
+                          setMigrationMessage({
+                            type: 'error',
+                            text: 'Password must be at least 8 characters long.',
+                          });
+                          setTimeout(() => setMigrationMessage(null), 5000);
+                          return;
+                        }
+
+                        const doubleConfirm = window.confirm(
+                          'FINAL CONFIRMATION:\n\n' +
+                          'You are about to DELETE ALL DATA except courts.\n\n' +
+                          'This action CANNOT be undone!\n\n' +
+                          'Click OK to proceed with the database wipe.'
+                        );
+
+                        if (!doubleConfirm) {
+                          return;
+                        }
+
                         setMigrationLoading(true);
                         setMigrationMessage(null);
                         try {
-                          const result = await adminApi.runMatchApplicantMigration();
+                          const result = await adminApi.wipeDatabaseExceptCourts(password);
                           if (result.success) {
                             setMigrationMessage({
                               type: 'success',
-                              text: result.message || 'Migration completed successfully!',
+                              text: result.message || 'Database wiped successfully!',
                             });
                           } else {
                             setMigrationMessage({
                               type: 'error',
-                              text: result.message || 'Migration failed. Please check the logs.',
+                              text: result.message || 'Database wipe failed. Please check the logs.',
                             });
                           }
                         } catch (error: any) {
                           setMigrationMessage({
                             type: 'error',
-                            text: error.response?.data?.message || error.message || 'Failed to run migration. Please try again.',
+                            text: error.response?.data?.message || error.message || 'Failed to wipe database. Please try again.',
                           });
                         } finally {
                           setMigrationLoading(false);
-                          // Clear message after 10 seconds
-                          setTimeout(() => setMigrationMessage(null), 10000);
+                          // Clear message after 15 seconds
+                          setTimeout(() => setMigrationMessage(null), 15000);
                         }
                       }}
                       isLoading={migrationLoading}
                       disabled={migrationLoading}
                     >
-                      Run Migration
+                      Wipe Database
                     </Button>
                   </div>
                 </div>

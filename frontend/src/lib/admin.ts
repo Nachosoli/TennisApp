@@ -183,5 +183,14 @@ export const adminApi = {
     );
     return response.data;
   },
+
+  // Database Wipe
+  async wipeDatabaseExceptCourts(password: string) {
+    const response = await apiClient.post<{ success: boolean; message: string; deletedCounts?: Record<string, number> }>(
+      '/admin/wipe-database-except-courts',
+      { password }
+    );
+    return response.data;
+  },
 };
 
