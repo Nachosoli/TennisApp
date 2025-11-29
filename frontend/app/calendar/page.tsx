@@ -32,7 +32,14 @@ export default function CalendarPage() {
   // Hide map by default on mobile, show on desktop
   const [showMap, setShowMap] = useState(false);
   const [homeCourt, setHomeCourt] = useState<Court | null>(null);
+  // Collapsed by default on mobile, expanded by default on desktop
   const [filtersCollapsed, setFiltersCollapsed] = useState(true);
+  
+  // Set initial collapsed state based on screen size
+  useEffect(() => {
+    const isMobile = window.innerWidth < 640; // sm breakpoint
+    setFiltersCollapsed(isMobile);
+  }, []);
   const matchesSectionRef = useRef<HTMLDivElement>(null);
   const lastScrollY = useRef(0);
   const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -120,7 +127,7 @@ export default function CalendarPage() {
     setMatchCount(filtered.length);
   }, [filters, allMatches]);
 
-  // Auto-collapse filters on mobile when scrolling down
+  // Auto-collapse filters on mobile when scrolling down (more aggressive)
   useEffect(() => {
     const handleScroll = () => {
       // Only on mobile
@@ -133,12 +140,16 @@ export default function CalendarPage() {
         clearTimeout(scrollTimeoutRef.current);
       }
       
-      // If scrolling down significantly, collapse filters
-      if (currentScrollY > lastScrollY.current + 50 && !filtersCollapsed) {
+      // More aggressive: collapse after scrolling down just 30px (was 50px)
+      if (currentScrollY > lastScrollY.current + 30 && currentScrollY > 100 && !filtersCollapsed) {
         setFiltersCollapsed(true);
       }
-      // If scrolling up significantly, expand filters
-      else if (currentScrollY < lastScrollY.current - 50 && filtersCollapsed) {
+      // Expand when scrolling back to top (within 100px of top)
+      else if (currentScrollY < 100 && filtersCollapsed) {
+        setFiltersCollapsed(false);
+      }
+      // Or expand when scrolling up significantly
+      else if (currentScrollY < lastScrollY.current - 30 && filtersCollapsed && currentScrollY < 200) {
         setFiltersCollapsed(false);
       }
       
@@ -174,10 +185,10 @@ export default function CalendarPage() {
   return (
     <Layout>
       <div className="space-y-4">
-        {/* Header with Filters Toggle */}
-        <div className="flex flex-col gap-2 sm:gap-4">
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-4">
-            <h1 className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900">Find Matches</h1>
+        {/* Header with Filters Toggle - More compact on mobile */}
+        <div className="flex flex-col gap-1.5 sm:gap-4">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 sm:gap-4">
+            <h1 className="text-base sm:text-xl lg:text-2xl font-bold text-gray-900">Find Matches</h1>
             <div className="flex items-center gap-2 sm:gap-3 w-full sm:w-auto">
               <Link href="/matches/create" className="flex-1 sm:flex-initial">
                 <Button variant="primary" className="w-full sm:w-auto flex items-center justify-center gap-2 text-sm sm:text-base px-3 sm:px-4 py-2 sm:py-2.5">
@@ -217,10 +228,10 @@ export default function CalendarPage() {
           </div>
         </div>
 
-        {/* Filters Bar - Compact when collapsed, hidden on mobile when collapsed */}
+        {/* Filters Bar - Compact on mobile, hidden when collapsed */}
         {!filtersCollapsed && (
           <Card className="bg-white shadow-sm p-2 sm:p-4">
-            <div className="space-y-2 sm:space-y-4">
+            <div className="space-y-1.5 sm:space-y-4">
               {/* Desktop: Collapse/Expand Button */}
               <div className="hidden sm:flex justify-between items-center">
                 <h2 className="text-sm font-semibold text-gray-700">Filters</h2>
@@ -240,10 +251,10 @@ export default function CalendarPage() {
                 </button>
               </div>
             
-              {/* Top Row - Main Filters */}
+              {/* Top Row - Main Filters - More compact on mobile */}
               <div className="grid grid-cols-1 md:grid-cols-4 gap-1.5 sm:gap-3">
               <select
-                className="w-full px-2.5 sm:px-4 py-2 sm:py-2.5 text-sm border border-gray-300 rounded-lg text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-shadow hover:shadow-md"
+                className="w-full px-2 sm:px-4 py-1.5 sm:py-2.5 text-xs sm:text-sm border border-gray-300 rounded-lg text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-shadow hover:shadow-md"
                 value={filters.skillLevel || ''}
                 onChange={(e) => setFilters({ ...filters, skillLevel: e.target.value || undefined })}
               >
@@ -255,7 +266,7 @@ export default function CalendarPage() {
               </select>
 
               <select
-                className="w-full px-2.5 sm:px-4 py-2 sm:py-2.5 text-sm border border-gray-300 rounded-lg text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-shadow hover:shadow-md"
+                className="w-full px-2 sm:px-4 py-1.5 sm:py-2.5 text-xs sm:text-sm border border-gray-300 rounded-lg text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-shadow hover:shadow-md"
                 value={filters.gender || ''}
                 onChange={(e) => setFilters({ ...filters, gender: e.target.value || undefined })}
               >
@@ -266,7 +277,7 @@ export default function CalendarPage() {
               </select>
 
               <select
-                className="w-full px-2.5 sm:px-4 py-2 sm:py-2.5 text-sm border border-gray-300 rounded-lg text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-shadow hover:shadow-md"
+                className="w-full px-2 sm:px-4 py-1.5 sm:py-2.5 text-xs sm:text-sm border border-gray-300 rounded-lg text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-shadow hover:shadow-md"
                 value={filters.surface || ''}
                 onChange={(e) => setFilters({ ...filters, surface: e.target.value || undefined })}
               >
@@ -277,8 +288,8 @@ export default function CalendarPage() {
                 <option value="indoor">Indoor</option>
               </select>
 
-                {/* Match Count Display */}
-                <div className="flex items-center justify-center px-3 sm:px-4 py-2 sm:py-2.5 bg-blue-50 border border-blue-200 rounded-lg">
+                {/* Match Count Display - More compact on mobile */}
+                <div className="flex items-center justify-center px-2 sm:px-4 py-1.5 sm:py-2.5 bg-blue-50 border border-blue-200 rounded-lg">
                   <span className="text-xs sm:text-sm font-semibold text-blue-700">
                     {matchCount} {matchCount === 1 ? 'match' : 'matches'}
                   </span>
