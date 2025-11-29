@@ -175,5 +175,13 @@ export const adminApi = {
     const response = await apiClient.get(`/admin/users/${userId}/stats`);
     return response.data;
   },
+
+  // Migrations
+  async runMatchApplicantMigration() {
+    const response = await apiClient.post<{ success: boolean; message: string }>(
+      '/admin/migrations/run-match-applicant'
+    );
+    return response.data;
+  },
 };
 
