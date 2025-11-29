@@ -54,5 +54,10 @@ export class UserStats {
   get winRate(): number {
     return this.totalMatches > 0 ? (this.totalWins / this.totalMatches) * 100 : 0;
   }
+
+  get totalLosses(): number {
+    // Losses = total matches - wins (cancelled matches are excluded from totalMatches)
+    return Math.max(0, this.totalMatches - this.totalWins);
+  }
 }
 

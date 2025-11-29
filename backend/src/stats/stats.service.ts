@@ -29,7 +29,15 @@ export class StatsService {
       throw new NotFoundException('User stats not found');
     }
 
-    return stats;
+    // Calculate totalLosses: totalMatches - totalWins
+    // Cancelled matches are excluded from totalMatches, so losses = matches - wins
+    const totalLosses = Math.max(0, stats.totalMatches - stats.totalWins);
+
+    // Return stats with totalLosses included
+    return {
+      ...stats,
+      totalLosses,
+    } as UserStats;
   }
 
   async getHeadToHead(userId1: string, userId2: string): Promise<{

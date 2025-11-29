@@ -81,6 +81,9 @@ export default function StatsPage() {
   const winRate = stats.totalMatches > 0 
     ? ((stats.totalWins / stats.totalMatches) * 100).toFixed(1)
     : '0.0';
+  
+  // Calculate losses: totalMatches - totalWins (cancelled matches are excluded from totalMatches)
+  const totalLosses = stats.totalLosses ?? Math.max(0, stats.totalMatches - stats.totalWins);
 
   return (
     <Layout>
@@ -128,7 +131,7 @@ export default function StatsPage() {
                 </svg>
               </div>
               <div>
-                <p className="text-base sm:text-2xl font-bold text-red-600">{stats.totalLosses ?? 0}</p>
+                <p className="text-base sm:text-2xl font-bold text-red-600">{totalLosses}</p>
                 <p className="text-[10px] sm:text-sm text-gray-600 leading-tight">Losses</p>
               </div>
             </div>
