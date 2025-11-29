@@ -389,18 +389,32 @@ export default function DashboardPage() {
                     const result = match.results?.[0];
                     const score = result?.score || '';
                     const isHomeCourt = match.courtId === user?.homeCourtId;
+                    
+                    // Find all user applications across all slots and prioritize confirmed
                     let userApplication = null;
+                    let confirmedApplication = null;
                     for (const slot of match.slots || []) {
                       if (slot.applications) {
-                        userApplication = slot.applications.find(app => 
-                          app.applicantUserId === user?.id
+                        const apps = slot.applications.filter(app => 
+                          app.applicantUserId === user?.id || app.userId === user?.id
                         );
-                        if (userApplication) break;
+                        // Prioritize confirmed application
+                        const confirmed = apps.find(app => app.status?.toLowerCase() === 'confirmed');
+                        if (confirmed) {
+                          confirmedApplication = confirmed;
+                        }
+                        // Use first application found if no confirmed one yet
+                        if (!userApplication && apps.length > 0) {
+                          userApplication = apps[0];
+                        }
                       }
                     }
+                    // Use confirmed application if available, otherwise use first found
+                    userApplication = confirmedApplication || userApplication;
 
                     const hasWaitlistedApplication = userApplication?.status?.toLowerCase() === 'waitlisted';
                     const hasPendingApplication = userApplication?.status?.toLowerCase() === 'pending';
+                    const hasConfirmedApplication = confirmedApplication !== null;
                     const matchDate = parseLocalDate(match.date);
                     const now = new Date();
                     const isPast = matchDate < now;
@@ -410,18 +424,16 @@ export default function DashboardPage() {
                     if (match.status?.toLowerCase() === 'completed') {
                       statusText = 'Completed';
                       statusClass = 'bg-green-100 text-green-800';
+                    } else if (hasConfirmedApplication || (match.status?.toLowerCase() === 'confirmed' && userApplication?.status?.toLowerCase() === 'confirmed')) {
+                      // User has confirmed application OR match is confirmed and user's application is confirmed
+                      statusText = 'Confirmed';
+                      statusClass = 'bg-green-100 text-green-800';
                     } else if (hasPendingApplication) {
                       statusText = 'Applied';
                       statusClass = 'bg-blue-100 text-blue-800';
                     } else if (hasWaitlistedApplication) {
                       statusText = 'Waitlisted';
                       statusClass = 'bg-orange-100 text-orange-800';
-                    } else if (match.status?.toLowerCase() === 'completed') {
-                      statusText = 'Completed';
-                      statusClass = 'bg-green-100 text-green-800';
-                    } else if (match.status?.toLowerCase() === 'confirmed') {
-                      statusText = 'Confirmed';
-                      statusClass = 'bg-green-100 text-green-800';
                     } else if (isPast) {
                       statusText = 'Report Score';
                       statusClass = 'bg-yellow-100 text-yellow-800';
@@ -450,11 +462,11 @@ export default function DashboardPage() {
                       )
                     ) || false;
                     const isConfirmed = match.status?.toLowerCase() === 'confirmed';
-                    const canReportScore = !score && isConfirmed && (isCreator || userApplication?.status?.toLowerCase() === 'confirmed');
+                    const canReportScore = !score && isConfirmed && (isCreator || hasConfirmedApplication || userApplication?.status?.toLowerCase() === 'confirmed');
                     const canDelete = isCreator && match.status?.toLowerCase() !== 'completed';
                     // Don't show Edit if there are any applicants - user can click row to manage
                     const canEdit = false; // Hide Edit button - user can click row/card to access match detail page
-                    const canWithdraw = !isCreator && userApplication?.status?.toLowerCase() === 'confirmed' && match.status?.toLowerCase() !== 'completed';
+                    const canWithdraw = !isCreator && (hasConfirmedApplication || userApplication?.status?.toLowerCase() === 'confirmed') && match.status?.toLowerCase() !== 'completed';
 
                     return (
                       <div
@@ -523,7 +535,7 @@ export default function DashboardPage() {
                                 Remove
                               </Button>
                             )}
-                            {(isCreator || userApplication?.status?.toLowerCase() === 'confirmed') && match.status?.toLowerCase() === 'confirmed' && (
+                            {(isCreator || hasConfirmedApplication || userApplication?.status?.toLowerCase() === 'confirmed') && match.status?.toLowerCase() === 'confirmed' && (
                               <Button
                                 type="button"
                                 variant="outline"
@@ -606,22 +618,36 @@ export default function DashboardPage() {
                       // Check if facility is user's home court
                       const isHomeCourt = match.courtId === user?.homeCourtId;
 
-                      // Find user's application if they're a participant
+                      // Find all user applications across all slots and prioritize confirmed
                       let userApplication = null;
+                      let confirmedApplication = null;
                       for (const slot of match.slots || []) {
                         if (slot.applications) {
-                          userApplication = slot.applications.find(app => 
-                            app.applicantUserId === user?.id
+                          const apps = slot.applications.filter(app => 
+                            app.applicantUserId === user?.id || app.userId === user?.id
                           );
-                          if (userApplication) break;
+                          // Prioritize confirmed application
+                          const confirmed = apps.find(app => app.status?.toLowerCase() === 'confirmed');
+                          if (confirmed) {
+                            confirmedApplication = confirmed;
+                          }
+                          // Use first application found if no confirmed one yet
+                          if (!userApplication && apps.length > 0) {
+                            userApplication = apps[0];
+                          }
                         }
                       }
+                      // Use confirmed application if available, otherwise use first found
+                      userApplication = confirmedApplication || userApplication;
 
                       // Check if user has waitlisted application (needed for status display)
                       const hasWaitlistedApplication = userApplication?.status?.toLowerCase() === 'waitlisted';
                       
                       // Check if user has pending application
                       const hasPendingApplication = userApplication?.status?.toLowerCase() === 'pending';
+                      
+                      // Check if user has confirmed application
+                      const hasConfirmedApplication = confirmedApplication !== null;
 
                       // Determine status
                       const matchDate = parseLocalDate(match.date);
@@ -633,15 +659,16 @@ export default function DashboardPage() {
                       if (match.status?.toLowerCase() === 'completed') {
                         statusText = 'Completed';
                         statusClass = 'bg-green-100 text-green-800';
+                      } else if (hasConfirmedApplication || (match.status?.toLowerCase() === 'confirmed' && userApplication?.status?.toLowerCase() === 'confirmed')) {
+                        // User has confirmed application OR match is confirmed and user's application is confirmed
+                        statusText = 'Confirmed';
+                        statusClass = 'bg-green-100 text-green-800';
                       } else if (hasPendingApplication) {
                         statusText = 'Applied';
                         statusClass = 'bg-blue-100 text-blue-800';
                       } else if (hasWaitlistedApplication) {
                         statusText = 'Waitlisted';
                         statusClass = 'bg-orange-100 text-orange-800';
-                      } else if (match.status?.toLowerCase() === 'confirmed') {
-                        statusText = 'Confirmed';
-                        statusClass = 'bg-green-100 text-green-800';
                       } else if (isPast) {
                         statusText = 'Report Score';
                         statusClass = 'bg-yellow-100 text-yellow-800';
@@ -672,7 +699,7 @@ export default function DashboardPage() {
                       // Determine if user can report score
                       // Allow reporting for confirmed matches (even if not past date yet)
                       const isConfirmed = match.status?.toLowerCase() === 'confirmed';
-                      const canReportScore = !score && isConfirmed && (isCreator || userApplication?.status?.toLowerCase() === 'confirmed');
+                      const canReportScore = !score && isConfirmed && (isCreator || hasConfirmedApplication || userApplication?.status?.toLowerCase() === 'confirmed');
                       
                       // Determine if user can delete (creator only, not completed)
                       const canDelete = isCreator && match.status?.toLowerCase() !== 'completed';
@@ -691,7 +718,7 @@ export default function DashboardPage() {
                       const canEdit = false; // Hide Edit button - user can click row/card to access match detail page
                       
                       // Determine if user can withdraw (participant with confirmed application, not completed)
-                      const canWithdraw = !isCreator && userApplication?.status?.toLowerCase() === 'confirmed' && match.status?.toLowerCase() !== 'completed';
+                      const canWithdraw = !isCreator && (hasConfirmedApplication || userApplication?.status?.toLowerCase() === 'confirmed') && match.status?.toLowerCase() !== 'completed';
 
                       return (
                         <tr
@@ -771,7 +798,7 @@ export default function DashboardPage() {
                                     </Button>
                                   )}
                                   {/* Chat button for confirmed matches */}
-                                  {(isCreator || userApplication?.status?.toLowerCase() === 'confirmed') && match.status?.toLowerCase() === 'confirmed' && (
+                                  {(isCreator || hasConfirmedApplication || userApplication?.status?.toLowerCase() === 'confirmed') && match.status?.toLowerCase() === 'confirmed' && (
                                     <Button
                                       type="button"
                                       variant="outline"
