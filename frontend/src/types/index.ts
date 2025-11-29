@@ -121,12 +121,18 @@ export interface Result {
 export interface Notification {
   id: string;
   userId: string;
-  type: 'match_created' | 'match_accepted' | 'match_confirmed' | 'court_changes' | 'score_reminder' | 'new_chat';
-  channel: 'email' | 'sms' | 'push';
+  type: 'match_created' | 'match_accepted' | 'match_applicant' | 'match_confirmed' | 'court_changes' | 'score_reminder' | 'new_chat';
+  channel?: 'email' | 'sms' | 'push'; // Optional: now tracked in deliveries on backend
   content: string;
-  status: 'pending' | 'sent' | 'failed';
+  status?: 'pending' | 'sent' | 'failed'; // Optional: now tracked in deliveries on backend
   createdAt: string;
-  read?: boolean;
+  read?: boolean; // Frontend-only flag for tracking read state
+  deliveries?: Array<{
+    id: string;
+    channel: 'email' | 'sms' | 'push';
+    status: 'pending' | 'sent' | 'failed';
+    sentAt?: string;
+  }>; // Optional: delivery information from backend
 }
 
 // Chat types

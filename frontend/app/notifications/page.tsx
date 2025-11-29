@@ -107,7 +107,7 @@ export default function NotificationsPage() {
               <Card
                 key={notification.id}
                 className={`cursor-pointer hover:shadow-md transition-shadow ${
-                  notification.status?.toLowerCase() === 'pending' ? 'bg-blue-50' : ''
+                  !notification.read ? 'bg-blue-50' : ''
                 }`}
               >
                 <div className="flex justify-between items-start">
@@ -126,7 +126,7 @@ export default function NotificationsPage() {
                         }`}>
                           {notification.type?.replace('_', ' ') || notification.type}
                         </span>
-                        {notification.status?.toLowerCase() === 'pending' && (
+                        {!notification.read && (
                           <span className="h-2 w-2 bg-blue-500 rounded-full"></span>
                         )}
                       </div>

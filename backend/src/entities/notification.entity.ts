@@ -4,10 +4,12 @@ import {
   Column,
   CreateDateColumn,
   ManyToOne,
+  OneToMany,
   JoinColumn,
   Index,
 } from 'typeorm';
 import { User } from './user.entity';
+import { NotificationDelivery } from './notification-delivery.entity';
 
 export enum NotificationType {
   MATCH_CREATED = 'match_created',
@@ -33,7 +35,6 @@ export enum NotificationStatus {
 @Entity('notifications')
 @Index(['userId'])
 @Index(['type'])
-@Index(['status'])
 @Index(['createdAt'])
 export class Notification {
   @PrimaryGeneratedColumn('uuid')
@@ -52,27 +53,11 @@ export class Notification {
   })
   type: NotificationType;
 
-  @Column({
-    type: 'enum',
-    enum: NotificationChannel,
-  })
-  channel: NotificationChannel;
-
-  @Column({
-    type: 'enum',
-    enum: NotificationStatus,
-    default: NotificationStatus.PENDING,
-  })
-  status: NotificationStatus;
-
   @Column({ type: 'text' })
   content: string;
 
-  @Column({ name: 'retry_count', type: 'integer', default: 0 })
-  retryCount: number;
-
-  @Column({ name: 'sent_at', nullable: true })
-  sentAt: Date;
+  @OneToMany(() => NotificationDelivery, (delivery) => delivery.notification, { cascade: true })
+  deliveries: NotificationDelivery[];
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;

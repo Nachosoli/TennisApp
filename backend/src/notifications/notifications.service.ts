@@ -2,6 +2,7 @@ import { Injectable, Logger, Inject, forwardRef } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, LessThan } from 'typeorm';
 import { Notification, NotificationType, NotificationChannel, NotificationStatus } from '../entities/notification.entity';
+import { NotificationDelivery } from '../entities/notification-delivery.entity';
 import { NotificationPreference } from '../entities/notification-preference.entity';
 import { PushSubscription } from '../entities/push-subscription.entity';
 import { User } from '../entities/user.entity';
@@ -17,6 +18,8 @@ export class NotificationsService {
   constructor(
     @InjectRepository(Notification)
     private notificationRepository: Repository<Notification>,
+    @InjectRepository(NotificationDelivery)
+    private notificationDeliveryRepository: Repository<NotificationDelivery>,
     @InjectRepository(NotificationPreference)
     private notificationPreferenceRepository: Repository<NotificationPreference>,
     @InjectRepository(PushSubscription)
@@ -31,6 +34,7 @@ export class NotificationsService {
 
   /**
    * Create and send a notification based on user preferences
+   * Creates one logical Notification with multiple NotificationDelivery records (one per channel)
    */
   async createNotification(
     userId: string,
@@ -55,112 +59,133 @@ export class NotificationsService {
     const emailEnabled = preference?.emailEnabled ?? isCritical;
     const smsEnabled = preference?.smsEnabled ?? isCritical;
 
-    // Create notifications based on preferences
-    const notifications: Notification[] = [];
-
+    // Determine which channels to use
+    const channels: NotificationChannel[] = [];
     if (emailEnabled && user.email) {
-      const emailNotification = this.notificationRepository.create({
-        userId,
-        type,
-        channel: NotificationChannel.EMAIL,
-        content,
-        status: NotificationStatus.PENDING,
-      });
-      notifications.push(emailNotification);
+      channels.push(NotificationChannel.EMAIL);
     }
-
     if (smsEnabled && user.phone && user.phoneVerified) {
-      const smsNotification = this.notificationRepository.create({
-        userId,
-        type,
-        channel: NotificationChannel.SMS,
-        content,
-        status: NotificationStatus.PENDING,
-      });
-      notifications.push(smsNotification);
+      channels.push(NotificationChannel.SMS);
     }
 
-    if (notifications.length > 0) {
-      await this.notificationRepository.save(notifications);
-      // Process notifications asynchronously
-      this.processNotifications(notifications, metadata).catch((error) => {
-        this.logger.error('Error processing notifications:', error);
-      });
+    // If no channels enabled, don't create notification
+    if (channels.length === 0) {
+      return;
     }
+
+    // Create one logical notification
+    const notification = this.notificationRepository.create({
+      userId,
+      type,
+      content,
+    });
+    const savedNotification = await this.notificationRepository.save(notification);
+
+    // Create delivery records for each enabled channel
+    const deliveries: NotificationDelivery[] = channels.map((channel) =>
+      this.notificationDeliveryRepository.create({
+        notificationId: savedNotification.id,
+        channel,
+        status: NotificationStatus.PENDING,
+      }),
+    );
+    await this.notificationDeliveryRepository.save(deliveries);
+
+    // Process deliveries asynchronously
+    this.processDeliveries(savedNotification, deliveries, metadata).catch((error) => {
+      this.logger.error('Error processing notification deliveries:', error);
+    });
   }
 
   /**
-   * Process and send pending notifications
+   * Process and send pending notification deliveries
+   * Emits socket event only once per logical notification (after processing all deliveries)
    */
-  private async processNotifications(
-    notifications: Notification[],
+  private async processDeliveries(
+    notification: Notification,
+    deliveries: NotificationDelivery[],
     metadata?: Record<string, any>,
   ): Promise<void> {
-    for (const notification of notifications) {
+    const user = await this.userRepository.findOne({
+      where: { id: notification.userId },
+    });
+
+    if (!user) {
+      // Mark all deliveries as failed
+      for (const delivery of deliveries) {
+        delivery.status = NotificationStatus.FAILED;
+        await this.notificationDeliveryRepository.save(delivery);
+      }
+      return;
+    }
+
+    let socketEmitted = false;
+    let atLeastOneSuccess = false;
+
+    // Process each delivery
+    for (const delivery of deliveries) {
       try {
-        const user = await this.userRepository.findOne({
-          where: { id: notification.userId },
-        });
-
-        if (!user) {
-          notification.status = NotificationStatus.FAILED;
-          await this.notificationRepository.save(notification);
-          continue;
-        }
-
         let success = false;
 
-        if (notification.channel === NotificationChannel.EMAIL) {
+        if (delivery.channel === NotificationChannel.EMAIL) {
           const htmlContent = this.generateEmailContent(notification.type, notification.content, metadata || {});
           success = await this.emailService.sendEmail(user.email, this.getEmailSubject(notification.type), htmlContent);
-        } else if (notification.channel === NotificationChannel.SMS) {
+        } else if (delivery.channel === NotificationChannel.SMS) {
           const smsContent = this.generateSmsContent(notification.type, notification.content, metadata || {});
           success = await this.smsService.sendSms(user.phone, smsContent);
         }
 
         if (success) {
-          notification.status = NotificationStatus.SENT;
-          notification.sentAt = new Date();
-          
-          // Emit real-time notification
-          try {
-            this.notificationsGateway.sendNotification(notification.userId, {
-              id: notification.id,
-              type: notification.type,
-              content: notification.content,
-              createdAt: notification.createdAt.toISOString(),
-            });
-          } catch (error) {
-            this.logger.warn('Failed to emit real-time notification:', error);
-          }
+          delivery.status = NotificationStatus.SENT;
+          delivery.sentAt = new Date();
+          atLeastOneSuccess = true;
         } else {
-          notification.status = NotificationStatus.FAILED;
+          delivery.status = NotificationStatus.FAILED;
         }
 
-        await this.notificationRepository.save(notification);
+        await this.notificationDeliveryRepository.save(delivery);
       } catch (error) {
-        this.logger.error(`Error processing notification ${notification.id}:`, error);
-        notification.status = NotificationStatus.FAILED;
-        notification.retryCount = (notification.retryCount || 0) + 1;
-        await this.notificationRepository.save(notification);
+        this.logger.error(`Error processing delivery ${delivery.id}:`, error);
+        delivery.status = NotificationStatus.FAILED;
+        delivery.retryCount = (delivery.retryCount || 0) + 1;
+        await this.notificationDeliveryRepository.save(delivery);
+      }
+    }
+
+    // Emit socket event only once per logical notification (if at least one delivery succeeded)
+    if (atLeastOneSuccess && !socketEmitted) {
+      try {
+        this.notificationsGateway.sendNotification(notification.userId, {
+          id: notification.id,
+          type: notification.type,
+          content: notification.content,
+          createdAt: notification.createdAt.toISOString(),
+        });
+        socketEmitted = true;
+      } catch (error) {
+        this.logger.warn('Failed to emit real-time notification:', error);
       }
     }
   }
 
   /**
-   * Retry failed notifications (once after 1 hour)
+   * Retry failed notification deliveries (once after 1 hour)
    */
   async retryFailedNotifications(): Promise<void> {
     const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
-    const failedNotifications = await this.notificationRepository.find({
+    const failedDeliveries = await this.notificationDeliveryRepository.find({
       where: {
         status: NotificationStatus.FAILED,
         retryCount: 0,
         createdAt: LessThan(oneHourAgo),
       },
+      relations: ['notification'],
     });
 
-    for (const notification of failedNotifications) {
+    for (const delivery of failedDeliveries) {
+      const notification = delivery.notification;
+      if (!notification) continue;
+
       const user = await this.userRepository.findOne({
         where: { id: notification.userId },
       });
@@ -168,29 +193,30 @@ export class NotificationsService {
       if (!user) continue;
 
       let success = false;
-      if (notification.channel === NotificationChannel.EMAIL) {
+      if (delivery.channel === NotificationChannel.EMAIL) {
         success = await this.emailService.sendEmail(user.email, this.getEmailSubject(notification.type), notification.content);
-      } else if (notification.channel === NotificationChannel.SMS) {
+      } else if (delivery.channel === NotificationChannel.SMS) {
         success = await this.smsService.sendSms(user.phone, notification.content);
       }
 
       if (success) {
-        notification.status = NotificationStatus.SENT;
-        notification.sentAt = new Date();
+        delivery.status = NotificationStatus.SENT;
+        delivery.sentAt = new Date();
       } else {
-        notification.retryCount = 1; // Mark as retried
+        delivery.retryCount = 1; // Mark as retried
       }
 
-      await this.notificationRepository.save(notification);
+      await this.notificationDeliveryRepository.save(delivery);
     }
   }
 
   /**
-   * Get user notifications
+   * Get user notifications (returns logical notifications, not duplicates)
    */
   async getUserNotifications(userId: string, limit: number = 50): Promise<Notification[]> {
     return this.notificationRepository.find({
       where: { userId },
+      relations: ['deliveries'],
       order: { createdAt: 'DESC' },
       take: limit,
     });

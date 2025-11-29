@@ -36,8 +36,14 @@ export const useNotificationsStore = create<NotificationsState>((set, get) => ({
     set({ isLoading: true });
     try {
       const notifications = await notificationsApi.getMyNotifications();
-      const unreadCount = notifications.filter((n) => n.status?.toLowerCase() === 'pending').length;
-      set({ notifications, unreadCount, isLoading: false });
+      // Initialize notifications with read: false if not already set (preserve existing read state)
+      const notificationsWithRead = notifications.map((n) => ({
+        ...n,
+        read: n.read !== undefined ? n.read : false,
+      }));
+      // Calculate unreadCount based on read flag instead of status
+      const unreadCount = notificationsWithRead.filter((n) => !n.read).length;
+      set({ notifications: notificationsWithRead, unreadCount, isLoading: false });
     } catch (error) {
       set({ isLoading: false });
       // Don't throw - just log the error to prevent infinite loops
@@ -70,29 +76,53 @@ export const useNotificationsStore = create<NotificationsState>((set, get) => ({
       if (exists) {
         return state; // Don't add duplicate
       }
+      // Ensure new notifications are marked as unread
+      const newNotification = {
+        ...notification,
+        read: false,
+      };
+      // Only increment unreadCount if the notification is unread
+      const isUnread = !newNotification.read;
       return {
-        notifications: [notification, ...state.notifications],
-        unreadCount: state.unreadCount + 1,
+        notifications: [newNotification, ...state.notifications],
+        unreadCount: isUnread ? state.unreadCount + 1 : state.unreadCount,
       };
     });
   },
 
   markAsRead: (notificationId: string) => {
-    set((state) => ({
-      notifications: state.notifications.map((n) =>
-        n.id === notificationId ? { ...n, status: 'sent' as const } : n
-      ),
-      unreadCount: Math.max(0, state.unreadCount - 1),
-    }));
+    set((state) => {
+      let wasUnread = false;
+      const updatedNotifications = state.notifications.map((n) => {
+        if (n.id === notificationId) {
+          wasUnread = !n.read; // Track if this notification was unread
+          return { ...n, read: true };
+        }
+        return n;
+      });
+      // Only decrement unreadCount if the notification was actually unread
+      const newUnreadCount = wasUnread
+        ? Math.max(0, state.unreadCount - 1)
+        : state.unreadCount;
+      return {
+        notifications: updatedNotifications,
+        unreadCount: newUnreadCount,
+      };
+    });
   },
 
   deleteNotification: async (notificationId: string) => {
     try {
       await notificationsApi.deleteNotification(notificationId);
-      set((state) => ({
-        notifications: state.notifications.filter((n) => n.id !== notificationId),
-        unreadCount: Math.max(0, state.unreadCount - 1),
-      }));
+      set((state) => {
+        // Find the notification being deleted to check if it was unread
+        const deletedNotification = state.notifications.find((n) => n.id === notificationId);
+        const wasUnread = deletedNotification ? !deletedNotification.read : false;
+        return {
+          notifications: state.notifications.filter((n) => n.id !== notificationId),
+          unreadCount: wasUnread ? Math.max(0, state.unreadCount - 1) : state.unreadCount,
+        };
+      });
     } catch (error) {
       console.error('Failed to delete notification:', error);
       throw error;

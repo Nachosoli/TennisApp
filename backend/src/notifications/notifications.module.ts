@@ -4,6 +4,7 @@ import { NotificationsService } from './notifications.service';
 import { NotificationPreferencesService } from './notification-preferences.service';
 import { NotificationsController } from './notifications.controller';
 import { Notification } from '../entities/notification.entity';
+import { NotificationDelivery } from '../entities/notification-delivery.entity';
 import { NotificationPreference } from '../entities/notification-preference.entity';
 import { PushSubscription } from '../entities/push-subscription.entity';
 import { User } from '../entities/user.entity';
@@ -13,7 +14,7 @@ import { GatewaysModule } from '../gateways/gateways.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Notification, NotificationPreference, PushSubscription, User]),
+    TypeOrmModule.forFeature([Notification, NotificationDelivery, NotificationPreference, PushSubscription, User]),
     GatewaysModule,
   ],
   providers: [NotificationsService, NotificationPreferencesService, EmailService, SmsService],
