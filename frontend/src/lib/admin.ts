@@ -177,6 +177,13 @@ export const adminApi = {
   },
 
   // Migrations
+  async runNotificationRefactoringMigration() {
+    const response = await apiClient.post<{ success: boolean; message: string }>(
+      '/admin/migrations/run-notification-refactoring'
+    );
+    return response.data;
+  },
+
   async runMatchApplicantMigration() {
     const response = await apiClient.post<{ success: boolean; message: string }>(
       '/admin/migrations/run-match-applicant'

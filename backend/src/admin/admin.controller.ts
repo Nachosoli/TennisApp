@@ -217,6 +217,13 @@ export class AdminController {
     return this.adminService.getUserStats(userId);
   }
 
+  // TEMPORARY: Admin endpoint to run notification refactoring migration
+  @Post('migrations/run-notification-refactoring')
+  @ApiOperation({ summary: 'TEMPORARY: Run migration to refactor notifications to use deliveries' })
+  async runNotificationRefactoringMigration(@CurrentUser('id') adminId: string) {
+    return this.adminService.runNotificationRefactoringMigration(adminId);
+  }
+
   // TEMPORARY: Admin endpoint to run match_applicant migration
   @Post('migrations/run-match-applicant')
   @ApiOperation({ summary: 'TEMPORARY: Run migration to add match_applicant to notification enums' })

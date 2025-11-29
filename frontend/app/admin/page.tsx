@@ -435,6 +435,66 @@ export default function AdminDashboard() {
                 )}
 
                 {/* Migration Operations */}
+                <div className="border border-gray-200 rounded-lg p-4 mb-4">
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <h3 className="text-lg font-semibold text-gray-900 mb-1">
+                        Refactor Notifications to Use Deliveries
+                      </h3>
+                      <p className="text-sm text-gray-600 mb-3">
+                        Runs a database migration to refactor notifications and eliminate duplicates. Creates notification_deliveries table and migrates existing data. This is safe to run multiple times.
+                      </p>
+                    </div>
+                    <Button
+                      variant="primary"
+                      onClick={async () => {
+                        const confirmed = window.confirm(
+                          'This will refactor notifications to use delivery records.\n\n' +
+                          'This will:\n' +
+                          '- Create notification_deliveries table\n' +
+                          '- Migrate existing notification data\n' +
+                          '- Remove duplicate notifications\n\n' +
+                          'This operation is safe and can be run multiple times.\n\n' +
+                          'Continue?'
+                        );
+                        
+                        if (!confirmed) {
+                          return;
+                        }
+
+                        setMigrationLoading(true);
+                        setMigrationMessage(null);
+                        try {
+                          const result = await adminApi.runNotificationRefactoringMigration();
+                          if (result.success) {
+                            setMigrationMessage({
+                              type: 'success',
+                              text: result.message || 'Migration completed successfully!',
+                            });
+                          } else {
+                            setMigrationMessage({
+                              type: 'error',
+                              text: result.message || 'Migration failed. Please check the logs.',
+                            });
+                          }
+                        } catch (error: any) {
+                          setMigrationMessage({
+                            type: 'error',
+                            text: error.response?.data?.message || error.message || 'Failed to run migration. Please try again.',
+                          });
+                        } finally {
+                          setMigrationLoading(false);
+                          setTimeout(() => setMigrationMessage(null), 15000);
+                        }
+                      }}
+                      isLoading={migrationLoading}
+                      disabled={migrationLoading}
+                    >
+                      Run Migration
+                    </Button>
+                  </div>
+                </div>
+
                 <div className="border border-gray-200 rounded-lg p-4">
                   <div className="flex items-start justify-between">
                     <div className="flex-1">

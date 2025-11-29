@@ -799,6 +799,65 @@ export class AdminService {
   }
 
   /**
+   * TEMPORARY: Run migration to refactor notifications to use deliveries
+   */
+  async runNotificationRefactoringMigration(adminId: string): Promise<{ success: boolean; message: string }> {
+    try {
+      // Log admin action
+      await this.logAdminAction(
+        adminId,
+        ActionType.EDIT_USER, // Using available action type
+        TargetType.USER,
+        adminId,
+        { action: 'run_notification_refactoring_migration' },
+      );
+
+      // Check if migration already ran
+      const queryRunner = this.dataSource.createQueryRunner();
+      await queryRunner.connect();
+
+      try {
+        const tableExists = await queryRunner.query(`
+          SELECT EXISTS (
+            SELECT FROM information_schema.tables 
+            WHERE table_schema = 'public' 
+            AND table_name = 'notification_deliveries'
+          ) as exists;
+        `);
+
+        if (tableExists[0]?.exists) {
+          return {
+            success: true,
+            message: 'Migration already applied. notification_deliveries table already exists.',
+          };
+        }
+
+        // Import and run the migration
+        const { RefactorNotificationsToUseDeliveries1734570000000 } = await import(
+          '../migrations/1734570000000-RefactorNotificationsToUseDeliveries'
+        );
+        const migration = new RefactorNotificationsToUseDeliveries1734570000000();
+        
+        await migration.up(queryRunner);
+
+        return {
+          success: true,
+          message: 'Migration completed successfully. Notifications have been refactored to use delivery records.',
+        };
+      } catch (error) {
+        throw error;
+      } finally {
+        await queryRunner.release();
+      }
+    } catch (error: any) {
+      return {
+        success: false,
+        message: `Migration failed: ${error.message}`,
+      };
+    }
+  }
+
+  /**
    * TEMPORARY: Run migration to add match_applicant to notification enums
    */
   async runMatchApplicantMigration(adminId: string): Promise<{ success: boolean; message: string }> {
