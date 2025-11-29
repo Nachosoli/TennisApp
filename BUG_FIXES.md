@@ -143,6 +143,12 @@ This document tracks all reported bugs and their fixes.
 **Files Affected:** `frontend/app/dashboard/page.tsx`  
 **Fix Required:** Conditionally show/hide or change Edit button based on applicant count.
 
+### 7.e - Edit Button Visibility for Creators Without Applicants
+**Status:** Pending  
+**Description:** In dashboard, game creator should see EDIT button if they don't have applicants (mobile and desktop).  
+**Files Affected:** `frontend/app/dashboard/page.tsx`  
+**Fix Required:** Show EDIT button for match creators when `hasAnyApplicants` is false. Currently `canEdit` is hardcoded to `false` on lines 468 and 718.
+
 ### 7.d - Match Status Colors
 **Status:** Pending  
 **Description:** Matches section should have different color for Status "Applied" vs "Completed" and we should also show "Waitlisted" (mobile and desktop).  
