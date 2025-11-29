@@ -215,12 +215,26 @@ export class NotificationsService {
    * Get user notifications (returns logical notifications, not duplicates)
    */
   async getUserNotifications(userId: string, limit: number = 50): Promise<Notification[]> {
-    return this.notificationRepository.find({
-      where: { userId },
-      relations: ['deliveries'],
-      order: { createdAt: 'DESC' },
-      take: limit,
-    });
+    try {
+      // Try to load with deliveries relation (if table exists)
+      return await this.notificationRepository.find({
+        where: { userId },
+        relations: ['deliveries'],
+        order: { createdAt: 'DESC' },
+        take: limit,
+      });
+    } catch (error: any) {
+      // If notification_deliveries table doesn't exist yet (migration not run), load without relation
+      if (error.message?.includes('notification_deliveries') || error.code === '42P01') {
+        this.logger.warn('notification_deliveries table not found, loading notifications without deliveries relation');
+        return this.notificationRepository.find({
+          where: { userId },
+          order: { createdAt: 'DESC' },
+          take: limit,
+        });
+      }
+      throw error;
+    }
   }
 
   /**
