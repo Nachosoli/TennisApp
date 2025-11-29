@@ -1,3 +1,9 @@
+// IMPORTANT: Import enums FIRST before any entity imports to avoid circular dependency issues
+import { NotificationType, NotificationChannel, NotificationStatus } from './notification.enums';
+
+// Re-export enums for backward compatibility
+export { NotificationType, NotificationChannel, NotificationStatus };
+
 import {
   Entity,
   PrimaryGeneratedColumn,
@@ -10,10 +16,6 @@ import {
 } from 'typeorm';
 import { User } from './user.entity';
 import { NotificationDelivery } from './notification-delivery.entity';
-import { NotificationType, NotificationChannel, NotificationStatus } from './notification.enums';
-
-// Re-export enums for backward compatibility
-export { NotificationType, NotificationChannel, NotificationStatus };
 
 @Entity('notifications')
 @Index(['userId'])
