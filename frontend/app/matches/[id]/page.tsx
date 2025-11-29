@@ -358,8 +358,10 @@ export default function MatchDetailPage() {
             </div>
           </Card>
 
-          <Card title="Time Slots">
-            {applyError && (
+          {/* Time Slots - Hide on mobile when confirmed, show on desktop always */}
+          <div className={currentMatch.status?.toLowerCase() === 'confirmed' ? 'hidden lg:block' : ''}>
+            <Card title="Time Slots">
+              {applyError && (
               <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg">
                 <div className="flex justify-between items-start">
                   <p className="text-sm">{applyError}</p>
@@ -517,12 +519,15 @@ export default function MatchDetailPage() {
                 </div>
               )}
             </div>
-          </Card>
+            </Card>
+          </div>
         </div>
 
+        {/* Manage Applications - Hide on mobile when confirmed, show on desktop always */}
         {isCreator && (
-          <ErrorBoundary>
-            <Card title="Manage Applications" className="border-2 border-blue-200">
+          <div className={currentMatch.status?.toLowerCase() === 'confirmed' ? 'hidden lg:block' : ''}>
+            <ErrorBoundary>
+              <Card title="Manage Applications" className="border-2 border-blue-200">
               <div className="mb-4 p-3 bg-blue-50 rounded-lg">
                 <p className="text-sm text-blue-800">
                   <strong>As the match creator,</strong> you can review and manage applications from players who want to join this match.
@@ -534,8 +539,9 @@ export default function MatchDetailPage() {
                 matchStatus={currentMatch.status}
                 onApplicationConfirmed={() => fetchMatchById(matchId)}
               />
-            </Card>
-          </ErrorBoundary>
+              </Card>
+            </ErrorBoundary>
+          </div>
         )}
 
         {/* Chat Section - Only show for creator or confirmed applicant */}
