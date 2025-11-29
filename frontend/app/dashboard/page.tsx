@@ -438,11 +438,15 @@ export default function DashboardPage() {
                       statusText = 'Report Score';
                       statusClass = 'bg-yellow-100 text-yellow-800';
                     } else if (match.status?.toLowerCase() === 'pending') {
-                      const pendingApplicationsCount = isCreator && match.slots?.reduce((count, slot) => {
-                        return count + (slot.applications?.filter(app => app.status?.toLowerCase() === 'pending').length || 0);
+                      // Count only pending and waitlisted applicants (not confirmed, as confirmed matches show "Confirmed" status)
+                      const pendingAndWaitlistedCount = isCreator && match.slots?.reduce((count, slot) => {
+                        return count + (slot.applications?.filter(app => {
+                          const status = app.status?.toLowerCase();
+                          return status === 'pending' || status === 'waitlisted';
+                        }).length || 0);
                       }, 0) || 0;
-                      if (pendingApplicationsCount > 0) {
-                        statusText = `Pending (${pendingApplicationsCount} application${pendingApplicationsCount > 1 ? 's' : ''})`;
+                      if (pendingAndWaitlistedCount > 0) {
+                        statusText = `Pending (${pendingAndWaitlistedCount} applicant${pendingAndWaitlistedCount > 1 ? 's' : ''})`;
                       } else {
                         statusText = 'Pending';
                       }
@@ -673,13 +677,16 @@ export default function DashboardPage() {
                         statusText = 'Report Score';
                         statusClass = 'bg-yellow-100 text-yellow-800';
                       } else if (match.status?.toLowerCase() === 'pending') {
-                        // Check if creator has pending applications
-                        const pendingApplicationsCount = isCreator && match.slots?.reduce((count, slot) => {
-                          return count + (slot.applications?.filter(app => app.status?.toLowerCase() === 'pending').length || 0);
+                        // Count only pending and waitlisted applicants (not confirmed, as confirmed matches show "Confirmed" status)
+                        const pendingAndWaitlistedCount = isCreator && match.slots?.reduce((count, slot) => {
+                          return count + (slot.applications?.filter(app => {
+                            const status = app.status?.toLowerCase();
+                            return status === 'pending' || status === 'waitlisted';
+                          }).length || 0);
                         }, 0) || 0;
                         
-                        if (pendingApplicationsCount > 0) {
-                          statusText = `Pending (${pendingApplicationsCount} application${pendingApplicationsCount > 1 ? 's' : ''})`;
+                        if (pendingAndWaitlistedCount > 0) {
+                          statusText = `Pending (${pendingAndWaitlistedCount} applicant${pendingAndWaitlistedCount > 1 ? 's' : ''})`;
                         } else {
                           statusText = 'Pending';
                         }
