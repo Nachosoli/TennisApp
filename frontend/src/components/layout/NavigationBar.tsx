@@ -34,10 +34,10 @@ export function NavigationBar() {
 
   const navLinks = [
     { href: '/dashboard', label: 'Dashboard' },
-    { href: '/courts', label: 'Courts' },
     { href: '/calendar', label: 'Matches' },
-    { href: '/contact', label: 'Contact Us' },
+    { href: '/courts', label: 'Courts' },
     { href: '/guidelines', label: 'Guidelines' },
+    { href: '/contact', label: 'Contact Us' },
   ];
 
   const isActive = (href: string) => {
@@ -144,7 +144,30 @@ export function NavigationBar() {
               </div>
               {/* Drawer Content */}
               <nav className="flex-1 overflow-y-auto py-4">
-                {navLinks.map((link) => {
+                {/* Main Navigation Links */}
+                {navLinks.slice(0, 3).map((link) => {
+                  const active = isActive(link.href);
+                  return (
+                    <Link
+                      key={link.href}
+                      href={link.href}
+                      onClick={() => setIsMobileMenuOpen(false)}
+                      className={`block px-4 py-3 text-base font-medium transition-colors min-h-[48px] flex items-center ${
+                        active
+                          ? 'bg-blue-50 text-blue-700 border-r-4 border-blue-700'
+                          : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
+                      }`}
+                    >
+                      {link.label}
+                    </Link>
+                  );
+                })}
+                
+                {/* Separator */}
+                <div className="border-t border-gray-200 my-2"></div>
+                
+                {/* Secondary Navigation Links */}
+                {navLinks.slice(3).map((link) => {
                   const active = isActive(link.href);
                   return (
                     <Link
