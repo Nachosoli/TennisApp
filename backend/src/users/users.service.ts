@@ -78,6 +78,7 @@ export class UsersService {
     await this.cacheManager.del(cacheKey);
     
     // Return user with relations loaded (especially homeCourt)
+    // Note: leftJoinAndSelect will return null for homeCourt if homeCourtId is null
     const updatedUser = await this.userRepository
       .createQueryBuilder('user')
       .leftJoinAndSelect('user.homeCourt', 'homeCourt')
@@ -87,6 +88,12 @@ export class UsersService {
 
     if (!updatedUser) {
       throw new NotFoundException('User not found');
+    }
+
+    // Ensure homeCourtId is explicitly null if it was cleared
+    if (updateDto.homeCourtId === null) {
+      (updatedUser as any).homeCourtId = null;
+      (updatedUser as any).homeCourt = null;
     }
 
     // Cache the updated user

@@ -376,7 +376,20 @@ function ProfilePageContent() {
         homeCourtId: null as any,
       });
       
-      setUser(updatedUser);
+      console.log('Updated user after clearing home court:', updatedUser);
+      
+      // Fetch fresh user data to ensure we have the latest state
+      const freshUser = await authApi.getCurrentUser();
+      console.log('Fresh user data:', freshUser);
+      
+      // Ensure homeCourtId is explicitly set to null/undefined
+      const userWithClearedCourt = {
+        ...freshUser,
+        homeCourtId: null,
+        homeCourt: null,
+      };
+      
+      setUser(userWithClearedCourt);
       
       // Reset all facility-related state to show the input form again
       setFacilityName('');
@@ -390,8 +403,10 @@ function ProfilePageContent() {
       setHasSearched(false);
       setShowFacilityResults(false);
       
+      // Force a refresh to ensure UI updates
       router.refresh();
     } catch (err: any) {
+      console.error('Error clearing home court:', err);
       const errorMessage = getErrorMessage(err);
       setError(errorMessage);
     } finally {
@@ -697,7 +712,7 @@ function ProfilePageContent() {
               <label className="block text-sm font-semibold text-gray-700 mb-1">
                 Home Court
               </label>
-              {user?.homeCourtId ? (
+              {user?.homeCourtId && user.homeCourtId !== null ? (
                 <div className="flex items-center justify-between p-3 bg-gray-50 border border-gray-300 rounded-lg">
                   <span className="text-gray-900 font-medium">{user?.homeCourt?.name || 'Home court set'}</span>
                   <Button
