@@ -11,14 +11,9 @@ import { NotificationPreference } from '@/types';
 import { PageLoader } from '@/components/ui/PageLoader';
 import { useRequireAuth } from '@/hooks/useRequireAuth';
 
-type NotificationType = 'match_created' | 'match_accepted' | 'match_applicant' | 'match_confirmed' | 'court_changes' | 'score_reminder' | 'new_chat';
+type NotificationType = 'match_accepted' | 'match_applicant' | 'match_confirmed' | 'score_reminder' | 'new_chat';
 
 const NOTIFICATION_TYPES: { type: NotificationType; label: string; description: string }[] = [
-  {
-    type: 'match_created',
-    label: 'Match Created',
-    description: 'When a new match is created that matches your preferences',
-  },
   {
     type: 'match_accepted',
     label: 'Match Accepted',
@@ -33,11 +28,6 @@ const NOTIFICATION_TYPES: { type: NotificationType; label: string; description: 
     type: 'match_confirmed',
     label: 'Match Confirmed',
     description: 'When a match you\'re participating in is confirmed',
-  },
-  {
-    type: 'court_changes',
-    label: 'Court Changes',
-    description: 'When there are changes to a court or match location',
   },
   {
     type: 'score_reminder',
@@ -100,13 +90,11 @@ export default function SettingsPage() {
   const router = useRouter();
   const { isLoading: authLoading, user } = useRequireAuth();
   const [preferences, setPreferences] = useState<Record<NotificationType, NotificationPreferenceState>>({
-    match_created: { enabled: false, method: 'email' },
-    match_accepted: { enabled: false, method: 'email' }, // Default OFF - users can enable if they want
+    match_accepted: { enabled: true, method: 'email' }, // Default ON
     match_applicant: { enabled: false, method: 'email' }, // Default OFF - users can enable if they want
     match_confirmed: { enabled: true, method: 'email' }, // Default ON - critical notification
-    court_changes: { enabled: false, method: 'email' },
     score_reminder: { enabled: false, method: 'email' },
-    new_chat: { enabled: false, method: 'email' },
+    new_chat: { enabled: true, method: 'email' }, // Default ON
   });
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -153,13 +141,11 @@ export default function SettingsPage() {
       
       // Initialize preferences object with defaults
       const prefsMap: Record<NotificationType, NotificationPreferenceState> = {
-        match_created: { enabled: false, method: 'email' },
-        match_accepted: { enabled: false, method: 'email' },
+        match_accepted: { enabled: true, method: 'email' }, // Default ON
         match_applicant: { enabled: false, method: 'email' },
-        match_confirmed: { enabled: false, method: 'email' },
-        court_changes: { enabled: false, method: 'email' },
+        match_confirmed: { enabled: true, method: 'email' }, // Default ON
         score_reminder: { enabled: false, method: 'email' },
-        new_chat: { enabled: false, method: 'email' },
+        new_chat: { enabled: true, method: 'email' }, // Default ON
       };
 
       // Map loaded preferences and convert format
