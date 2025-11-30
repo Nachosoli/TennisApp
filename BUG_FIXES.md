@@ -69,35 +69,9 @@ This document tracks all reported bugs and their fixes.
 **Files Affected:** `frontend/app/calendar/page.tsx`  
 **Fix Required:** Make filters collapsible or reduce sticky header size on mobile.
 
-### 5.e - Waitlist Status on Game Cards
-**Status:** Pending  
-**Description:** The game card should indicate the user is waitlisted (if they already applied). Perhaps replace the line that says "X Slots available" and show "You are already on the waitlist" (mobile and desktop).  
-**Files Affected:** `frontend/app/calendar/page.tsx`, `frontend/src/components/CalendarView.tsx` (if exists)  
-**Fix Required:** Check user's application status and show waitlist message instead of slots available.
-
-### 5.f - Completed Matches Showing as Pending
-**Status:** Pending  
-**Description:** Calendar is showing matches that should be completed. The game card is pending, but when clicking view details and accessing Match/ID, the game properly shows as completed (mobile and desktop).  
-**Files Affected:** `frontend/app/calendar/page.tsx`  
-**Fix Required:** Filter out completed matches from calendar view or update match status check.
-
 ---
 
 ## Issue 6: Match/ID Page
-
-### 6.i - Improve Manage Applications UI for Mobile
-**Status:** Pending  
-**Description:** The "Manage Applications" section is too crowded on mobile. The page needs optimization for better mobile UX.  
-**Files Affected:** `frontend/app/matches/[id]/page.tsx`, `frontend/src/components/ApplicationsTable.tsx`  
-**Fix Required:** 
-- Remove the informational text box: "As the match creator, you can review and manage applications from players who want to join this match." (lines 531-535 in `frontend/app/matches/[id]/page.tsx`)
-- Optimize mobile card layout:
-  - **Option 1 (Recommended):** Replace the "pending" status badge in the header with two badge icons (checkmark for Confirm, X for Reject) that are clickable. This saves vertical space and makes actions more accessible.
-  - **Option 2:** Keep buttons at bottom but make them smaller (reduce padding, use icon-only buttons with tooltips, or use compact button style)
-  - Reduce spacing between card elements
-  - Consider collapsing less critical stats (e.g., Cancellation Rate) behind a "Show more" toggle
-  - Reduce card padding on mobile
-- Ensure buttons are easily tappable (minimum 44x44px touch target)
 
 ### 6.f - Chat History After Withdrawal
 **Status:** Pending  
@@ -109,67 +83,7 @@ This document tracks all reported bugs and their fixes.
 
 ## Issue 7: Dashboard
 
-### 7.c - Edit Button for Matches with Applicants
-**Status:** Pending  
-**Description:** If there are applicants to a match, then creator should not be able to edit. Change EDIT button to "Manage?" or just not show the EDIT as user can click the row/card and access to Match/ID for management (mobile and desktop).  
-**Files Affected:** `frontend/app/dashboard/page.tsx`  
-**Fix Required:** Conditionally show/hide or change Edit button based on applicant count.
-
-### 7.e - Edit Button Visibility for Creators Without Applicants
-**Status:** Pending  
-**Description:** In dashboard, game creator should see EDIT button if they don't have applicants (mobile and desktop).  
-**Files Affected:** `frontend/app/dashboard/page.tsx`  
-**Fix Required:** Show EDIT button for match creators when `hasAnyApplicants` is false. Currently `canEdit` is hardcoded to `false` on lines 468 and 718.
-
-### 7.d - Match Status Colors
-**Status:** Pending  
-**Description:** Matches section should have different color for Status "Applied" vs "Completed" and we should also show "Waitlisted" (mobile and desktop).  
-**Files Affected:** `frontend/app/dashboard/page.tsx`  
-**Fix Required:** Add color coding for different match statuses and show waitlisted status.
-
 ---
-
-## Issue 9: Notifications (Settings)
-
-### 9.1 - Match Applicants Toggle
-**Status:** Pending  
-**Description:** Add a "Match applicants" toggle, defaulted to OFF (mobile and desktop).  
-**Files Affected:** `frontend/app/notifications/page.tsx` or settings page, `backend/src/notifications/notifications.service.ts`  
-**Fix Required:** Add new notification preference type and toggle in UI.
-
-### 9.2 - Default Email for Match Applications
-**Status:** Pending  
-**Description:** Do not send match applications email by default. Right now, we don't have the toggle and we are getting emails (mobile and desktop).  
-**Files Affected:** `backend/src/notifications/notifications.service.ts`, `backend/src/applications/applications.service.ts`  
-**Fix Required:** Change default email preference for MATCH_ACCEPTED to false, or add toggle first (9.1).
-
----
-
-## Issue 10: Chat
-
-### 10.1 - Automatic Match Confirmation Messages Not Showing
-**Status:** Pending  
-**Description:** When a match is confirmed, the automatic match confirmation messages (contact info messages) are not appearing in the chat. The chat appears empty even though messages should have been created automatically.  
-**Files Affected:** `backend/src/applications/applications.service.ts`, `backend/src/chat/chat.service.ts`, `backend/src/chat/chat.gateway.ts`  
-**Fix Required:** 
-- Ensure automatic messages are created after `slot.confirmedAt` is saved and persisted
-- Emit socket events for automatic messages so frontend sees them immediately without requiring a page refresh
-- Verify that `getUserJoinTime` filter in `getMatchMessages` doesn't exclude messages created at the same time as confirmation
-- Add better error logging to identify if message creation is silently failing
-- Consider reloading match with fresh slot data before creating messages to ensure `confirmedAt` timestamp is available
-
-**Implementation Plan:**
-- In `backend/src/applications/applications.service.ts`:
-  - After saving `application.matchSlot` with `confirmedAt`, reload the match with relations to ensure we have the latest slot data
-  - Store the created message objects from `createContactInfoMessage` calls
-  - Inject `ChatGateway` into `ApplicationsService` and emit socket events for both automatic messages
-  - Wrap socket emission in try-catch to prevent failures from breaking confirmation flow
-- In `backend/src/chat/chat.service.ts`:
-  - Verify `createContactInfoMessage` returns the saved message with all relations loaded
-  - Ensure the method handles cases where `confirmedSlot.confirmedAt` might not be set yet
-- In `backend/src/chat/chat.gateway.ts`:
-  - Add a public method `emitNewMessage(matchId: string, message: ChatMessage)` that can be called from services to broadcast messages
-- Test that messages appear immediately in the chat UI after confirmation without requiring a page refresh
 
 ---
 
