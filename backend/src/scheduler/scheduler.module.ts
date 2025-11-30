@@ -6,12 +6,13 @@ import { NotificationsModule } from '../notifications/notifications.module';
 import { Match } from '../entities/match.entity';
 import { Result } from '../entities/result.entity';
 import { User } from '../entities/user.entity';
+import { Notification } from '../entities/notification.entity';
 
 @Module({
   imports: [
     ScheduleModule.forRoot(),
     NotificationsModule,
-    TypeOrmModule.forFeature([Match, Result, User]),
+    TypeOrmModule.forFeature([Match, Result, User, Notification]),
   ],
   providers: [SchedulerService],
 })

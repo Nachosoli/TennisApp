@@ -1,11 +1,12 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { Cron, CronExpression } from '@nestjs/schedule';
+import { Cron } from '@nestjs/schedule';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, MoreThan } from 'typeorm';
 import { Match, MatchStatus } from '../entities/match.entity';
 import { SlotStatus } from '../entities/match-slot.entity';
 import { ApplicationStatus } from '../entities/application.entity';
 import { Result } from '../entities/result.entity';
+import { Notification } from '../entities/notification.entity';
 import { NotificationsService } from '../notifications/notifications.service';
 import { NotificationType } from '../entities/notification.enums';
 
@@ -18,14 +19,16 @@ export class SchedulerService {
     private matchRepository: Repository<Match>,
     @InjectRepository(Result)
     private resultRepository: Repository<Result>,
+    @InjectRepository(Notification)
+    private notificationRepository: Repository<Notification>,
     private notificationsService: NotificationsService,
   ) {}
 
   /**
    * Send score reminder notifications 24 hours after match date
-   * Runs every hour
+   * Runs once per day at midnight
    */
-  @Cron(CronExpression.EVERY_HOUR)
+  @Cron('0 0 * * *') // Every day at midnight (00:00)
   async sendScoreReminders() {
     this.logger.log('Running score reminder job...');
 
@@ -47,6 +50,7 @@ export class SchedulerService {
       .getMany();
 
     let reminderCount = 0;
+    let skippedCount = 0;
 
     for (const match of matches) {
       const confirmedSlot = match.slots.find((slot) => slot.status === SlotStatus.CONFIRMED);
@@ -63,36 +67,62 @@ export class SchedulerService {
 
       // Notify creator
       if (creator) {
-        await this.notificationsService.createNotification(
-          creator.id,
-          NotificationType.SCORE_REMINDER,
-          `Don't forget to submit the score for your match`,
-          {
-            opponentName: applicant ? `${applicant.firstName} ${applicant.lastName}` : 'Opponent',
-            date: match.date.toLocaleDateString(),
-            matchId: match.id,
+        // Check if a score reminder was already sent to this user in the last 24 hours
+        const existingReminder = await this.notificationRepository.findOne({
+          where: {
+            userId: creator.id,
+            type: NotificationType.SCORE_REMINDER,
+            createdAt: MoreThan(twentyFourHoursAgo),
           },
-        );
-        reminderCount++;
+        });
+
+        if (!existingReminder) {
+          await this.notificationsService.createNotification(
+            creator.id,
+            NotificationType.SCORE_REMINDER,
+            `Don't forget to submit the score for your match`,
+            {
+              opponentName: applicant ? `${applicant.firstName} ${applicant.lastName}` : 'Opponent',
+              date: match.date.toLocaleDateString(),
+              matchId: match.id,
+            },
+          );
+          reminderCount++;
+        } else {
+          skippedCount++;
+        }
       }
 
       // Notify applicant
       if (applicant) {
-        await this.notificationsService.createNotification(
-          applicant.id,
-          NotificationType.SCORE_REMINDER,
-          `Don't forget to submit the score for your match`,
-          {
-            opponentName: creator ? `${creator.firstName} ${creator.lastName}` : 'Opponent',
-            date: match.date.toLocaleDateString(),
-            matchId: match.id,
+        // Check if a score reminder was already sent to this user in the last 24 hours
+        const existingReminder = await this.notificationRepository.findOne({
+          where: {
+            userId: applicant.id,
+            type: NotificationType.SCORE_REMINDER,
+            createdAt: MoreThan(twentyFourHoursAgo),
           },
-        );
-        reminderCount++;
+        });
+
+        if (!existingReminder) {
+          await this.notificationsService.createNotification(
+            applicant.id,
+            NotificationType.SCORE_REMINDER,
+            `Don't forget to submit the score for your match`,
+            {
+              opponentName: creator ? `${creator.firstName} ${creator.lastName}` : 'Opponent',
+              date: match.date.toLocaleDateString(),
+              matchId: match.id,
+            },
+          );
+          reminderCount++;
+        } else {
+          skippedCount++;
+        }
       }
     }
 
-    this.logger.log(`Sent ${reminderCount} score reminder notifications`);
+    this.logger.log(`Sent ${reminderCount} score reminder notifications, skipped ${skippedCount} duplicates`);
   }
 }
 
