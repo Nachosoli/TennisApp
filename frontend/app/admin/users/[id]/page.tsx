@@ -204,7 +204,7 @@ export default function AdminUserDetailPage() {
               {user.bio && (
                 <div>
                   <span className="font-medium text-gray-700">Bio:</span>
-                  <p className="text-gray-900 mt-1">{sanitizeText(user.bio)}</p>
+                  <p className="text-gray-900 mt-1 whitespace-pre-wrap">{sanitizeText(user.bio)}</p>
                 </div>
               )}
               <div>

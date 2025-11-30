@@ -8,6 +8,7 @@ import { socketService } from '@/lib/socket';
 import { Button } from './ui/Button';
 import { Input } from './ui/Input';
 import { format } from 'date-fns';
+import { sanitizeText } from '@/lib/sanitize';
 
 interface ChatProps {
   matchId: string;
@@ -110,7 +111,7 @@ export const Chat = ({ matchId }: ChatProps) => {
                       {sanitizeText(message.user.firstName)} {sanitizeText(message.user.lastName)}
                     </p>
                   )}
-                  <p className="text-sm">{sanitizeText(message.message)}</p>
+                  <p className="text-sm whitespace-pre-wrap">{sanitizeText(message.message)}</p>
                   <p className={`text-xs mt-1 ${
                     isOwnMessage ? 'text-blue-100' : 'text-gray-500'
                   }`}>
