@@ -172,7 +172,8 @@ export class MatchesService {
       .leftJoinAndSelect('match.court', 'court')
       .leftJoinAndSelect('match.creator', 'creator')
       .leftJoinAndSelect('creator.stats', 'creatorStats')
-      .leftJoinAndSelect('match.slots', 'slots');
+      .leftJoinAndSelect('match.slots', 'slots')
+      .leftJoinAndSelect('slots.applications', 'applications');
 
     if (filters?.userId) {
       query.andWhere('match.creatorUserId = :userId', { userId: filters.userId });
@@ -414,6 +415,7 @@ export class MatchesService {
     },
   ): Promise<Match[]> {
     // Get matches matching user preferences, excluding user's own matches
+    // BUT include matches where user has a waitlisted application
     const filters = {
       dateFrom,
       dateTo,
@@ -421,7 +423,40 @@ export class MatchesService {
       ...userPreferences,
     };
 
-    return this.findAll(filters);
+    // Get regular matches (excluding user's own)
+    const regularMatches = await this.findAll(filters);
+
+    // Also get matches where user has a waitlisted application (even if they're the creator or match is confirmed)
+    const waitlistedMatchesQuery = this.matchRepository
+      .createQueryBuilder('match')
+      .leftJoinAndSelect('match.court', 'court')
+      .leftJoinAndSelect('match.creator', 'creator')
+      .leftJoinAndSelect('creator.stats', 'creatorStats')
+      .leftJoinAndSelect('match.slots', 'slots')
+      .leftJoinAndSelect('slots.applications', 'applications')
+      .where('match.date >= :dateFrom', { dateFrom })
+      .andWhere('match.date <= :dateTo', { dateTo })
+      .andWhere('match.status != :cancelledStatus', { cancelledStatus: MatchStatus.CANCELLED })
+      .andWhere('match.status != :completedStatus', { completedStatus: MatchStatus.COMPLETED })
+      .andWhere(
+        'EXISTS (SELECT 1 FROM applications app INNER JOIN match_slots ms ON app.match_slot_id = ms.id WHERE ms.match_id = match.id AND app.applicant_user_id = :userId AND app.status = :waitlistedStatus)',
+        {
+          userId,
+          waitlistedStatus: ApplicationStatus.WAITLISTED,
+        },
+      )
+      .orderBy('match.date', 'ASC')
+      .addOrderBy('match.createdAt', 'DESC');
+
+    const waitlistedMatches = await waitlistedMatchesQuery.getMany();
+
+    // Combine and deduplicate by match ID
+    const allMatches = [...regularMatches, ...waitlistedMatches];
+    const uniqueMatches = Array.from(
+      new Map(allMatches.map((match) => [match.id, match])).values(),
+    );
+
+    return uniqueMatches;
   }
 
   async findUserMatches(userId: string): Promise<Match[]> {
