@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/stores/auth-store';
 import { useRequireAuth } from '@/hooks/useRequireAuth';
 import { PageLoader } from '@/components/ui/PageLoader';
@@ -22,7 +21,6 @@ interface MatchHistoryEntry {
 }
 
 export default function HistoryPage() {
-  const router = useRouter();
   const { isLoading: authLoading, user } = useRequireAuth();
   const [matches, setMatches] = useState<MatchHistoryEntry[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -240,12 +238,11 @@ export default function HistoryPage() {
                     const matchDate = parseLocalDate(match.date);
                     const isHomeCourt = match.courtId === user?.homeCourtId;
 
-                    return (
-                      <tr
-                        key={match.id}
-                        className="hover:bg-gray-50 cursor-pointer"
-                        onClick={() => router.push(`/matches/${match.id}`)}
-                      >
+                      return (
+                        <tr
+                          key={match.id}
+                          className="hover:bg-gray-50"
+                        >
                         <td className="px-4 py-3 text-sm text-gray-900">
                           {matchDate.toLocaleDateString('en-US', {
                             month: 'short',
