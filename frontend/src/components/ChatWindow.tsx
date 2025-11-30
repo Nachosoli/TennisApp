@@ -50,20 +50,39 @@ export const ChatWindow = ({ matchId }: ChatWindowProps) => {
     e.preventDefault();
     if (!message.trim() || isSending) return;
 
+    const messageText = message.trim();
+    setMessage(''); // Clear input immediately for better UX
+
     try {
       setIsSending(true);
       setError(null);
-      await chatApi.sendMessage(matchId, message.trim());
-      setMessage('');
-      // Reload messages to show the new one
-      await loadMessages();
-      // Scroll to bottom after sending (newest message at bottom)
-      setTimeout(() => {
-        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-      }, 100);
+      
+      // Send message and get the response
+      const sentMessage = await chatApi.sendMessage(matchId, messageText);
+      
+      // Optimistically add the message to the UI immediately
+      if (sentMessage) {
+        setMessages((prev) => {
+          // Check if message already exists (avoid duplicates)
+          const exists = prev.some((m) => m.id === sentMessage.id);
+          if (exists) return prev;
+          return [...prev, sentMessage];
+        });
+        
+        // Scroll to bottom after adding message
+        setTimeout(() => {
+          messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+        }, 100);
+      } else {
+        // If no message returned, reload all messages
+        await loadMessages();
+      }
     } catch (err: any) {
       console.error('Failed to send message:', err);
-      setError(err.response?.data?.message || 'Failed to send message. Please try again.');
+      // Restore the message in the input if sending failed
+      setMessage(messageText);
+      const errorMessage = err.response?.data?.message || err.message || 'Failed to send message. Please try again.';
+      setError(errorMessage);
     } finally {
       setIsSending(false);
     }

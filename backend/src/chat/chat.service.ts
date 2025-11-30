@@ -91,39 +91,55 @@ export class ChatService {
         });
       }
 
-      // Send notifications to all participants
-      const sender = await this.userRepository.findOne({ where: { id: userId } });
-      const senderName = sender && sender.firstName && sender.lastName 
-        ? `${sender.firstName} ${sender.lastName}` 
-        : 'Someone';
+      // Send notifications to all participants (non-blocking - don't fail if notifications fail)
+      try {
+        const sender = await this.userRepository.findOne({ where: { id: userId } });
+        const senderName = sender && sender.firstName && sender.lastName 
+          ? `${sender.firstName} ${sender.lastName}` 
+          : 'Someone';
 
-      for (const participantId of participants) {
-        await this.notificationsService.createNotification(
-          participantId,
-          NotificationType.NEW_CHAT,
-          `New message from ${senderName}`,
-          {
-            senderName,
-            courtName: matchWithRelations.court?.name || 'Court',
-            date: matchWithRelations.date 
-              ? (matchWithRelations.date instanceof Date 
-                  ? matchWithRelations.date.toLocaleDateString()
-                  : new Date(matchWithRelations.date).toLocaleDateString())
-              : 'Unknown date',
-            messagePreview: createDto.message.substring(0, 50),
-            matchId: matchWithRelations.id,
-          },
-        );
+        for (const participantId of participants) {
+          try {
+            await this.notificationsService.createNotification(
+              participantId,
+              NotificationType.NEW_CHAT,
+              `New message from ${senderName}`,
+              {
+                senderName,
+                courtName: matchWithRelations.court?.name || 'Court',
+                date: matchWithRelations.date 
+                  ? (matchWithRelations.date instanceof Date 
+                      ? matchWithRelations.date.toLocaleDateString()
+                      : new Date(matchWithRelations.date).toLocaleDateString())
+                  : 'Unknown date',
+                messagePreview: createDto.message.substring(0, 50),
+                matchId: matchWithRelations.id,
+              },
+            );
+          } catch (notificationError) {
+            // Log but don't fail - message was already saved
+            console.warn(`Failed to send notification to participant ${participantId}:`, notificationError);
+          }
+        }
+      } catch (error) {
+        // Log but don't fail - message was already saved
+        console.warn('Failed to send chat notifications:', error);
       }
     }
     
     // Load the message with user relation for frontend display
-    const messageWithUser = await this.chatMessageRepository.findOne({
-      where: { id: savedMessage.id },
-      relations: ['user'],
-    });
-    
-    return messageWithUser || savedMessage;
+    try {
+      const messageWithUser = await this.chatMessageRepository.findOne({
+        where: { id: savedMessage.id },
+        relations: ['user'],
+      });
+      
+      return messageWithUser || savedMessage;
+    } catch (error) {
+      // If loading with relations fails, return the saved message
+      console.error('Error loading message with user relation:', error);
+      return savedMessage;
+    }
   }
 
   async verifyMatchAccess(userId: string, matchId: string): Promise<boolean> {
