@@ -60,13 +60,16 @@ export const MatchesMap = ({ matches, onMapLoad, homeCourt, currentUserId }: Mat
     libraries: GOOGLE_MAPS_LIBRARIES,
   });
 
-  // Group matches by court, excluding user's own matches and cancelled matches
+  // Group matches by court, excluding user's own matches, cancelled matches, and completed matches
+  // Note: Confirmed matches are already filtered by the parent component before being passed here
   const courtMatchesMap = useMemo(() => {
     const map = new Map<string, { court: any; matches: Match[] }>();
     
     matches.forEach((match) => {
       // Exclude cancelled matches (backend stores as lowercase 'cancelled')
       if (match.status?.toLowerCase() === 'cancelled') return;
+      // Exclude completed matches
+      if (match.status?.toLowerCase() === 'completed') return;
       // Exclude matches created by the current user
       if (currentUserId && match.creatorUserId === currentUserId) return;
       

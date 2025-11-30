@@ -69,10 +69,11 @@ export default function CalendarPage() {
           )
         );
         
-        // Show confirmed singles matches to all users (they can join waitlist)
-        // Only hide confirmed matches if user is not creator and doesn't have waitlisted application
-        // But for singles, we want to show them so users can join waitlist
-        // For now, show all confirmed matches (singles can join waitlist, doubles will be handled separately)
+        // Always show matches where user is waitlisted, regardless of match status
+        if (hasWaitlistedApplication) return true;
+        
+        // Hide confirmed matches from other users (unless they have a waitlisted application, which we already handled above)
+        if (match.status?.toLowerCase() === 'confirmed' && user && match.creatorUserId !== user.id) return false;
         return true;
       });
       setAllMatches(filtered);
@@ -323,7 +324,8 @@ export default function CalendarPage() {
                   coordinates: {
                     coordinates: homeCourt.location.coordinates
                   }
-                } : null} 
+                } : null}
+                currentUserId={user?.id}
               />
             </Card>
           </div>
