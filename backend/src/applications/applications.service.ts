@@ -668,6 +668,38 @@ export class ApplicationsService {
       },
     );
 
+    // Create automatic match confirmation messages for both participants
+    try {
+      // Load match with relations for message creation
+      const matchWithRelations = await this.matchRepository.findOne({
+        where: { id: currentMatch.id },
+        relations: ['court', 'slots'],
+      });
+
+      if (matchWithRelations) {
+        // Message from new applicant to creator
+        await this.chatService.createContactInfoMessage(
+          currentMatch.id,
+          application.applicantUserId, // Sender: new applicant
+          creatorUserId, // Recipient: creator
+          matchWithRelations,
+          application.matchSlot,
+        );
+
+        // Message from creator to new applicant
+        await this.chatService.createContactInfoMessage(
+          currentMatch.id,
+          creatorUserId, // Sender: creator
+          application.applicantUserId, // Recipient: new applicant
+          matchWithRelations,
+          application.matchSlot,
+        );
+      }
+    } catch (error) {
+      // Log error but don't fail approval if message creation fails
+      console.warn('Failed to create match confirmation messages:', error);
+    }
+
     // Clear match cache
     await this.matchesService.clearMatchCache(currentMatch.id);
 
@@ -762,6 +794,17 @@ export class ApplicationsService {
 
     // Delete the application
     await this.applicationRepository.remove(application);
+
+    // If this was a confirmed application, delete all chat messages for this match
+    // This clears the chat history so creator doesn't see old messages from withdrawn participant
+    if (wasConfirmed) {
+      try {
+        await this.chatService.deleteAllMatchMessages(matchId);
+      } catch (error) {
+        console.warn(`Failed to delete chat messages for match ${matchId}:`, error);
+        // Don't fail withdrawal if message deletion fails
+      }
+    }
 
     // If this was a confirmed application, check if we need to revert match status
     if (wasConfirmed) {

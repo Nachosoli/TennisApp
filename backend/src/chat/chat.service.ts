@@ -306,5 +306,16 @@ export class ChatService {
 
     return savedMessage;
   }
+
+  /**
+   * Delete all chat messages for a match
+   * Used when a confirmed participant withdraws to clear chat history
+   * @param matchId The match ID
+   */
+  async deleteAllMatchMessages(matchId: string): Promise<void> {
+    await this.chatMessageRepository.delete({
+      matchId,
+    });
+  }
 }
 
