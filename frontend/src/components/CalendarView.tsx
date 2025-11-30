@@ -71,8 +71,11 @@ export const CalendarView = ({ filters, onDateSelect }: CalendarViewProps) => {
             )
           );
           
-          // Hide confirmed matches from other users UNLESS they have a waitlisted application
-          if (match.status?.toLowerCase() === 'confirmed' && user && match.creatorUserId !== user.id && !hasWaitlistedApplication) return false;
+          // Always show matches where user is waitlisted, regardless of match status
+          if (hasWaitlistedApplication) return true;
+          
+          // Hide confirmed matches from other users (unless they have a waitlisted application, which we already handled above)
+          if (match.status?.toLowerCase() === 'confirmed' && user && match.creatorUserId !== user.id) return false;
           return true;
         });
         setMatches(filtered);
