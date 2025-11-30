@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ChatMessage } from '../entities/chat-message.entity';
@@ -8,7 +8,6 @@ import { User } from '../entities/user.entity';
 import { CreateChatMessageDto } from './dto/create-chat-message.dto';
 import { NotificationsService } from '../notifications/notifications.service';
 import { NotificationType } from '../entities/notification.enums';
-import { sanitizeTextContent } from '../common/utils/sanitize.util';
 
 @Injectable()
 export class ChatService {
@@ -42,7 +41,18 @@ export class ChatService {
     }
 
     // Sanitize message content to prevent XSS
-    const sanitizedMessage = sanitizeTextContent(createDto.message);
+    // Strip HTML tags but preserve newlines and basic formatting
+    // Only remove dangerous HTML, not all special characters
+    let sanitizedMessage = (createDto.message || '')
+      .replace(/<[^>]*>/g, '') // Remove HTML tags
+      .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '') // Remove script tags
+      .trim();
+    
+    // Ensure message is not empty after sanitization
+    // If it becomes empty, validation should have caught it, but handle gracefully
+    if (!sanitizedMessage || sanitizedMessage.length === 0) {
+      throw new BadRequestException('Message cannot be empty');
+    }
 
     const message = this.chatMessageRepository.create({
       matchId: createDto.matchId,
