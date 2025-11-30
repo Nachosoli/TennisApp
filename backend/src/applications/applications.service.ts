@@ -159,9 +159,10 @@ export class ApplicationsService {
             matchId: slot.match.id,
           },
         );
-      } catch (error) {
+      } catch (error: any) {
         // Log error but don't fail the request if notification fails
-        console.warn('Failed to send waitlist application notification:', error);
+        console.error('Failed to send waitlist application notification:', error);
+        console.error('Error details:', error.message, error.stack);
       }
 
       // Emit real-time update
@@ -262,9 +263,10 @@ export class ApplicationsService {
           matchId: slot.match.id,
         },
       );
-    } catch (error) {
+    } catch (error: any) {
       // Log error but don't fail the request if notification fails
-      console.warn('Failed to send application notification:', error);
+      console.error('Failed to send application notification:', error);
+      console.error('Error details:', error.message, error.stack);
     }
 
     // Emit real-time update
@@ -370,8 +372,9 @@ export class ApplicationsService {
                 matchId: currentMatch.id,
               },
             );
-          } catch (error) {
-            console.warn(`Failed to send waitlist notification to user ${otherApp.applicantUserId}:`, error);
+          } catch (error: any) {
+            console.error(`Failed to send waitlist notification to user ${otherApp.applicantUserId}:`, error);
+            console.error('Error details:', error.message, error.stack);
             // Don't fail confirmation if notification fails
           }
         }
@@ -473,8 +476,9 @@ export class ApplicationsService {
             matchId: overlappingApp.matchSlot.match.id,
           },
         );
-      } catch (error) {
-        console.warn(`Failed to send overlap notification to user ${overlappingApp.applicantUserId}:`, error);
+      } catch (error: any) {
+        console.error(`Failed to send overlap notification to user ${overlappingApp.applicantUserId}:`, error);
+        console.error('Error details:', error.message, error.stack);
         // Don't fail confirmation if notification fails
       }
     }
@@ -504,8 +508,9 @@ export class ApplicationsService {
           matchId: notificationMatch.id,
         },
       );
-    } catch (error) {
-      console.warn('Failed to send notification to applicant:', error);
+    } catch (error: any) {
+      console.error('Failed to send notification to applicant:', error);
+      console.error('Error details:', error.message, error.stack);
       // Don't fail confirmation if notification fails
     }
 
@@ -523,8 +528,9 @@ export class ApplicationsService {
           matchId: notificationMatch.id,
         },
       );
-    } catch (error) {
-      console.warn('Failed to send notification to creator:', error);
+    } catch (error: any) {
+      console.error('Failed to send notification to creator:', error);
+      console.error('Error details:', error.message, error.stack);
       // Don't fail confirmation if notification fails
     }
 

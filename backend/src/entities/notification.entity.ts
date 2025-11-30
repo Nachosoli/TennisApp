@@ -41,30 +41,6 @@ export class Notification {
   @Column({ type: 'text' })
   content: string;
 
-  // TEMPORARY: Keep old fields as optional for backward compatibility during migration
-  // These will be removed after migration is complete
-  @Column({
-    type: 'enum',
-    enum: NotificationChannel,
-    nullable: true,
-    select: false, // Don't select these by default
-  })
-  channel?: NotificationChannel;
-
-  @Column({
-    type: 'enum',
-    enum: NotificationStatus,
-    nullable: true,
-    select: false,
-  })
-  status?: NotificationStatus;
-
-  @Column({ name: 'retry_count', type: 'integer', nullable: true, select: false })
-  retryCount?: number;
-
-  @Column({ name: 'sent_at', nullable: true, select: false })
-  sentAt?: Date;
-
   @OneToMany(() => NotificationDelivery, (delivery) => delivery.notification, { cascade: true })
   deliveries: NotificationDelivery[];
 

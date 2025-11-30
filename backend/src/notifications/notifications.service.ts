@@ -70,12 +70,25 @@ export class NotificationsService {
     }
 
     // Always create the notification for in-app display, even if no delivery channels are enabled
-    const notification = this.notificationRepository.create({
-      userId,
-      type,
-      content,
-    });
-    const savedNotification = await this.notificationRepository.save(notification);
+    let savedNotification: Notification;
+    try {
+      this.logger.log(`[createNotification] Creating notification - userId: ${userId}, type: ${type}`);
+      
+      const notification = this.notificationRepository.create({
+        userId,
+        type,
+        content,
+      });
+      
+      this.logger.log(`[createNotification] Saving notification to database...`);
+      savedNotification = await this.notificationRepository.save(notification);
+      this.logger.log(`[createNotification] Notification saved successfully - id: ${savedNotification.id}`);
+    } catch (error: any) {
+      this.logger.error(`[createNotification] FAILED to save notification: ${error.message}`, error.stack);
+      this.logger.error(`[createNotification] Error code: ${error.code}, detail: ${error.detail}`);
+      this.logger.error(`[createNotification] Notification data - userId: ${userId}, type: ${type}, content length: ${content.length}`);
+      throw error; // Re-throw so calling code can see the error
+    }
 
     // Create delivery records for each enabled channel (if any)
     if (channels.length > 0) {
@@ -94,27 +107,10 @@ export class NotificationsService {
           this.logger.error('Error processing notification deliveries:', error);
         });
       } catch (error: any) {
-        // If notification_deliveries table doesn't exist yet (migration not run), 
-        // fall back to old behavior: create notifications with channel/status directly
-        if (error.message?.includes('notification_deliveries') || error.code === '42P01') {
-          this.logger.warn('notification_deliveries table not found, using legacy notification creation');
-          // Create separate notifications for each channel (old behavior)
-          const legacyNotifications: Notification[] = channels.map((channel) =>
-            this.notificationRepository.create({
-              userId,
-              type,
-              content,
-              channel, // Use optional field
-              status: NotificationStatus.PENDING, // Use optional field
-            }),
-          );
-          await this.notificationRepository.save(legacyNotifications);
-          // Note: We can't use processDeliveries here since it expects deliveries
-          // The old notifications will be processed by the old code path if it still exists
-        } else {
-          this.logger.error('Error creating delivery records:', error);
-          // Don't throw - notification is already created, just log the error
-        }
+        // Log error but don't fail - notification is already created
+        this.logger.error('Error creating delivery records:', error);
+        this.logger.error('Delivery error details:', error.message, error.stack);
+        // Don't throw - notification is already created, just log the error
       }
     }
 
