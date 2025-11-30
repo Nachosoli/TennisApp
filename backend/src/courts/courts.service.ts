@@ -31,6 +31,19 @@ export class CourtsService {
     @Inject(CACHE_MANAGER) private cacheManager: Cache,
   ) {}
 
+  /**
+   * Sanitize user input to prevent XSS attacks
+   * Strips HTML tags and dangerous characters
+   */
+  private sanitizeInput(input: string): string {
+    if (!input) return '';
+    // Strip HTML tags and escape dangerous characters
+    return input
+      .replace(/<[^>]*>/g, '') // Remove HTML tags
+      .replace(/[<>"']/g, '') // Remove dangerous characters
+      .trim();
+  }
+
   async create(userId: string, createDto: CreateCourtDto): Promise<Court> {
     const user = await this.userRepository.findOne({ where: { id: userId } });
     if (!user) {
@@ -81,8 +94,11 @@ export class CourtsService {
       coordinates: [longitude, latitude], // GeoJSON format: [lng, lat]
     };
 
+    // Sanitize court name to prevent XSS
+    const sanitizedName = this.sanitizeInput(createDto.name);
+
     const court = this.courtRepository.create({
-      name: createDto.name,
+      name: sanitizedName,
       address: formattedAddress,
       coordinates,
       surfaceType: createDto.surfaceType,
@@ -121,8 +137,11 @@ export class CourtsService {
       coordinates: [createDto.longitude, createDto.latitude], // GeoJSON format: [lng, lat]
     };
 
+    // Sanitize court name to prevent XSS
+    const sanitizedName = this.sanitizeInput(createDto.name);
+
     const court = this.courtRepository.create({
-      name: createDto.name,
+      name: sanitizedName,
       address: createDto.address,
       coordinates,
       surfaceType: SurfaceType.HARD, // Default to HARD for Google Places
@@ -185,6 +204,14 @@ export class CourtsService {
       if (!user || !user.isAdmin) {
         throw new ForbiddenException('Not authorized to update this court');
       }
+    }
+
+    // Sanitize name and address if provided
+    if (updateDto.name) {
+      updateDto.name = this.sanitizeInput(updateDto.name);
+    }
+    if (updateDto.address) {
+      updateDto.address = this.sanitizeInput(updateDto.address);
     }
 
     Object.assign(court, updateDto);

@@ -9,6 +9,7 @@ import { Button } from './ui/Button';
 import Link from 'next/link';
 import { useAuthStore } from '@/stores/auth-store';
 import { parseLocalDate } from '@/lib/date-utils';
+import { sanitizeText } from '@/lib/sanitize';
 
 interface CalendarViewProps {
   filters?: {
@@ -207,8 +208,9 @@ export const CalendarView = ({ filters, onDateSelect }: CalendarViewProps) => {
                           className={`text-xs px-1 py-0.5 rounded truncate ${
                             isPast ? 'bg-gray-200 text-gray-500' : 'bg-blue-100 text-blue-800'
                           }`}
+                          title={sanitizeText(match.court?.name) || 'Match'}
                         >
-                          {match.court?.name || 'Match'}
+                          {sanitizeText(match.court?.name) || 'Match'}
                         </div>
                       ))}
                       {dayMatches.length > 2 && (
@@ -295,15 +297,15 @@ export const CalendarView = ({ filters, onDateSelect }: CalendarViewProps) => {
                   >
                     <div className="flex justify-between items-start mb-3">
                       <div className="flex-1">
-                        <h4 className="font-bold text-lg mb-1">{match.court?.name || 'Court TBD'}</h4>
-                        <p className="text-sm opacity-80 mb-2">{match.court?.address}</p>
+                        <h4 className="font-bold text-lg mb-1">{sanitizeText(match.court?.name) || 'Court TBD'}</h4>
+                        <p className="text-sm opacity-80 mb-2">{sanitizeText(match.court?.address)}</p>
                         
                         {/* Creator Info */}
                         <div className="mb-2">
                           <p className="text-sm font-medium">
                             Player: {creator?.firstName && creator?.lastName 
-                              ? `${creator.firstName} ${creator.lastName}`
-                              : creator?.email || 'Unknown'}
+                              ? `${sanitizeText(creator.firstName)} ${sanitizeText(creator.lastName)}`
+                              : sanitizeText(creator?.email) || 'Unknown'}
                           </p>
                         </div>
                         
