@@ -38,9 +38,9 @@ Full-stack web application connecting recreational tennis players to schedule ma
 - **Storage**: Cloudinary (photos: 10MB max, JPG/PNG/WebP)
 
 ### Infrastructure
-- **Frontend Hosting**: Vercel
-- **Backend Hosting**: AWS/GCP Docker
-- **Database**: Managed PostgreSQL
+- **Frontend Hosting**: Railway
+- **Backend Hosting**: Railway
+- **Database**: Railway (Managed PostgreSQL)
 - **CI/CD**: Basic CI (tests on PR), manual deployment
 - **Monitoring**: Structured logging (Winston/Pino) + Sentry
 - **Rate Limiting**: 1000 requests/minute per user

@@ -167,10 +167,10 @@ sudo systemctl start courtmate-backend
 
 ### Frontend (Next.js)
 
-#### Vercel Deployment (Recommended)
+#### Railway Deployment
 
-1. Connect your GitHub repository to Vercel
-2. Configure environment variables in Vercel dashboard
+1. Connect your GitHub repository to Railway
+2. Configure environment variables in Railway dashboard
 3. Deploy automatically on push to main branch
 
 #### Manual Deployment

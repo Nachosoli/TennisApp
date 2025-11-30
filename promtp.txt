@@ -88,7 +88,7 @@ Email: SendGrid.
 
 Maps: Google Places API.
 
-Hosting: Frontend (Vercel), Backend (AWS/GCP Docker), Postgres (managed).
+Hosting: Frontend (Railway), Backend (Railway), Postgres (Railway managed).
 
 Testing: Jest + Supertest + React Testing Library.
 
