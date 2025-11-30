@@ -14,6 +14,7 @@ import { Application, ApplicationStatus } from '../entities/application.entity';
 import { MatchSlot, SlotStatus } from '../entities/match-slot.entity';
 import { CreateResultDto } from './dto/create-result.dto';
 import { EloService } from '../elo/elo.service';
+import { sanitizeInput } from '../common/utils/sanitize.util';
 
 @Injectable()
 export class ResultsService {
@@ -91,8 +92,13 @@ export class ResultsService {
       // Doubles: creator + applicant, with optional guests
       player1UserId = match.creatorUserId;
       player2UserId = application.applicantUserId;
-      guestPlayer1Name = createDto.guestPlayer1Name || null;
-      guestPlayer2Name = application.guestPartnerName || null;
+      // Sanitize guest player names
+      guestPlayer1Name = createDto.guestPlayer1Name 
+        ? sanitizeInput(createDto.guestPlayer1Name) 
+        : null;
+      guestPlayer2Name = application.guestPartnerName 
+        ? sanitizeInput(application.guestPartnerName) 
+        : null;
     }
 
     // Validate score format (allow alternative outcomes)

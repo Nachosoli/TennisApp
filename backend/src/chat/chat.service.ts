@@ -8,6 +8,7 @@ import { User } from '../entities/user.entity';
 import { CreateChatMessageDto } from './dto/create-chat-message.dto';
 import { NotificationsService } from '../notifications/notifications.service';
 import { NotificationType } from '../entities/notification.enums';
+import { sanitizeTextContent } from '../common/utils/sanitize.util';
 
 @Injectable()
 export class ChatService {
@@ -40,10 +41,13 @@ export class ChatService {
       throw new ForbiddenException('You do not have access to this match chat');
     }
 
+    // Sanitize message content to prevent XSS
+    const sanitizedMessage = sanitizeTextContent(createDto.message);
+
     const message = this.chatMessageRepository.create({
       matchId: createDto.matchId,
       userId,
-      message: createDto.message,
+      message: sanitizedMessage,
     });
 
     const savedMessage = await this.chatMessageRepository.save(message);

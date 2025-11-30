@@ -6,6 +6,7 @@ import type { Cache } from 'cache-manager';
 import { User } from '../entities/user.entity';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { CloudinaryService } from './services/cloudinary.service';
+import { sanitizeInput, sanitizeTextContent } from '../common/utils/sanitize.util';
 
 @Injectable()
 export class UsersService {
@@ -67,8 +68,23 @@ export class UsersService {
       (user as any).homeCourtId = updateDto.homeCourtId ?? null;
     }
 
+    // Sanitize user input fields to prevent XSS
+    const sanitizedUpdates: Partial<UpdateProfileDto> = { ...updateDto };
+    if (sanitizedUpdates.firstName) {
+      sanitizedUpdates.firstName = sanitizeInput(sanitizedUpdates.firstName);
+    }
+    if (sanitizedUpdates.lastName) {
+      sanitizedUpdates.lastName = sanitizeInput(sanitizedUpdates.lastName);
+    }
+    if (sanitizedUpdates.bio) {
+      sanitizedUpdates.bio = sanitizeTextContent(sanitizedUpdates.bio);
+    }
+    if (sanitizedUpdates.playStyle) {
+      sanitizedUpdates.playStyle = sanitizeInput(sanitizedUpdates.playStyle);
+    }
+
     // Apply other updates (excluding homeCourtId which we handled above)
-    const { homeCourtId, ...otherUpdates } = updateDto;
+    const { homeCourtId, ...otherUpdates } = sanitizedUpdates;
     Object.assign(user, otherUpdates);
     
     await this.userRepository.save(user);

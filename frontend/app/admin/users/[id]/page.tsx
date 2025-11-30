@@ -12,6 +12,7 @@ import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { User, Match, Court } from '@/types';
 import { format } from 'date-fns';
+import { sanitizeText } from '@/lib/sanitize';
 
 export default function AdminUserDetailPage() {
   const params = useParams();
@@ -203,7 +204,7 @@ export default function AdminUserDetailPage() {
               {user.bio && (
                 <div>
                   <span className="font-medium text-gray-700">Bio:</span>
-                  <p className="text-gray-900 mt-1">{user.bio}</p>
+                  <p className="text-gray-900 mt-1">{sanitizeText(user.bio)}</p>
                 </div>
               )}
               <div>

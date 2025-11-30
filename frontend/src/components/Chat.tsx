@@ -107,10 +107,10 @@ export const Chat = ({ matchId }: ChatProps) => {
                 >
                   {!isOwnMessage && message.user && (
                     <p className="text-xs font-medium mb-1 opacity-75">
-                      {message.user.firstName} {message.user.lastName}
+                      {sanitizeText(message.user.firstName)} {sanitizeText(message.user.lastName)}
                     </p>
                   )}
-                  <p className="text-sm">{message.message}</p>
+                  <p className="text-sm">{sanitizeText(message.message)}</p>
                   <p className={`text-xs mt-1 ${
                     isOwnMessage ? 'text-blue-100' : 'text-gray-500'
                   }`}>

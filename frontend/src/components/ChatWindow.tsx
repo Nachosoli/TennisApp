@@ -7,6 +7,7 @@ import { ChatMessage } from '@/types';
 import { format } from 'date-fns';
 import { Button } from './ui/Button';
 import { LoadingSpinner } from './ui/LoadingSpinner';
+import { sanitizeText } from '@/lib/sanitize';
 
 interface ChatWindowProps {
   matchId: string;
@@ -115,10 +116,10 @@ export const ChatWindow = ({ matchId }: ChatWindowProps) => {
                 >
                   {!isOwnMessage && msg.user && (
                     <p className="text-xs font-medium mb-1 opacity-75">
-                      {msg.user.firstName} {msg.user.lastName}
+                      {sanitizeText(msg.user.firstName)} {sanitizeText(msg.user.lastName)}
                     </p>
                   )}
-                  <p className="text-sm whitespace-pre-wrap">{msg.message}</p>
+                  <p className="text-sm whitespace-pre-wrap">{sanitizeText(msg.message)}</p>
                   <p className={`text-xs mt-1 ${
                     isOwnMessage ? 'text-blue-100' : 'text-gray-500'
                   }`}>

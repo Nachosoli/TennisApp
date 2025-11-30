@@ -16,6 +16,7 @@ import { UpdateCourtDto } from './dto/update-court.dto';
 import { CreateCourtFromGooglePlaceDto } from './dto/create-court-from-google-place.dto';
 import { GooglePlacesService } from './services/google-places.service';
 import { Point } from 'geojson';
+import { sanitizeInput } from '../common/utils/sanitize.util';
 
 @Injectable()
 export class CourtsService {
@@ -31,18 +32,6 @@ export class CourtsService {
     @Inject(CACHE_MANAGER) private cacheManager: Cache,
   ) {}
 
-  /**
-   * Sanitize user input to prevent XSS attacks
-   * Strips HTML tags and dangerous characters
-   */
-  private sanitizeInput(input: string): string {
-    if (!input) return '';
-    // Strip HTML tags and escape dangerous characters
-    return input
-      .replace(/<[^>]*>/g, '') // Remove HTML tags
-      .replace(/[<>"']/g, '') // Remove dangerous characters
-      .trim();
-  }
 
   async create(userId: string, createDto: CreateCourtDto): Promise<Court> {
     const user = await this.userRepository.findOne({ where: { id: userId } });
@@ -94,12 +83,13 @@ export class CourtsService {
       coordinates: [longitude, latitude], // GeoJSON format: [lng, lat]
     };
 
-    // Sanitize court name to prevent XSS
-    const sanitizedName = this.sanitizeInput(createDto.name);
+    // Sanitize court name and address to prevent XSS
+    const sanitizedName = sanitizeInput(createDto.name);
+    const sanitizedAddress = sanitizeInput(formattedAddress);
 
     const court = this.courtRepository.create({
       name: sanitizedName,
-      address: formattedAddress,
+      address: sanitizedAddress,
       coordinates,
       surfaceType: createDto.surfaceType,
       isPublic: createDto.isPublic ?? true,
@@ -137,12 +127,13 @@ export class CourtsService {
       coordinates: [createDto.longitude, createDto.latitude], // GeoJSON format: [lng, lat]
     };
 
-    // Sanitize court name to prevent XSS
-    const sanitizedName = this.sanitizeInput(createDto.name);
+    // Sanitize court name and address to prevent XSS
+    const sanitizedName = sanitizeInput(createDto.name);
+    const sanitizedAddress = sanitizeInput(createDto.address);
 
     const court = this.courtRepository.create({
       name: sanitizedName,
-      address: createDto.address,
+      address: sanitizedAddress,
       coordinates,
       surfaceType: SurfaceType.HARD, // Default to HARD for Google Places
       isPublic: true, // Assume public for Google Places
@@ -208,10 +199,10 @@ export class CourtsService {
 
     // Sanitize name and address if provided
     if (updateDto.name) {
-      updateDto.name = this.sanitizeInput(updateDto.name);
+      updateDto.name = sanitizeInput(updateDto.name);
     }
     if (updateDto.address) {
-      updateDto.address = this.sanitizeInput(updateDto.address);
+      updateDto.address = sanitizeInput(updateDto.address);
     }
 
     Object.assign(court, updateDto);

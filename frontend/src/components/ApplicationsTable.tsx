@@ -8,6 +8,7 @@ import { Card } from './ui/Card';
 import { Button } from './ui/Button';
 import { Skeleton } from './ui/Skeleton';
 import { format } from 'date-fns';
+import { sanitizeText } from '@/lib/sanitize';
 
 interface ApplicationsTableProps {
   matchId: string;
@@ -196,7 +197,7 @@ export const ApplicationsTable = ({ matchId, matchFormat = 'singles', matchStatu
               <div className="flex items-start justify-between">
                 <div className="flex-1">
                   <h3 className="font-semibold text-gray-900">
-                    {user.firstName} {user.lastName}
+                    {sanitizeText(user.firstName)} {sanitizeText(user.lastName)}
                   </h3>
                   <div className="mt-2 space-y-1 text-sm text-gray-600">
                     {application.matchSlot && (

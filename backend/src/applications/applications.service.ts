@@ -22,6 +22,7 @@ import { MatchUpdatesGateway } from '../gateways/match-updates.gateway';
 import { ChatService } from '../chat/chat.service';
 import { MatchesService } from '../matches/matches.service';
 import { ChatGateway } from '../chat/chat.gateway';
+import { sanitizeInput } from '../common/utils/sanitize.util';
 
 @Injectable()
 export class ApplicationsService {
@@ -109,10 +110,15 @@ export class ApplicationsService {
     // For confirmed singles matches, allow waitlist applications
     if (slot.match.status === MatchStatus.CONFIRMED && isSingles) {
       // Allow application but set status to WAITLISTED immediately
+      // Sanitize guest partner name if provided
+      const sanitizedGuestName = applyDto.guestPartnerName 
+        ? sanitizeInput(applyDto.guestPartnerName) 
+        : undefined;
+
       const application = this.applicationRepository.create({
         matchSlotId: slot.id,
         applicantUserId: userId,
-        guestPartnerName: applyDto.guestPartnerName,
+        guestPartnerName: sanitizedGuestName,
         status: ApplicationStatus.WAITLISTED, // Auto-waitlist for confirmed singles matches
       });
 
@@ -206,11 +212,16 @@ export class ApplicationsService {
       console.warn('Failed to check time overlap, allowing application:', error);
     }
 
+    // Sanitize guest partner name if provided
+    const sanitizedGuestName = applyDto.guestPartnerName 
+      ? sanitizeInput(applyDto.guestPartnerName) 
+      : undefined;
+
     // Create application
     const application = this.applicationRepository.create({
       matchSlotId: slot.id,
       applicantUserId: userId,
-      guestPartnerName: applyDto.guestPartnerName,
+      guestPartnerName: sanitizedGuestName,
       status: ApplicationStatus.PENDING,
     });
 

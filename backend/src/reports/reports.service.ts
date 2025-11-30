@@ -5,6 +5,7 @@ import { Report, ReportType, ReportStatus } from '../entities/report.entity';
 import { User } from '../entities/user.entity';
 import { Match } from '../entities/match.entity';
 import { Court } from '../entities/court.entity';
+import { sanitizeTextContent } from '../common/utils/sanitize.util';
 
 @Injectable()
 export class ReportsService {
@@ -45,11 +46,14 @@ export class ReportsService {
       throw new BadRequestException('You have already reported this item');
     }
 
+    // Sanitize reason to prevent XSS
+    const sanitizedReason = sanitizeTextContent(reason);
+
     const report = this.reportRepository.create({
       reporterUserId: reporterId,
       reportType,
       targetId,
-      reason,
+      reason: sanitizedReason,
       status: ReportStatus.PENDING,
     });
 

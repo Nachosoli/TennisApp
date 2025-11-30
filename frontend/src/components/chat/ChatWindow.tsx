@@ -7,6 +7,7 @@ import { chatApi } from '@/lib/chat';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
 import { format } from 'date-fns';
+import { sanitizeText } from '@/lib/sanitize';
 
 interface ChatWindowProps {
   matchId: string;
@@ -69,9 +70,9 @@ export const ChatWindow = ({ matchId }: ChatWindowProps) => {
                 }`}
               >
                 <div className="text-sm font-medium mb-1">
-                  {message.user?.firstName} {message.user?.lastName}
+                  {sanitizeText(message.user?.firstName)} {sanitizeText(message.user?.lastName)}
                 </div>
-                <div className="text-sm">{message.message}</div>
+                <div className="text-sm">{sanitizeText(message.message)}</div>
                 <div className={`text-xs mt-1 ${
                   message.userId === useAuthStore.getState().user?.id
                     ? 'text-blue-100'

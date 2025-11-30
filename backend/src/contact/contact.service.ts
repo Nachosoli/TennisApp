@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { EmailService } from '../notifications/services/email.service';
 import { UsersService } from '../users/users.service';
 import { CreateContactDto, ContactSubject } from './dto/create-contact.dto';
+import { sanitizeTextContent } from '../common/utils/sanitize.util';
 
 @Injectable()
 export class ContactService {
@@ -29,13 +30,16 @@ export class ContactService {
 
       const emailSubject = `[CourtBuddy Contact] ${subjectLabels[createContactDto.subject]} - ${user.firstName} ${user.lastName}`;
 
+      // Sanitize message content (will be HTML-escaped in email template)
+      const sanitizedMessage = sanitizeTextContent(createContactDto.message);
+
       // Generate HTML email content
       const htmlContent = this.generateContactEmailHtml({
         userName: `${user.firstName} ${user.lastName}`,
         userEmail: user.email,
         userId: user.id,
         subject: subjectLabels[createContactDto.subject],
-        message: createContactDto.message,
+        message: sanitizedMessage,
         timestamp: new Date().toISOString(),
       });
 
@@ -161,7 +165,7 @@ export class ContactService {
           </div>
           <div class="message-box">
             <div class="info-label">Message</div>
-            <div class="info-value" style="white-space: pre-wrap; margin-top: 10px;">${data.message}</div>
+            <div class="info-value" style="white-space: pre-wrap; margin-top: 10px;">${this.escapeHtml(data.message)}</div>
           </div>
         </div>
         <div class="footer">
@@ -170,6 +174,20 @@ export class ContactService {
       </body>
       </html>
     `;
+  }
+
+  /**
+   * Escape HTML entities for safe display in email
+   */
+  private escapeHtml(text: string): string {
+    const map: Record<string, string> = {
+      '&': '&amp;',
+      '<': '&lt;',
+      '>': '&gt;',
+      '"': '&quot;',
+      "'": '&#039;',
+    };
+    return text.replace(/[&<>"']/g, (m) => map[m]);
   }
 }
 
