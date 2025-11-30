@@ -36,12 +36,32 @@ export const useNotificationsStore = create<NotificationsState>((set, get) => ({
     set({ isLoading: true });
     try {
       const notifications = await notificationsApi.getMyNotifications();
-      // Initialize notifications with read: false if not already set (preserve existing read state)
-      const notificationsWithRead = notifications.map((n) => ({
-        ...n,
-        read: n.read !== undefined ? n.read : false,
-      }));
-      // Calculate unreadCount based on read flag instead of status
+      
+      // Deduplicate by ID (in case backend returns duplicates)
+      const seenIds = new Set<string>();
+      const uniqueNotifications = notifications.filter((n) => {
+        if (seenIds.has(n.id)) {
+          return false; // Skip duplicate
+        }
+        seenIds.add(n.id);
+        return true;
+      });
+
+      // Merge with existing notifications, preserving read state
+      const existingNotificationsMap = new Map(
+        state.notifications.map((n) => [n.id, n])
+      );
+      
+      // Initialize notifications with read state (preserve existing read state if notification already exists)
+      const notificationsWithRead = uniqueNotifications.map((n) => {
+        const existing = existingNotificationsMap.get(n.id);
+        return {
+          ...n,
+          read: existing?.read !== undefined ? existing.read : (n.read !== undefined ? n.read : false),
+        };
+      });
+
+      // Calculate unreadCount based on read flag
       const unreadCount = notificationsWithRead.filter((n) => !n.read).length;
       set({ notifications: notificationsWithRead, unreadCount, isLoading: false });
     } catch (error) {

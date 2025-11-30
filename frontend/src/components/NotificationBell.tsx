@@ -72,7 +72,9 @@ export const NotificationBell = () => {
           />
         </svg>
         {unreadCount > 0 && (
-          <span className="absolute top-0.5 right-0.5 block h-3 w-3 rounded-full bg-red-600 ring-2 ring-white z-10" />
+          <span className="absolute -top-1 -right-1 flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-red-600 text-white text-[10px] font-semibold ring-2 ring-white z-10">
+            {unreadCount > 9 ? '9+' : unreadCount}
+          </span>
         )}
       </button>
 
