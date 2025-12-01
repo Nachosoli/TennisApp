@@ -377,20 +377,23 @@ export class MatchesService {
       }
     }
 
-    // Increment cancelledMatches counter for the creator
-    const creatorStats = await this.userStatsRepository.findOne({
-      where: { userId: match.creatorUserId },
-    });
-    if (creatorStats) {
-      creatorStats.cancelledMatches = (creatorStats.cancelledMatches || 0) + 1;
-      await this.userStatsRepository.save(creatorStats);
-    } else {
-      // Create stats if they don't exist
-      const newStats = this.userStatsRepository.create({
-        userId: match.creatorUserId,
-        cancelledMatches: 1,
+    // Only increment cancelledMatches counter if match is in CONFIRMED status
+    if (match.status === MatchStatus.CONFIRMED) {
+      // Increment cancelledMatches counter for the creator
+      const creatorStats = await this.userStatsRepository.findOne({
+        where: { userId: match.creatorUserId },
       });
-      await this.userStatsRepository.save(newStats);
+      if (creatorStats) {
+        creatorStats.cancelledMatches = (creatorStats.cancelledMatches || 0) + 1;
+        await this.userStatsRepository.save(creatorStats);
+      } else {
+        // Create stats if they don't exist
+        const newStats = this.userStatsRepository.create({
+          userId: match.creatorUserId,
+          cancelledMatches: 1,
+        });
+        await this.userStatsRepository.save(newStats);
+      }
     }
 
     // Delete the match from database (CASCADE will delete related slots and applications)

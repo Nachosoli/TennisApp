@@ -14,6 +14,7 @@ import { Application, ApplicationStatus } from '../entities/application.entity';
 import { MatchSlot, SlotStatus } from '../entities/match-slot.entity';
 import { Match, MatchStatus, MatchFormat } from '../entities/match.entity';
 import { User } from '../entities/user.entity';
+import { UserStats } from '../entities/user-stats.entity';
 import { ApplyToSlotDto } from './dto/apply-to-slot.dto';
 import { ConfigService } from '@nestjs/config';
 import { NotificationsService } from '../notifications/notifications.service';
@@ -37,6 +38,8 @@ export class ApplicationsService {
     private matchRepository: Repository<Match>,
     @InjectRepository(User)
     private userRepository: Repository<User>,
+    @InjectRepository(UserStats)
+    private userStatsRepository: Repository<UserStats>,
     @Inject(CACHE_MANAGER) private cacheManager: Cache,
     private configService: ConfigService,
     private notificationsService: NotificationsService,
@@ -791,6 +794,24 @@ export class ApplicationsService {
     const slot = application.matchSlot;
     const matchId = match.id;
     const applicantUserId = application.applicantUserId; // Store before deletion
+
+    // Increment cancelledMatches counter if applicant was confirmed and match is confirmed
+    if (wasConfirmed && match.status === MatchStatus.CONFIRMED) {
+      const applicantStats = await this.userStatsRepository.findOne({
+        where: { userId: applicantUserId },
+      });
+      if (applicantStats) {
+        applicantStats.cancelledMatches = (applicantStats.cancelledMatches || 0) + 1;
+        await this.userStatsRepository.save(applicantStats);
+      } else {
+        // Create stats if they don't exist
+        const newStats = this.userStatsRepository.create({
+          userId: applicantUserId,
+          cancelledMatches: 1,
+        });
+        await this.userStatsRepository.save(newStats);
+      }
+    }
 
     // Delete the application
     await this.applicationRepository.remove(application);
