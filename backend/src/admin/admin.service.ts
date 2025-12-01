@@ -1044,4 +1044,131 @@ export class AdminService {
       };
     }
   }
+
+  /**
+   * Get list of all migrations and their status
+   */
+  async getMigrations(): Promise<{
+    pending: Array<{ name: string; timestamp: number }>;
+    executed: Array<{ name: string; timestamp: number; executedAt: Date }>;
+  }> {
+    const queryRunner = this.dataSource.createQueryRunner();
+    await queryRunner.connect();
+
+    try {
+      // Get all migration files
+      const migrationSource = this.dataSource.migrations || [];
+      const migrationFiles = migrationSource.map((migration: any) => {
+        const name = migration.name || migration.constructor.name;
+        return {
+          name,
+          timestamp: this.extractTimestamp(name),
+        };
+      });
+
+      // Get executed migrations from database
+      let executedMigrations: any[] = [];
+      try {
+        executedMigrations = await queryRunner.query(`
+          SELECT name, timestamp 
+          FROM migrations 
+          ORDER BY timestamp DESC
+        `);
+      } catch (error: any) {
+        // If migrations table doesn't exist, no migrations have been run
+        if (!error.message.includes('does not exist')) {
+          throw error;
+        }
+      }
+
+      const executedNames = new Set(executedMigrations.map((m: any) => m.name));
+      
+      const pending = migrationFiles.filter(m => !executedNames.has(m.name));
+      const executed = migrationFiles
+        .filter(m => executedNames.has(m.name))
+        .map(m => {
+          const execInfo = executedMigrations.find((e: any) => e.name === m.name);
+          return {
+            ...m,
+            executedAt: execInfo?.timestamp ? new Date(parseInt(execInfo.timestamp, 10)) : new Date(),
+          };
+        });
+
+      return { pending, executed };
+    } finally {
+      await queryRunner.release();
+    }
+  }
+
+  /**
+   * Run pending migrations
+   */
+  async runMigrations(adminId: string): Promise<{ success: boolean; message: string; executed: string[] }> {
+    try {
+      // Log admin action
+      await this.logAdminAction(
+        adminId,
+        ActionType.EDIT_USER, // Using available action type
+        TargetType.USER,
+        adminId,
+        { action: 'run_migrations' },
+      );
+
+      // Run migrations using TypeORM
+      const migrations = await this.dataSource.runMigrations();
+
+      const executedNames = migrations.map(m => m.name);
+
+      return {
+        success: true,
+        message: `Successfully ran ${migrations.length} migration(s)`,
+        executed: executedNames,
+      };
+    } catch (error: any) {
+      return {
+        success: false,
+        message: `Migration failed: ${error.message}`,
+        executed: [],
+      };
+    }
+  }
+
+  /**
+   * Revert last migration
+   */
+  async revertLastMigration(adminId: string): Promise<{ success: boolean; message: string; reverted: string | null }> {
+    try {
+      // Log admin action
+      await this.logAdminAction(
+        adminId,
+        ActionType.EDIT_USER, // Using available action type
+        TargetType.USER,
+        adminId,
+        { action: 'revert_last_migration' },
+      );
+
+      // Revert last migration using TypeORM
+      await this.dataSource.undoLastMigration();
+
+      return {
+        success: true,
+        message: 'Last migration reverted successfully',
+        reverted: null, // TypeORM doesn't return the reverted migration name
+      };
+    } catch (error: any) {
+      return {
+        success: false,
+        message: `Revert failed: ${error.message}`,
+        reverted: null,
+      };
+    }
+  }
+
+  /**
+   * Extract timestamp from migration name
+   */
+  private extractTimestamp(name: string): number {
+    const match = name.match(/^(\d+)/);
+    return match ? parseInt(match[1], 10) : 0;
+  }
 }

@@ -13,6 +13,7 @@ import {
 import type { Point } from 'geojson';
 import { User } from './user.entity';
 import { Match } from './match.entity';
+import { CourtReview } from './court-review.entity';
 
 export enum SurfaceType {
   HARD = 'hard',
@@ -92,6 +93,9 @@ export class Court {
 
   @OneToMany(() => User, (user) => user.homeCourt)
   usersWithHomeCourt: User[];
+
+  @OneToMany(() => CourtReview, (review) => review.court)
+  reviews: CourtReview[];
 
   // Helper methods
   get isDeleted(): boolean {

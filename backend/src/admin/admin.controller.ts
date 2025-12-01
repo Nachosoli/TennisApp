@@ -240,4 +240,23 @@ export class AdminController {
   ) {
     return this.adminService.wipeDatabaseExceptCourts(adminId, wipeDto);
   }
+
+  // Migration Management
+  @Get('migrations')
+  @ApiOperation({ summary: 'Get list of all migrations and their status' })
+  async getMigrations() {
+    return this.adminService.getMigrations();
+  }
+
+  @Post('migrations/run')
+  @ApiOperation({ summary: 'Run all pending migrations' })
+  async runMigrations(@CurrentUser('id') adminId: string) {
+    return this.adminService.runMigrations(adminId);
+  }
+
+  @Post('migrations/revert')
+  @ApiOperation({ summary: 'Revert the last executed migration' })
+  async revertLastMigration(@CurrentUser('id') adminId: string) {
+    return this.adminService.revertLastMigration(adminId);
+  }
 }

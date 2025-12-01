@@ -411,6 +411,22 @@ export default function AdminDashboard() {
             {/* Database Operations */}
             <Card title="Database Operations">
               <div className="space-y-4">
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="font-medium text-blue-900 mb-1">Database Migrations</p>
+                      <p className="text-sm text-blue-800">
+                        View and manage database schema migrations
+                      </p>
+                    </div>
+                    <Button
+                      variant="primary"
+                      onClick={() => router.push('/admin/migrations')}
+                    >
+                      Manage Migrations
+                    </Button>
+                  </div>
+                </div>
                 <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
                   <p className="text-sm text-yellow-800">
                     <strong>Note:</strong> Migration operations are safe and can be run multiple times.

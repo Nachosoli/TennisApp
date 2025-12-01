@@ -21,6 +21,7 @@ import { AnalyticsModule } from './analytics/analytics.module';
 import { SchedulerModule } from './scheduler/scheduler.module';
 import { GatewaysModule } from './gateways/gateways.module';
 import { ContactModule } from './contact/contact.module';
+import { ReviewsModule } from './reviews/reviews.module';
 import databaseConfig from './config/database.config';
 import redisConfig from './config/redis.config';
 import jwtConfig from './config/jwt.config';
@@ -99,6 +100,7 @@ import { TimeoutMiddleware } from './common/middleware/timeout.middleware';
     SchedulerModule,
     GatewaysModule,
     ContactModule,
+    ReviewsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

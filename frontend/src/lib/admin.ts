@@ -199,5 +199,28 @@ export const adminApi = {
     );
     return response.data;
   },
+
+  // Migration Management
+  async getMigrations() {
+    const response = await apiClient.get<{
+      pending: Array<{ name: string; timestamp: number }>;
+      executed: Array<{ name: string; timestamp: number; executedAt: Date }>;
+    }>('/admin/migrations');
+    return response.data;
+  },
+
+  async runMigrations() {
+    const response = await apiClient.post<{ success: boolean; message: string; executed: string[] }>(
+      '/admin/migrations/run'
+    );
+    return response.data;
+  },
+
+  async revertLastMigration() {
+    const response = await apiClient.post<{ success: boolean; message: string; reverted: string | null }>(
+      '/admin/migrations/revert'
+    );
+    return response.data;
+  },
 };
 

@@ -9,7 +9,6 @@ import { SkeletonCard } from '@/components/ui/Skeleton';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { GoogleMap } from '@/components/GoogleMap';
 import { Court } from '@/types';
-import Link from 'next/link';
 import { useRequireAuth } from '@/hooks/useRequireAuth';
 import { PageLoader } from '@/components/ui/PageLoader';
 
@@ -91,10 +90,6 @@ function CourtsPageContent() {
                         {court.isPublic ? 'Public' : 'Private'}
                       </span>
                     </div>
-
-                    <Link href={`/courts/${court.id}`}>
-                      <Button variant="primary" className="w-full">View Details</Button>
-                    </Link>
                   </div>
                 </Card>
               ))}

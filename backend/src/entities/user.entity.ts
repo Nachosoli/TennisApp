@@ -22,6 +22,7 @@ import { NotificationPreference } from './notification-preference.entity';
 import { Report } from './report.entity';
 import { AdminAction } from './admin-action.entity';
 import { PaymentMethod } from './payment-method.entity';
+import { CourtReview } from './court-review.entity';
 
 export enum RatingType {
   UTR = 'utr',
@@ -191,6 +192,9 @@ export class User {
 
   @OneToMany(() => PaymentMethod, (paymentMethod) => paymentMethod.user)
   paymentMethods: PaymentMethod[];
+
+  @OneToMany(() => CourtReview, (review) => review.user)
+  courtReviews: CourtReview[];
 
   // Helper methods
   get fullName(): string {
