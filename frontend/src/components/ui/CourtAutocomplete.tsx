@@ -302,7 +302,7 @@ export const CourtAutocomplete = ({ value, onChange, courts, error }: CourtAutoc
 
       {isOpen && !googleMapsApiKey && searchTerm && filteredCourts.length === 0 && (
         <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg p-4">
-          <p className="text-sm text-gray-600">No courts found matching "{searchTerm}"</p>
+          <p className="text-sm text-gray-600">No courts found matching &quot;{searchTerm}&quot;</p>
           <p className="text-sm text-gray-500 mt-1">Set up Google Maps API to add new courts automatically</p>
         </div>
       )}

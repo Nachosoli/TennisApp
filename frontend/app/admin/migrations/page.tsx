@@ -193,7 +193,7 @@ export default function AdminMigrationsPage() {
         <Card title="Migration Information">
           <div className="space-y-3 text-sm text-gray-600">
             <p>
-              <strong>Pending Migrations:</strong> These migrations have not been run yet. Click "Run Pending" to execute them.
+              <strong>Pending Migrations:</strong> These migrations have not been run yet. Click &quot;Run Pending&quot; to execute them.
             </p>
             <p>
               <strong>Executed Migrations:</strong> These migrations have already been applied to the database.

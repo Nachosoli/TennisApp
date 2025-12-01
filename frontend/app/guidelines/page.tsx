@@ -108,7 +108,7 @@ export default function GuidelinesPage() {
                   <ul className="list-disc list-inside space-y-2 text-gray-600 ml-4">
                     <li>Submit match results promptly and accurately</li>
                     <li>Provide constructive feedback when appropriate</li>
-                    <li>Respect your opponent's privacy and boundaries</li>
+                    <li>Respect your opponent&apos;s privacy and boundaries</li>
                   </ul>
                 </div>
               </div>

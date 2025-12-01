@@ -87,8 +87,8 @@ export default function ContactPage() {
             <div>
               <h2 className="text-xl font-semibold text-gray-900 mb-4">Get in Touch</h2>
               <p className="text-gray-600 mb-4">
-                We'd love to hear from you! Whether you have a question, feedback, or need support, 
-                we're here to help.
+                We&apos;d love to hear from you! Whether you have a question, feedback, or need support, 
+                we&apos;re here to help.
               </p>
             </div>
 
@@ -149,7 +149,7 @@ export default function ContactPage() {
               {submitSuccess && (
                 <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded">
                   <p className="text-sm font-medium">
-                    Thank you for contacting us! We'll get back to you within 24-48 hours.
+                    Thank you for contacting us! We&apos;ll get back to you within 24-48 hours.
                   </p>
                 </div>
               )}
@@ -182,7 +182,7 @@ export default function ContactPage() {
               <h3 className="text-lg font-medium text-gray-900 mb-2">Before Contacting Us</h3>
               <ul className="list-disc list-inside space-y-2 text-gray-600">
                 <li>Check our <a href="/guidelines" className="text-blue-600 hover:text-blue-800 underline">Guidelines</a> page for common questions</li>
-                <li>Review your profile settings if you're experiencing account issues</li>
+                <li>Review your profile settings if you&apos;re experiencing account issues</li>
                 <li>Include relevant details (match ID, screenshots, etc.) when reporting issues</li>
               </ul>
             </div>

@@ -319,7 +319,7 @@ export default function MatchDetailPage() {
               {/* Creator's Information Section */}
               {currentMatch.creator && (
                 <div className="mt-4 pt-4 border-t border-gray-200">
-                  <h4 className="font-semibold text-gray-900 mb-2">Creator's Information</h4>
+                  <h4 className="font-semibold text-gray-900 mb-2">Creator&apos;s Information</h4>
                   <div className="space-y-2 text-sm">
                     {currentMatch.creator.ratingValue && (
                       <div>

@@ -948,7 +948,7 @@ function ProfilePageContent() {
             {codeSent ? (
               <div className="space-y-4">
                 <p className="text-gray-700">
-                  We've sent a verification code to <strong>{user?.phone}</strong>. Please enter the code below.
+                  We&apos;ve sent a verification code to <strong>{user?.phone}</strong>. Please enter the code below.
                 </p>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
