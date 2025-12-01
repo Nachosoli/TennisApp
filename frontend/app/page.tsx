@@ -125,7 +125,7 @@ export default function Home() {
             <div className="text-center mb-12">
               <h2 className="text-4xl font-bold text-gray-900 mb-4">What is CourtBuddy?</h2>
               <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-                CourtBuddy is the ultimate platform for recreational tennis players. Whether you're looking for a quick match, 
+                CourtBuddy is the ultimate platform for recreational tennis players. Whether you&apos;re looking for a quick match, 
                 want to host games at your home court, or need to track your performance, CourtBuddy makes it easy to connect 
                 with the tennis community and elevate your game.
               </p>
