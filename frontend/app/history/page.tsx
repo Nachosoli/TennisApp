@@ -13,8 +13,8 @@ import { sanitizeText } from '@/lib/sanitize';
 
 interface MatchHistoryEntry {
   match: Match;
-  opponent: User | null;
-  opponentName: string;
+  homeName: string;
+  visitorName: string;
   score: string;
   eloChange: number | null;
   matchType: 'singles' | 'doubles';
@@ -55,33 +55,30 @@ export default function HistoryPage() {
 
         // Process matches into history entries
         const historyEntries: MatchHistoryEntry[] = completedMatches.map(match => {
-          const isCreator = match.creatorUserId === user?.id;
-          let opponent: User | null = null;
-          let opponentName = 'Unknown';
+          // Home = Creator, Visitor = Applicant
+          let homeName = 'Unknown';
+          let visitorName = 'Unknown';
           
-          // Determine opponent
-          if (isCreator) {
-            // User is creator, find applicant from confirmed slot
-            const confirmedSlot = match.slots?.find(slot => 
-              slot.status?.toLowerCase() === 'confirmed'
+          // Determine if user is creator (Home) or applicant (Visitor)
+          const isCreator = match.creatorUserId === user?.id;
+          
+          // Get creator (Home) name
+          if (match.creator) {
+            homeName = `${match.creator.firstName} ${match.creator.lastName}`;
+          }
+          
+          // Get applicant (Visitor) name from confirmed slot
+          const confirmedSlot = match.slots?.find(slot => 
+            slot.status?.toLowerCase() === 'confirmed'
+          );
+          if (confirmedSlot?.applications) {
+            const confirmedApplication = confirmedSlot.applications.find(app => 
+              app.status?.toLowerCase() === 'confirmed'
             );
-            if (confirmedSlot?.applications) {
-              const confirmedApplication = confirmedSlot.applications.find(app => 
-                app.status?.toLowerCase() === 'confirmed'
-              );
-              if (confirmedApplication?.applicant) {
-                opponent = confirmedApplication.applicant;
-                opponentName = `${opponent.firstName} ${opponent.lastName}`;
-              } else if (confirmedApplication?.user) {
-                opponent = confirmedApplication.user;
-                opponentName = `${opponent.firstName} ${opponent.lastName}`;
-              }
-            }
-          } else {
-            // User is applicant, opponent is creator
-            if (match.creator) {
-              opponent = match.creator;
-              opponentName = `${opponent.firstName} ${opponent.lastName}`;
+            if (confirmedApplication?.applicant) {
+              visitorName = `${confirmedApplication.applicant.firstName} ${confirmedApplication.applicant.lastName}`;
+            } else if (confirmedApplication?.user) {
+              visitorName = `${confirmedApplication.user.firstName} ${confirmedApplication.user.lastName}`;
             }
           }
 
@@ -96,7 +93,7 @@ export default function HistoryPage() {
           const matchType = match.format?.toLowerCase() === 'doubles' ? 'doubles' : 'singles';
 
           // Determine if user won or lost
-          // Score format: "player1Games-player2Games" where player1 is creator, player2 is applicant
+          // Score format: "player1Games-player2Games" where player1 is creator (Home), player2 is applicant (Visitor)
           // If user is creator, they are player1. If user is applicant, they are player2.
           let isWin = false;
           if (result?.score && result.score !== '-') {
@@ -130,11 +127,11 @@ export default function HistoryPage() {
                 if (isNaN(p1Games) || isNaN(p2Games)) continue;
 
                 if (isCreator) {
-                  // User is player1 (creator)
+                  // User is player1 (creator/Home)
                   if (p1Games > p2Games) userSets++;
                   else if (p2Games > p1Games) opponentSets++;
                 } else {
-                  // User is player2 (applicant)
+                  // User is player2 (applicant/Visitor)
                   if (p2Games > p1Games) userSets++;
                   else if (p1Games > p2Games) opponentSets++;
                 }
@@ -149,8 +146,8 @@ export default function HistoryPage() {
 
           return {
             match,
-            opponent,
-            opponentName,
+            homeName,
+            visitorName,
             score,
             eloChange,
             matchType,
@@ -222,7 +219,7 @@ export default function HistoryPage() {
             {/* Mobile Card View */}
             <div className="md:hidden space-y-4">
               {matches.map((entry) => {
-                const { match, opponentName, score, eloChange, matchType, isWin } = entry;
+                const { match, homeName, visitorName, score, eloChange, matchType, isWin } = entry;
                 const matchDate = parseLocalDate(match.date);
                 const isHomeCourt = match.courtId === user?.homeCourtId;
 
@@ -249,13 +246,15 @@ export default function HistoryPage() {
                         <h3 className="font-semibold text-gray-900 mb-1">
                           {sanitizeText(match.court?.name || 'Court')}
                         </h3>
-                        <div className="flex items-center text-sm text-gray-600">
-                          {isHomeCourt && (
-                            <svg className="w-4 h-4 mr-1 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
-                              <path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z" />
-                            </svg>
-                          )}
-                          <span>vs {sanitizeText(opponentName)}</span>
+                        <div className="space-y-1 text-sm text-gray-600">
+                          <div>
+                            <span className="font-medium">Home: </span>
+                            <span>{sanitizeText(homeName)}</span>
+                          </div>
+                          <div>
+                            <span className="font-medium">Visitor: </span>
+                            <span>{sanitizeText(visitorName)}</span>
+                          </div>
                         </div>
                         <div className="mt-2 space-y-1 text-sm">
                           <div>
@@ -284,7 +283,8 @@ export default function HistoryPage() {
                 <thead className="bg-blue-600 text-white">
                   <tr>
                     <th className="px-4 py-3 text-left text-sm font-medium">Date</th>
-                    <th className="px-4 py-3 text-left text-sm font-medium">Opponent</th>
+                    <th className="px-4 py-3 text-left text-sm font-medium">Home</th>
+                    <th className="px-4 py-3 text-left text-sm font-medium">Visitor</th>
                     <th className="px-4 py-3 text-left text-sm font-medium">Score</th>
                     <th className="px-4 py-3 text-left text-sm font-medium">Facility</th>
                     <th className="px-4 py-3 text-left text-sm font-medium">ELO</th>
@@ -292,7 +292,7 @@ export default function HistoryPage() {
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
                   {matches.map((entry) => {
-                    const { match, opponentName, score, eloChange, isWin } = entry;
+                    const { match, homeName, visitorName, score, eloChange, isWin } = entry;
                     const matchDate = parseLocalDate(match.date);
                     const isHomeCourt = match.courtId === user?.homeCourtId;
 
@@ -313,7 +313,10 @@ export default function HistoryPage() {
                           })}
                         </td>
                         <td className="px-4 py-3 text-sm text-gray-900">
-                          {sanitizeText(opponentName)}
+                          {sanitizeText(homeName)}
+                        </td>
+                        <td className="px-4 py-3 text-sm text-gray-900">
+                          {sanitizeText(visitorName)}
                         </td>
                         <td className="px-4 py-3 text-sm text-gray-900">
                           {sanitizeText(score)}
