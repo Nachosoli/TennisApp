@@ -1083,6 +1083,57 @@ export class AdminService {
 
       const executedNames = new Set(executedMigrations.map((m: any) => m.name));
       
+      // Check for migrations that were run manually (via admin endpoints) but not tracked
+      // Check if RefactorNotificationsToUseDeliveries was actually applied
+      try {
+        const notificationDeliveriesExists = await queryRunner.query(`
+          SELECT EXISTS (
+            SELECT FROM information_schema.tables 
+            WHERE table_schema = 'public' 
+            AND table_name = 'notification_deliveries'
+          ) as exists;
+        `);
+        if (notificationDeliveriesExists[0]?.exists) {
+          const migrationName = 'RefactorNotificationsToUseDeliveries1734570000000';
+          if (!executedNames.has(migrationName)) {
+            executedNames.add(migrationName);
+            // Add to executed list with current date
+            executedMigrations.push({
+              name: migrationName,
+              timestamp: 1734570000000,
+            });
+          }
+        }
+      } catch (error) {
+        // Ignore errors checking for table
+      }
+
+      // Check if AddMatchApplicantToNotificationEnums was actually applied
+      try {
+        const enumExists = await queryRunner.query(`
+          SELECT EXISTS (
+            SELECT 1 FROM pg_enum 
+            WHERE enumlabel = 'match_applicant' 
+            AND enumtypid = (
+              SELECT oid FROM pg_type WHERE typname = 'notifications_type_enum'
+            )
+          ) as exists;
+        `);
+        if (enumExists[0]?.exists) {
+          const migrationName = 'AddMatchApplicantToNotificationEnums1734569700000';
+          if (!executedNames.has(migrationName)) {
+            executedNames.add(migrationName);
+            // Add to executed list with current date
+            executedMigrations.push({
+              name: migrationName,
+              timestamp: 1734569700000,
+            });
+          }
+        }
+      } catch (error) {
+        // Ignore errors checking for enum
+      }
+      
       const pending = migrationFiles.filter(m => !executedNames.has(m.name));
       const executed = migrationFiles
         .filter(m => executedNames.has(m.name))
@@ -1114,7 +1165,59 @@ export class AdminService {
         { action: 'run_migrations' },
       );
 
-      // Run migrations using TypeORM
+      // Check which migrations have already been applied manually
+      const queryRunner = this.dataSource.createQueryRunner();
+      await queryRunner.connect();
+
+      try {
+        // Check if notification migrations were already applied
+        const notificationDeliveriesExists = await queryRunner.query(`
+          SELECT EXISTS (
+            SELECT FROM information_schema.tables 
+            WHERE table_schema = 'public' 
+            AND table_name = 'notification_deliveries'
+          ) as exists;
+        `).catch(() => [{ exists: false }]);
+
+        const matchApplicantEnumExists = await queryRunner.query(`
+          SELECT EXISTS (
+            SELECT 1 FROM pg_enum 
+            WHERE enumlabel = 'match_applicant' 
+            AND enumtypid = (
+              SELECT oid FROM pg_type WHERE typname = 'notifications_type_enum'
+            )
+          ) as exists;
+        `).catch(() => [{ exists: false }]);
+
+        // Manually mark these migrations as executed if they were already applied
+        if (notificationDeliveriesExists[0]?.exists) {
+          try {
+            await queryRunner.query(`
+              INSERT INTO migrations (timestamp, name)
+              VALUES (1734570000000, 'RefactorNotificationsToUseDeliveries1734570000000')
+              ON CONFLICT DO NOTHING;
+            `);
+          } catch (error) {
+            // Ignore if already exists or table doesn't exist
+          }
+        }
+
+        if (matchApplicantEnumExists[0]?.exists) {
+          try {
+            await queryRunner.query(`
+              INSERT INTO migrations (timestamp, name)
+              VALUES (1734569700000, 'AddMatchApplicantToNotificationEnums1734569700000')
+              ON CONFLICT DO NOTHING;
+            `);
+          } catch (error) {
+            // Ignore if already exists or table doesn't exist
+          }
+        }
+      } finally {
+        await queryRunner.release();
+      }
+
+      // Run migrations using TypeORM (it will skip already executed ones)
       const migrations = await this.dataSource.runMigrations();
 
       const executedNames = migrations.map(m => m.name);

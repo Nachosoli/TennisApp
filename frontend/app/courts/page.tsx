@@ -11,8 +11,10 @@ import { GoogleMap } from '@/components/GoogleMap';
 import { Court } from '@/types';
 import { useRequireAuth } from '@/hooks/useRequireAuth';
 import { PageLoader } from '@/components/ui/PageLoader';
+import { useRouter } from 'next/navigation';
 
 function CourtsPageContent() {
+  const router = useRouter();
   const { isLoading: authLoading, user } = useRequireAuth();
   const [courts, setCourts] = useState<Court[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -63,12 +65,17 @@ function CourtsPageContent() {
                   courts={courts}
                   height="400px"
                   showCurrentLocation={true}
+                  onCourtClick={(court) => router.push(`/courts/${court.id}`)}
                 />
               </Card>
             )}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {courts.map((court) => (
-                <Card key={court.id} className="hover:shadow-lg transition-shadow">
+                <Card 
+                  key={court.id} 
+                  className="hover:shadow-lg transition-shadow cursor-pointer"
+                  onClick={() => router.push(`/courts/${court.id}`)}
+                >
                   <div className="space-y-3">
                     <div>
                       <h3 className="text-lg font-semibold text-gray-900">{court.name}</h3>
