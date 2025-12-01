@@ -146,13 +146,19 @@ export class ResultsService {
         scoreForElo = submitterIsPlayer1 ? '6-0 6-0' : '0-6 0-6';
       }
       
-      await this.updateEloAfterMatch(
-        match.id,
-        match.format === MatchFormat.SINGLES ? MatchType.SINGLES : MatchType.DOUBLES,
-        player1UserId,
-        player2UserId,
-        scoreForElo,
-      );
+      try {
+        await this.updateEloAfterMatch(
+          match.id,
+          match.format === MatchFormat.SINGLES ? MatchType.SINGLES : MatchType.DOUBLES,
+          player1UserId,
+          player2UserId,
+          scoreForElo,
+        );
+      } catch (error) {
+        // Log error but don't fail the result submission
+        console.error(`Failed to update ELO for match ${match.id}:`, error);
+        // Continue - result is still saved, just ELO wasn't updated
+      }
     }
 
     return savedResult;

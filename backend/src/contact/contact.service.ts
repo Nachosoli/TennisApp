@@ -1,4 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { EmailService } from '../notifications/services/email.service';
 import { UsersService } from '../users/users.service';
 import { CreateContactDto, ContactSubject } from './dto/create-contact.dto';
@@ -7,12 +8,17 @@ import { sanitizeTextContent } from '../common/utils/sanitize.util';
 @Injectable()
 export class ContactService {
   private readonly logger = new Logger(ContactService.name);
-  private readonly supportEmail = 'support@courtbuddyapp.com';
+  private readonly supportEmail: string;
 
   constructor(
     private emailService: EmailService,
     private usersService: UsersService,
-  ) {}
+    private configService: ConfigService,
+  ) {
+    // Use environment variable or default to new domain
+    this.supportEmail = this.configService.get<string>('SUPPORT_EMAIL') || 'support@courtbuddy.io';
+    this.logger.log(`Contact form emails will be sent to: ${this.supportEmail}`);
+  }
 
   async submitContactForm(userId: string, createContactDto: CreateContactDto): Promise<{ success: boolean; message: string }> {
     try {
@@ -44,6 +50,7 @@ export class ContactService {
       });
 
       // Send email
+      this.logger.log(`Sending contact form email to ${this.supportEmail} from user ${userId} (${user.email})`);
       const emailSent = await this.emailService.sendEmail(
         this.supportEmail,
         emailSubject,
@@ -51,11 +58,11 @@ export class ContactService {
       );
 
       if (!emailSent) {
-        this.logger.error(`Failed to send contact form email from user ${userId}`);
+        this.logger.error(`Failed to send contact form email from user ${userId} to ${this.supportEmail}`);
         throw new Error('Failed to send email');
       }
 
-      this.logger.log(`Contact form submitted successfully by user ${userId}`);
+      this.logger.log(`Contact form submitted successfully by user ${userId}. Email sent to ${this.supportEmail}`);
       return {
         success: true,
         message: 'Your message has been sent successfully. We will respond within 24-48 hours.',

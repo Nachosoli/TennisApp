@@ -18,6 +18,7 @@ interface MatchHistoryEntry {
   score: string;
   eloChange: number | null;
   matchType: 'singles' | 'doubles';
+  isWin: boolean;
 }
 
 export default function HistoryPage() {
@@ -88,11 +89,63 @@ export default function HistoryPage() {
           const result = match.results?.[0];
           const score = result?.score || '-';
 
-          // Get ELO change
+          // Get ELO change from map
           const eloChange = eloChangeMap.get(match.id) ?? null;
 
           // Determine match type
           const matchType = match.format?.toLowerCase() === 'doubles' ? 'doubles' : 'singles';
+
+          // Determine if user won or lost
+          // Score format: "player1Games-player2Games" where player1 is creator, player2 is applicant
+          // If user is creator, they are player1. If user is applicant, they are player2.
+          let isWin = false;
+          if (result?.score && result.score !== '-') {
+            const scoreLower = result.score.toLowerCase();
+            const isAlternativeOutcome = scoreLower.includes('won by default') || scoreLower.includes('retired');
+            
+            if (isAlternativeOutcome) {
+              // For alternative outcomes, check who submitted
+              // If user submitted and it says "won", user won
+              // If opponent submitted and it says "won", opponent won
+              if (result.submittedByUserId) {
+                const submittedByUser = result.submittedByUserId === user?.id;
+                if (scoreLower.includes('won')) {
+                  isWin = submittedByUser;
+                } else {
+                  // "Retired" or other - assume the submitter won
+                  isWin = submittedByUser;
+                }
+              } else {
+                // Fallback: use ELO change if available (positive = win, negative = loss)
+                isWin = eloChange !== null ? eloChange > 0 : false;
+              }
+            } else {
+              // Parse regular score format: "6-4 3-6 6-2"
+              const sets = result.score.trim().split(/\s+/);
+              let userSets = 0;
+              let opponentSets = 0;
+
+              for (const set of sets) {
+                const [p1Games, p2Games] = set.split('-').map(Number);
+                if (isNaN(p1Games) || isNaN(p2Games)) continue;
+
+                if (isCreator) {
+                  // User is player1 (creator)
+                  if (p1Games > p2Games) userSets++;
+                  else if (p2Games > p1Games) opponentSets++;
+                } else {
+                  // User is player2 (applicant)
+                  if (p2Games > p1Games) userSets++;
+                  else if (p1Games > p2Games) opponentSets++;
+                }
+              }
+
+              isWin = userSets > opponentSets;
+            }
+          } else if (eloChange !== null) {
+            // Fallback: use ELO change if score is not available
+            isWin = eloChange > 0;
+          }
 
           return {
             match,
@@ -101,6 +154,7 @@ export default function HistoryPage() {
             score,
             eloChange,
             matchType,
+            isWin,
           };
         });
 
@@ -168,14 +222,18 @@ export default function HistoryPage() {
             {/* Mobile Card View */}
             <div className="md:hidden space-y-4">
               {matches.map((entry) => {
-                const { match, opponentName, score, eloChange, matchType } = entry;
+                const { match, opponentName, score, eloChange, matchType, isWin } = entry;
                 const matchDate = parseLocalDate(match.date);
                 const isHomeCourt = match.courtId === user?.homeCourtId;
 
                 return (
                   <div
                     key={match.id}
-                    className="bg-white border border-gray-200 rounded-lg p-4 space-y-3"
+                    className={`border rounded-lg p-4 space-y-3 ${
+                      isWin 
+                        ? 'bg-blue-50 border-blue-200' 
+                        : 'bg-red-50 border-red-200'
+                    }`}
                   >
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
@@ -234,14 +292,18 @@ export default function HistoryPage() {
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
                   {matches.map((entry) => {
-                    const { match, opponentName, score, eloChange } = entry;
+                    const { match, opponentName, score, eloChange, isWin } = entry;
                     const matchDate = parseLocalDate(match.date);
                     const isHomeCourt = match.courtId === user?.homeCourtId;
 
                       return (
                         <tr
                           key={match.id}
-                          className="hover:bg-gray-50"
+                          className={`${
+                            isWin 
+                              ? 'bg-blue-50 hover:bg-blue-100' 
+                              : 'bg-red-50 hover:bg-red-100'
+                          }`}
                         >
                         <td className="px-4 py-3 text-sm text-gray-900">
                           {matchDate.toLocaleDateString('en-US', {

@@ -123,5 +123,20 @@ export class StatsService {
 
     return query.getMany();
   }
+
+  async getEloChangeForMatch(userId: string, matchId: string): Promise<number | null> {
+    const eloLog = await this.eloLogRepository.findOne({
+      where: {
+        userId,
+        matchId,
+      },
+    });
+
+    if (!eloLog) {
+      return null;
+    }
+
+    return Number(eloLog.eloAfter) - Number(eloLog.eloBefore);
+  }
 }
 

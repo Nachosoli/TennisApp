@@ -41,5 +41,15 @@ export const statsApi = {
     });
     return response.data;
   },
+
+  async getEloChangeForMatch(userId: string, matchId: string): Promise<number | null> {
+    try {
+      const response = await apiClient.get<{ eloChange: number | null }>(`/stats/users/${userId}/matches/${matchId}/elo-change`);
+      return response.data.eloChange;
+    } catch (error) {
+      console.error('Failed to get ELO change for match:', error);
+      return null;
+    }
+  },
 };
 

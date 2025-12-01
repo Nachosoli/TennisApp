@@ -34,5 +34,15 @@ export class StatsController {
   ) {
     return this.statsService.getEloHistory(userId, matchType);
   }
+
+  @Get('users/:userId/matches/:matchId/elo-change')
+  @ApiOperation({ summary: 'Get ELO change for a specific match' })
+  async getEloChangeForMatch(
+    @Param('userId') userId: string,
+    @Param('matchId') matchId: string,
+  ) {
+    const eloChange = await this.statsService.getEloChangeForMatch(userId, matchId);
+    return { eloChange };
+  }
 }
 
