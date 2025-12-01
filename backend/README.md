@@ -82,7 +82,7 @@ TWILIO_PHONE_NUMBER=+1234567890
 
 # SendGrid (Email)
 SENDGRID_API_KEY=your-api-key
-SENDGRID_FROM_EMAIL=noreply@courtmate.com
+SENDGRID_FROM_EMAIL=noreply@domaincourt.io
 
 # Google Maps (optional)
 GOOGLE_MAPS_API_KEY=your-api-key
@@ -129,7 +129,7 @@ The API will be available at `http://localhost:3001/api/v1`
 
 Swagger documentation is available at:
 - **Development**: `http://localhost:3001/api/v1/docs`
-- **Production**: `https://your-domain.com/api/v1/docs`
+- **Production**: `https://domaincourt.io/api/v1/docs`
 
 ## Testing
 

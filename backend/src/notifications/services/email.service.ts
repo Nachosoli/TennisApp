@@ -10,7 +10,7 @@ export class EmailService {
 
   constructor(private configService: ConfigService) {
     this.sendGridApiKey = this.configService.get<string>('SENDGRID_API_KEY') || '';
-    this.fromEmail = this.configService.get<string>('SENDGRID_FROM_EMAIL') || 'noreply@courtbuddyapp.com';
+    this.fromEmail = this.configService.get<string>('SENDGRID_FROM_EMAIL') || 'no-reply@courtbuddy.io';
 
     if (this.sendGridApiKey) {
       sgMail.setApiKey(this.sendGridApiKey);

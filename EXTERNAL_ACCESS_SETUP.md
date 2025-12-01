@@ -50,9 +50,9 @@ DB_NAME=courtmate_db
 REDIS_PASSWORD=your_redis_password
 
 # Application URLs (use your domain or IP)
-FRONTEND_URL=http://your-domain.com
-BACKEND_URL=http://your-domain.com
-CORS_ORIGINS=http://your-domain.com,http://www.your-domain.com
+FRONTEND_URL=https://domaincourt.io
+BACKEND_URL=https://domaincourt.io
+CORS_ORIGINS=https://domaincourt.io,https://www.domaincourt.io
 
 # JWT Secrets (generate strong random strings)
 JWT_SECRET=your-jwt-secret-key-here
@@ -64,7 +64,7 @@ TWILIO_ACCOUNT_SID=your-twilio-sid
 TWILIO_AUTH_TOKEN=your-twilio-token
 TWILIO_PHONE_NUMBER=+1234567890
 SENDGRID_API_KEY=your-sendgrid-key
-SENDGRID_FROM_EMAIL=noreply@yourdomain.com
+SENDGRID_FROM_EMAIL=noreply@domaincourt.io
 CLOUDINARY_CLOUD_NAME=your-cloud-name
 CLOUDINARY_API_KEY=your-cloudinary-key
 CLOUDINARY_API_SECRET=your-cloudinary-secret
@@ -106,12 +106,12 @@ docker run -it --rm certbot/certbot certonly --standalone
 
 2. **Get certificate:**
 ```bash
-sudo certbot certonly --standalone -d your-domain.com -d www.your-domain.com
+sudo certbot certonly --standalone -d domaincourt.io -d www.domaincourt.io
 ```
 
 3. **Certificates will be stored in:**
-   - `/etc/letsencrypt/live/your-domain.com/fullchain.pem`
-   - `/etc/letsencrypt/live/your-domain.com/privkey.pem`
+   - `/etc/letsencrypt/live/domaincourt.io/fullchain.pem`
+   - `/etc/letsencrypt/live/domaincourt.io/privkey.pem`
 
 ### Step 2: Update Nginx Configuration
 
@@ -126,17 +126,17 @@ sudo certbot certonly --standalone -d your-domain.com -d www.your-domain.com
      - ./nginx/ssl:/etc/letsencrypt:ro
    ```
 
-   Make sure your certificates are accessible at `./nginx/ssl/live/your-domain.com/`
+   Make sure your certificates are accessible at `./nginx/ssl/live/domaincourt.io/`
 
 ### Step 3: Update Environment Variables
 
 Update your `.env` file to use HTTPS:
 ```env
-FRONTEND_URL=https://your-domain.com
-BACKEND_URL=https://your-domain.com
-CORS_ORIGINS=https://your-domain.com,https://www.your-domain.com
-NEXT_PUBLIC_API_URL=https://your-domain.com/api/v1
-NEXT_PUBLIC_WS_URL=wss://your-domain.com
+FRONTEND_URL=https://domaincourt.io
+BACKEND_URL=https://domaincourt.io
+CORS_ORIGINS=https://domaincourt.io,https://www.domaincourt.io
+NEXT_PUBLIC_API_URL=https://domaincourt.io/api/v1
+NEXT_PUBLIC_WS_URL=wss://domaincourt.io
 ```
 
 ### Step 4: Start Services
@@ -225,7 +225,7 @@ If using AWS, Azure, GCP, or DigitalOcean:
 curl http://YOUR_SERVER_IP/api/v1/health/live
 
 # Test HTTPS endpoint (if configured)
-curl https://your-domain.com/api/v1/health/live
+curl https://domaincourt.io/api/v1/health/live
 ```
 
 2. **From a different network:**

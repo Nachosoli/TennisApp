@@ -197,8 +197,8 @@ export class AuthService {
     }
 
     if (user.emailVerified) {
-      this.logger.warn(`Email verification failed: Email already verified for user ${user.id}`);
-      throw new BadRequestException('Email is already verified');
+      this.logger.log(`Email already verified for user ${user.id} - returning success`);
+      return; // Email is already verified, treat as success
     }
 
     const isValid = await this.emailVerificationService.verifyEmailToken(email, token);

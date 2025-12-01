@@ -43,7 +43,7 @@ TWILIO_PHONE_NUMBER=+1234567890
 
 # SendGrid (Email)
 SENDGRID_API_KEY=your-api-key
-SENDGRID_FROM_EMAIL=noreply@courtmate.com
+SENDGRID_FROM_EMAIL=noreply@domaincourt.io
 
 # Google Maps
 GOOGLE_MAPS_API_KEY=your-api-key
@@ -55,8 +55,8 @@ CLOUDINARY_API_SECRET=your-api-secret
 
 # App Configuration
 NODE_ENV=production
-FRONTEND_URL=https://courtmate.com
-BACKEND_URL=https://api.courtmate.com
+FRONTEND_URL=https://domaincourt.io
+BACKEND_URL=https://domaincourt.io
 PORT=3001
 ```
 
@@ -65,8 +65,8 @@ PORT=3001
 Create `.env.local` file in `frontend/` directory:
 
 ```env
-NEXT_PUBLIC_API_URL=https://api.courtmate.com
-NEXT_PUBLIC_WS_URL=wss://api.courtmate.com
+NEXT_PUBLIC_API_URL=https://domaincourt.io/api/v1
+NEXT_PUBLIC_WS_URL=wss://domaincourt.io
 ```
 
 ## Docker Deployment
@@ -223,7 +223,7 @@ Create `/etc/nginx/sites-available/courtmate`:
 # Backend API
 server {
     listen 80;
-    server_name api.courtmate.com;
+    server_name domaincourt.io;
 
     location / {
         proxy_pass http://localhost:3001;
@@ -241,7 +241,7 @@ server {
 # Frontend
 server {
     listen 80;
-    server_name courtmate.com www.courtmate.com;
+    server_name domaincourt.io www.domaincourt.io;
 
     location / {
         proxy_pass http://localhost:3000;
@@ -268,7 +268,7 @@ sudo systemctl reload nginx
 sudo apt-get install certbot python3-certbot-nginx
 
 # Obtain certificate
-sudo certbot --nginx -d courtmate.com -d www.courtmate.com -d api.courtmate.com
+sudo certbot --nginx -d domaincourt.io -d www.domaincourt.io
 
 # Auto-renewal
 sudo certbot renew --dry-run

@@ -23,20 +23,20 @@ volumes:
 
 1. **Get SSL certificates** using Let's Encrypt:
 ```bash
-sudo certbot certonly --standalone -d your-domain.com -d www.your-domain.com
+sudo certbot certonly --standalone -d domaincourt.io -d www.domaincourt.io
 ```
 
 2. **Create SSL directory structure:**
 ```bash
-mkdir -p nginx/ssl/live/your-domain.com
+mkdir -p nginx/ssl/live/domaincourt.io
 ```
 
 3. **Copy certificates:**
 ```bash
-sudo cp /etc/letsencrypt/live/your-domain.com/fullchain.pem nginx/ssl/live/your-domain.com/
-sudo cp /etc/letsencrypt/live/your-domain.com/privkey.pem nginx/ssl/live/your-domain.com/
-sudo chmod 644 nginx/ssl/live/your-domain.com/fullchain.pem
-sudo chmod 600 nginx/ssl/live/your-domain.com/privkey.pem
+sudo cp /etc/letsencrypt/live/domaincourt.io/fullchain.pem nginx/ssl/live/domaincourt.io/
+sudo cp /etc/letsencrypt/live/domaincourt.io/privkey.pem nginx/ssl/live/domaincourt.io/
+sudo chmod 644 nginx/ssl/live/domaincourt.io/fullchain.pem
+sudo chmod 600 nginx/ssl/live/domaincourt.io/privkey.pem
 ```
 
 4. **Update `nginx.conf`:**

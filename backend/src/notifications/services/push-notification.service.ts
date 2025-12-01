@@ -21,7 +21,7 @@ export class PushNotificationService {
 
     if (publicKey && privateKey) {
       this.vapidKeys = { publicKey, privateKey };
-      webpush.setVapidDetails('mailto:noreply@courtmate.com', publicKey, privateKey);
+      webpush.setVapidDetails('mailto:noreply@domaincourt.io', publicKey, privateKey);
     } else {
       this.logger.warn('VAPID keys not configured, push notifications disabled');
     }
