@@ -35,11 +35,22 @@ export default function CalendarPage() {
   const [homeCourt, setHomeCourt] = useState<Court | null>(null);
   // Collapsed by default on mobile, expanded by default on desktop
   const [filtersCollapsed, setFiltersCollapsed] = useState(true);
+  const [isDesktop, setIsDesktop] = useState(false);
   
-  // Set initial collapsed state based on screen size
+  // Set initial collapsed state based on screen size and track desktop state
   useEffect(() => {
-    const isMobile = window.innerWidth < 640; // sm breakpoint
-    setFiltersCollapsed(isMobile);
+    const checkScreenSize = () => {
+      const desktop = window.innerWidth >= 640; // sm breakpoint
+      setIsDesktop(desktop);
+      // On desktop, always keep filters visible
+      if (desktop) {
+        setFiltersCollapsed(false);
+      }
+    };
+    
+    checkScreenSize();
+    window.addEventListener('resize', checkScreenSize);
+    return () => window.removeEventListener('resize', checkScreenSize);
   }, []);
   const matchesSectionRef = useRef<HTMLDivElement>(null);
   const lastScrollY = useRef(0);
@@ -163,8 +174,13 @@ export default function CalendarPage() {
   const handleCourtSelect = (courtId: string) => {
     setSelectedCourtId(courtId);
     setSelectedDate(null); // Clear date selection when court is selected
-    // Scroll to matches section on mobile
-    if (window.innerWidth < 1024 && matchesSectionRef.current) {
+    setShowMap(false); // Hide the map
+    // Only collapse filters on mobile, keep visible on desktop
+    if (typeof window !== 'undefined' && window.innerWidth < 640) {
+      setFiltersCollapsed(true);
+    }
+    // Scroll to matches section
+    if (matchesSectionRef.current) {
       setTimeout(() => {
         matchesSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
       }, 100);
@@ -277,27 +293,13 @@ export default function CalendarPage() {
           </div>
         </div>
 
-        {/* Filters Bar - Compact on mobile, hidden when collapsed */}
-        {!filtersCollapsed && (
+        {/* Filters Bar - Compact on mobile, hidden when collapsed, always visible on desktop */}
+        {(!filtersCollapsed || isDesktop) && (
           <Card className="bg-white shadow-sm p-2 sm:p-4">
             <div className="space-y-1.5 sm:space-y-4">
-              {/* Desktop: Collapse/Expand Button */}
+              {/* Desktop: Filters Header (no collapse button) */}
               <div className="hidden sm:flex justify-between items-center">
                 <h2 className="text-sm font-semibold text-gray-700">Filters</h2>
-                <button
-                  onClick={() => setFiltersCollapsed(!filtersCollapsed)}
-                  className="p-2 text-gray-600 hover:text-gray-900"
-                  aria-label={filtersCollapsed ? 'Expand filters' : 'Collapse filters'}
-                >
-                  <svg
-                    className={`w-5 h-5 transition-transform ${filtersCollapsed ? '' : 'rotate-180'}`}
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                  </svg>
-                </button>
               </div>
             
               {/* Top Row - Main Filters - More compact on mobile */}
