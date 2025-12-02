@@ -306,33 +306,40 @@ export const CalendarView = ({ filters, matches: propMatches, onDateSelect }: Ca
                 
                 // Determine why match doesn't meet criteria
                 const getGreyedOutReason = () => {
-                  if (!isGreyedOut || !filters) return null;
+                  if (!isGreyedOut) return null;
                   const reasons = [];
-                  if (filters.gender) {
-                    const filterGender = filters.gender.toUpperCase();
-                    const creatorGender = match.creator?.gender?.toUpperCase();
-                    const matchGenderFilter = (match as any).genderFilter?.toUpperCase() || null;
-                    const applicantGender = user?.gender?.toUpperCase();
-                    
-                    if (creatorGender !== filterGender) {
-                      reasons.push('creator gender');
-                    } else if (matchGenderFilter && matchGenderFilter !== 'ANY' && matchGenderFilter !== applicantGender) {
-                      reasons.push('gender preference');
-                    }
+                  const matchGenderFilter = (match as any).genderFilter?.toUpperCase() || null;
+                  const applicantGender = user?.gender?.toUpperCase();
+                  
+                  // Check gender preference even when no filter is applied
+                  if (applicantGender && matchGenderFilter && matchGenderFilter !== 'ANY' && matchGenderFilter !== applicantGender) {
+                    reasons.push('gender preference');
                   }
-                  if (filters.skillLevel) {
-                    const creatorRating = match.creator?.ratingValue;
-                    const creatorRatingType = match.creator?.ratingType as RatingType | undefined;
-                    if (creatorRating === undefined || creatorRating === null || !creatorRatingType) {
-                      reasons.push('skill level');
-                    } else if (!isRatingInSkillLevel(creatorRatingType, creatorRating, filters.skillLevel as SkillLevel)) {
-                      reasons.push('skill level');
+                  
+                  // Check filter-specific criteria
+                  if (filters) {
+                    if (filters.gender) {
+                      const filterGender = filters.gender.toUpperCase();
+                      const creatorGender = match.creator?.gender?.toUpperCase();
+                      
+                      if (creatorGender !== filterGender) {
+                        reasons.push('creator gender');
+                      }
                     }
-                  }
-                  if (filters.surface) {
-                    const matchSurface = (match as any).surfaceFilter || match.surface || match.court?.surface;
-                    if (!matchSurface || matchSurface.toLowerCase() !== filters.surface.toLowerCase()) {
-                      reasons.push('surface');
+                    if (filters.skillLevel) {
+                      const creatorRating = match.creator?.ratingValue;
+                      const creatorRatingType = match.creator?.ratingType as RatingType | undefined;
+                      if (creatorRating === undefined || creatorRating === null || !creatorRatingType) {
+                        reasons.push('skill level');
+                      } else if (!isRatingInSkillLevel(creatorRatingType, creatorRating, filters.skillLevel as SkillLevel)) {
+                        reasons.push('skill level');
+                      }
+                    }
+                    if (filters.surface) {
+                      const matchSurface = (match as any).surfaceFilter || match.surface || match.court?.surface;
+                      if (!matchSurface || matchSurface.toLowerCase() !== filters.surface.toLowerCase()) {
+                        reasons.push('surface');
+                      }
                     }
                   }
                   return reasons.join(', ');

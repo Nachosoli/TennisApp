@@ -107,24 +107,29 @@ export default function CalendarPage() {
       let meetsSkillLevel = true;
       let meetsSurface = true;
       
+      const matchGenderFilter = (match as any).genderFilter?.toUpperCase() || null;
+      
+      // Always check if match accepts applicant's gender (even when no filter is applied)
+      // If applicant has no gender set, we can't determine if match accepts them, so don't filter
+      const matchAcceptsApplicant = !applicantGender ? true : (
+        !matchGenderFilter || 
+        matchGenderFilter === 'ANY' || 
+        matchGenderFilter === applicantGender
+      );
+      
       // Gender filter logic: "Play Against" - what gender the applicant wants to play against
       if (filters.gender) {
         const filterGender = filters.gender.toUpperCase(); // 'MALE' or 'FEMALE'
         const creatorGender = match.creator?.gender?.toUpperCase();
-        const matchGenderFilter = (match as any).genderFilter?.toUpperCase() || null;
         
         // Check 1: Creator's gender must match filter (what applicant wants to play against)
         const creatorMatches = creatorGender === filterGender;
         
-        // Check 2: Match must accept applicant's gender (or be ANY/NULL)
-        // If applicant has no gender set, we can't determine if match accepts them, so don't filter
-        const matchAcceptsApplicant = !applicantGender ? true : (
-          !matchGenderFilter || 
-          matchGenderFilter === 'ANY' || 
-          matchGenderFilter === applicantGender
-        );
-        
+        // Check 2: Match must accept applicant's gender (already checked above)
         meetsGender = creatorMatches && matchAcceptsApplicant;
+      } else {
+        // No gender filter applied, but still check if match accepts applicant's gender
+        meetsGender = matchAcceptsApplicant;
       }
       
       // Skill level filter: compare creator's rating against the selected range
