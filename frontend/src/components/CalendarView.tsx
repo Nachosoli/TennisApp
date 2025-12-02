@@ -347,30 +347,18 @@ export const CalendarView = ({ filters, matches: propMatches, onDateSelect }: Ca
                       isConfirmedSingles ? 'opacity-75 border-gray-300' : ''
                     } ${
                       isGreyedOut 
-                        ? 'bg-gray-200 border-gray-400 cursor-not-allowed' 
+                        ? 'opacity-70 grayscale cursor-not-allowed pointer-events-none' 
                         : 'hover:shadow-md cursor-pointer'
                     }`}
                   >
                     <div className="flex justify-between items-start mb-3">
                       <div className="flex-1">
-                        {isGreyedOut && (
-                          <div className="mb-2 p-2 bg-gray-300 border border-gray-400 rounded text-xs text-gray-700">
-                            <span className="font-semibold">Does not meet filter criteria</span>
-                            {greyedOutReason && (
-                              <span className="ml-1">({greyedOutReason})</span>
-                            )}
-                          </div>
-                        )}
-                        <h4 className={`font-bold text-lg mb-1 ${isGreyedOut ? 'text-gray-600' : ''}`}>
-                          {sanitizeText(match.court?.name) || 'Court TBD'}
-                        </h4>
-                        <p className={`text-sm mb-2 ${isGreyedOut ? 'text-gray-500' : 'opacity-80'}`}>
-                          {sanitizeText(match.court?.address)}
-                        </p>
+                        <h4 className="font-bold text-lg mb-1">{sanitizeText(match.court?.name) || 'Court TBD'}</h4>
+                        <p className="text-sm opacity-80 mb-2">{sanitizeText(match.court?.address)}</p>
                         
                         {/* Creator Info */}
                         <div className="mb-2">
-                          <p className={`text-sm font-medium ${isGreyedOut ? 'text-gray-600' : ''}`}>
+                          <p className="text-sm font-medium">
                             Player: {creator?.firstName && creator?.lastName 
                               ? `${sanitizeText(creator.firstName)} ${sanitizeText(creator.lastName)}`
                               : sanitizeText(creator?.email) || 'Unknown'}
@@ -378,13 +366,13 @@ export const CalendarView = ({ filters, matches: propMatches, onDateSelect }: Ca
                         </div>
                         
                         {/* Stats Grid */}
-                        <div className={`grid grid-cols-2 gap-2 mt-3 text-sm ${isGreyedOut ? 'text-gray-600' : ''}`}>
+                        <div className="grid grid-cols-2 gap-2 mt-3 text-sm">
                           {creator?.ratingValue && (
                             <div>
                               <span className="font-medium">Rating: </span>
                               <span>{creator.ratingValue}</span>
                               {creator.ratingType && (
-                                <span className={`text-xs ${isGreyedOut ? 'text-gray-500' : 'opacity-75'}`}> ({creator.ratingType})</span>
+                                <span className="text-xs opacity-75"> ({creator.ratingType})</span>
                               )}
                             </div>
                           )}
