@@ -90,7 +90,7 @@ export function EloGraph({ data, height = 300 }: EloGraphProps) {
   };
 
   return (
-    <div className="w-full overflow-x-auto bg-gray-900 rounded-lg p-4">
+    <div className="w-full overflow-x-auto bg-white rounded-lg border border-gray-200 p-6 shadow-sm">
       <svg
         width={graphWidth}
         height={graphHeight}
@@ -109,16 +109,17 @@ export function EloGraph({ data, height = 300 }: EloGraphProps) {
                 y1={y}
                 x2={padding.left + innerWidth}
                 y2={y}
-                stroke="#374151"
+                stroke="#E5E7EB"
                 strokeWidth="1"
-                strokeDasharray="4 4"
+                strokeDasharray="2 2"
               />
               <text
                 x={padding.left - 10}
                 y={y + 4}
-                fill="#9CA3AF"
+                fill="#6B7280"
                 fontSize="12"
                 textAnchor="end"
+                fontWeight="500"
               >
                 {formatElo(elo)}
               </text>
@@ -144,15 +145,16 @@ export function EloGraph({ data, height = 300 }: EloGraphProps) {
                 y1={padding.top + innerHeight}
                 x2={x}
                 y2={padding.top + innerHeight + 5}
-                stroke="#6B7280"
+                stroke="#D1D5DB"
                 strokeWidth="1"
               />
               <text
                 x={x}
                 y={padding.top + innerHeight + 20}
-                fill="#9CA3AF"
+                fill="#6B7280"
                 fontSize="11"
                 textAnchor="middle"
+                fontWeight="500"
                 transform={`rotate(-45 ${x} ${padding.top + innerHeight + 20})`}
               >
                 {formatDate(entry.createdAt)}
@@ -165,11 +167,37 @@ export function EloGraph({ data, height = 300 }: EloGraphProps) {
         <path
           d={generatePath()}
           fill="none"
-          stroke="#60A5FA"
-          strokeWidth="2"
+          stroke="#3B82F6"
+          strokeWidth="3"
           strokeLinecap="round"
           strokeLinejoin="round"
         />
+        
+        {/* Gradient area under the line */}
+        <defs>
+          <linearGradient id="lineGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stopColor="#3B82F6" stopOpacity="0.2" />
+            <stop offset="100%" stopColor="#3B82F6" stopOpacity="0.05" />
+          </linearGradient>
+        </defs>
+        
+        {/* Area fill under the line */}
+        {sortedData.length > 0 && (() => {
+          let areaPath = `M ${padding.left + scaleX(0)} ${padding.top + scaleY(sortedData[0].eloBefore)}`;
+          sortedData.forEach((entry, index) => {
+            const x = padding.left + scaleX(index);
+            const y = padding.top + scaleY(entry.eloAfter);
+            areaPath += ` L ${x} ${y}`;
+          });
+          areaPath += ` L ${padding.left + scaleX(sortedData.length - 1)} ${padding.top + innerHeight}`;
+          areaPath += ` L ${padding.left + scaleX(0)} ${padding.top + innerHeight} Z`;
+          return (
+            <path
+              d={areaPath}
+              fill="url(#lineGradient)"
+            />
+          );
+        })()}
 
         {/* Data points */}
         {sortedData.map((entry, index) => {
@@ -183,20 +211,20 @@ export function EloGraph({ data, height = 300 }: EloGraphProps) {
               <circle
                 cx={x}
                 cy={y}
-                r="4"
+                r="5"
                 fill={eloChange >= 0 ? "#10B981" : "#EF4444"}
-                stroke="#1F2937"
+                stroke="white"
                 strokeWidth="2"
               />
               
               {/* ELO value label above point */}
               <text
                 x={x}
-                y={y - 10}
-                fill="#F3F4F6"
-                fontSize="11"
+                y={y - 12}
+                fill={eloChange >= 0 ? "#059669" : "#DC2626"}
+                fontSize="12"
                 textAnchor="middle"
-                fontWeight="500"
+                fontWeight="600"
               >
                 {formatElo(entry.eloAfter)}
               </text>
@@ -215,18 +243,18 @@ export function EloGraph({ data, height = 300 }: EloGraphProps) {
             <circle
               cx={padding.left + scaleX(0)}
               cy={padding.top + scaleY(sortedData[0].eloBefore)}
-              r="4"
-              fill="#60A5FA"
-              stroke="#1F2937"
+              r="5"
+              fill="#3B82F6"
+              stroke="white"
               strokeWidth="2"
             />
             <text
               x={padding.left + scaleX(0)}
-              y={padding.top + scaleY(sortedData[0].eloBefore) - 10}
-              fill="#F3F4F6"
-              fontSize="11"
+              y={padding.top + scaleY(sortedData[0].eloBefore) - 12}
+              fill="#2563EB"
+              fontSize="12"
               textAnchor="middle"
-              fontWeight="500"
+              fontWeight="600"
             >
               {formatElo(sortedData[0].eloBefore)}
             </text>
