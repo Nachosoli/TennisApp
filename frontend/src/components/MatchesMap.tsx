@@ -233,8 +233,15 @@ export const MatchesMap = ({ matches, onMapLoad, homeCourt, currentUserId }: Mat
           
           const [lng, lat] = court.coordinates.coordinates;
           const matchCount = matches.length;
+          const matchingMatches = matches.filter(m => (m as any).meetsCriteria !== false);
+          const matchingCount = matchingMatches.length;
+          const hasNonMatching = matchingCount < matchCount;
           const circleScale = getCircleScale(matchCount);
           const labelFontSize = getLabelFontSize(matchCount);
+          
+          // Grey out marker if any matches don't meet criteria
+          const markerColor = hasNonMatching ? '#9ca3af' : '#2563eb'; // Grey if non-matching, blue if all match
+          const markerOpacity = hasNonMatching ? 0.4 : 0.8;
           
           return (
             <Marker
@@ -250,8 +257,8 @@ export const MatchesMap = ({ matches, onMapLoad, homeCourt, currentUserId }: Mat
               icon={{
                 path: google.maps.SymbolPath.CIRCLE,
                 scale: circleScale,
-                fillColor: '#2563eb', // Blue color
-                fillOpacity: 0.8, // Slightly transparent for better visual
+                fillColor: markerColor,
+                fillOpacity: markerOpacity,
                 strokeColor: '#ffffff',
                 strokeWeight: 2,
               }}

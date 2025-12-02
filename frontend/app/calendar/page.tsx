@@ -26,7 +26,7 @@ export default function CalendarPage() {
     surface?: string;
   }>({});
   const [allMatches, setAllMatches] = useState<Match[]>([]);
-  const [filteredMatches, setFilteredMatches] = useState<Match[]>([]);
+  const [filteredMatches, setFilteredMatches] = useState<(Match & { meetsCriteria: boolean })[]>([]);
   const [matchCount, setMatchCount] = useState(0);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   // Hide map by default on mobile, show on desktop
@@ -98,52 +98,60 @@ export default function CalendarPage() {
   };
 
   // Calculate match count and filtered matches based on filters
+  // Now we show all matches but mark which ones meet criteria
   useEffect(() => {
-    const filtered = allMatches.filter(match => {
-      // Skill level filter: compare creator's rating against the selected range based on their rating type
+    const applicantGender = user?.gender?.toUpperCase(); // 'MALE' or 'FEMALE'
+    
+    const matchesWithCriteria = allMatches.map(match => {
+      let meetsGender = true;
+      let meetsSkillLevel = true;
+      let meetsSurface = true;
+      
+      // Gender filter logic: "Play Against" - what gender the applicant wants to play against
+      if (filters.gender) {
+        const filterGender = filters.gender.toUpperCase(); // 'MALE' or 'FEMALE'
+        const creatorGender = match.creator?.gender?.toUpperCase();
+        const matchGenderFilter = (match as any).genderFilter?.toUpperCase() || null;
+        
+        // Check 1: Creator's gender must match filter (what applicant wants to play against)
+        const creatorMatches = creatorGender === filterGender;
+        
+        // Check 2: Match must accept applicant's gender (or be ANY/NULL)
+        // If applicant has no gender set, we can't determine if match accepts them, so don't filter
+        const matchAcceptsApplicant = !applicantGender ? true : (
+          !matchGenderFilter || 
+          matchGenderFilter === 'ANY' || 
+          matchGenderFilter === applicantGender
+        );
+        
+        meetsGender = creatorMatches && matchAcceptsApplicant;
+      }
+      
+      // Skill level filter: compare creator's rating against the selected range
       if (filters.skillLevel) {
         const creatorRating = match.creator?.ratingValue;
         const creatorRatingType = match.creator?.ratingType as RatingType | undefined;
-        if (!isRatingInRange(creatorRating, creatorRatingType, filters.skillLevel)) return false;
+        meetsSkillLevel = isRatingInRange(creatorRating, creatorRatingType, filters.skillLevel);
       }
       
-      // Gender filter: check match.genderFilter (not match.gender)
-      // If filter is "MALE" or "FEMALE", show matches where genderFilter is NULL, "ANY", or matches the filter
-      if (filters.gender) {
-        const matchGenderFilter = (match as any).genderFilter || match.gender;
-        // Normalize to uppercase for comparison
-        const normalizedFilter = filters.gender.toUpperCase();
-        const normalizedMatchFilter = matchGenderFilter ? matchGenderFilter.toUpperCase() : null;
-        
-        // Show match if:
-        // 1. matchGenderFilter is NULL/undefined (accepts all)
-        // 2. matchGenderFilter is "ANY" (accepts all)
-        // 3. matchGenderFilter matches the selected filter
-        // Otherwise, filter it out
-        if (normalizedMatchFilter && 
-            normalizedMatchFilter !== 'ANY' && 
-            normalizedMatchFilter !== normalizedFilter) {
-          return false;
-        }
-      }
-      
-      // Surface filter: only apply if filter is set
-      // Check match.surfaceFilter (from backend), match.surface, or fallback to court.surface
+      // Surface filter: check match surface
       if (filters.surface) {
         const matchSurface = (match as any).surfaceFilter || match.surface || match.court?.surface;
-        if (!matchSurface || matchSurface.toLowerCase() !== filters.surface.toLowerCase()) {
-          return false;
-        }
+        meetsSurface = matchSurface && matchSurface.toLowerCase() === filters.surface.toLowerCase();
       }
       
-      // Distance filter: only apply if filter is set and match has maxDistance
-      if (filters.maxDistance && match.maxDistance && match.maxDistance > filters.maxDistance * 1609.34) return false;
+      const meetsCriteria = meetsGender && meetsSkillLevel && meetsSurface;
       
-      return true;
+      return {
+        ...match,
+        meetsCriteria,
+      };
     });
-    setFilteredMatches(filtered);
-    setMatchCount(filtered.length);
-  }, [filters, allMatches]);
+    
+    setFilteredMatches(matchesWithCriteria);
+    // Count only matches that meet all criteria
+    setMatchCount(matchesWithCriteria.filter(m => m.meetsCriteria).length);
+  }, [filters, allMatches, user]);
 
   // Auto-collapse filters on mobile when scrolling down (more aggressive)
   useEffect(() => {
@@ -288,7 +296,7 @@ export default function CalendarPage() {
                 value={filters.gender || ''}
                 onChange={(e) => setFilters({ ...filters, gender: e.target.value || undefined })}
               >
-                <option value="">All Genders</option>
+                <option value="">Play Against</option>
                 <option value="MALE">Man</option>
                 <option value="FEMALE">Woman</option>
               </select>
@@ -320,7 +328,7 @@ export default function CalendarPage() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 h-[calc(100vh-280px)] min-h-[400px]">
           {/* Left Side - Calendar/List */}
           <div ref={matchesSectionRef} className="overflow-y-auto order-2 lg:order-1">
-            <CalendarView filters={filters} onDateSelect={(date) => {
+            <CalendarView filters={filters} matches={filteredMatches} onDateSelect={(date) => {
               setSelectedDate(date);
               // Scroll to matches section when date with matches is selected
               if (date && matchesSectionRef.current) {

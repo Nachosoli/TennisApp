@@ -18,10 +18,11 @@ interface CalendarViewProps {
     maxDistance?: number;
     surface?: string;
   };
+  matches?: (Match & { meetsCriteria?: boolean })[];
   onDateSelect?: (date: Date | null) => void;
 }
 
-export const CalendarView = ({ filters, onDateSelect }: CalendarViewProps) => {
+export const CalendarView = ({ filters, matches: propMatches, onDateSelect }: CalendarViewProps) => {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [matches, setMatches] = useState<Match[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -46,43 +47,51 @@ export const CalendarView = ({ filters, onDateSelect }: CalendarViewProps) => {
     }
   };
 
+  // Use matches from props if provided, otherwise fetch them
   useEffect(() => {
-    const monthStart = startOfMonth(currentDate);
-    const monthEnd = endOfMonth(currentDate);
-    
-    setIsLoading(true);
-    matchesApi.getCalendar({
-      dateFrom: format(monthStart, 'yyyy-MM-dd'),
-      dateTo: format(monthEnd, 'yyyy-MM-dd'),
-      ...filters,
-    })
-      .then((matches) => {
-        // Filter out cancelled matches, completed matches, confirmed matches (for non-creators), and user's own matches
-        const filtered = matches.filter(match => {
-          if (match.status?.toLowerCase() === 'cancelled') return false;
-          if (match.status?.toLowerCase() === 'completed') return false;
-          if (user && match.creatorUserId === user.id) return false;
-          
-          // Check if user has a waitlisted application for this match
-          const hasWaitlistedApplication = user && match.slots?.some(slot =>
-            slot.applications?.some(app =>
-              (app.applicantUserId === user.id || app.userId === user.id) &&
-              app.status?.toLowerCase() === 'waitlisted'
-            )
-          );
-          
-          // Always show matches where user is waitlisted, regardless of match status
-          if (hasWaitlistedApplication) return true;
-          
-          // Hide confirmed matches from other users (unless they have a waitlisted application, which we already handled above)
-          if (match.status?.toLowerCase() === 'confirmed' && user && match.creatorUserId !== user.id) return false;
-          return true;
-        });
-        setMatches(filtered);
+    if (propMatches) {
+      // Use matches passed from parent (already filtered and with meetsCriteria flag)
+      setMatches(propMatches);
+      setIsLoading(false);
+    } else {
+      // Fallback: fetch matches if not provided (for backward compatibility)
+      const monthStart = startOfMonth(currentDate);
+      const monthEnd = endOfMonth(currentDate);
+      
+      setIsLoading(true);
+      matchesApi.getCalendar({
+        dateFrom: format(monthStart, 'yyyy-MM-dd'),
+        dateTo: format(monthEnd, 'yyyy-MM-dd'),
+        ...filters,
       })
-      .catch(console.error)
-      .finally(() => setIsLoading(false));
-  }, [currentDate, filters, user]);
+        .then((matches) => {
+          // Filter out cancelled matches, completed matches, confirmed matches (for non-creators), and user's own matches
+          const filtered = matches.filter(match => {
+            if (match.status?.toLowerCase() === 'cancelled') return false;
+            if (match.status?.toLowerCase() === 'completed') return false;
+            if (user && match.creatorUserId === user.id) return false;
+            
+            // Check if user has a waitlisted application for this match
+            const hasWaitlistedApplication = user && match.slots?.some(slot =>
+              slot.applications?.some(app =>
+                (app.applicantUserId === user.id || app.userId === user.id) &&
+                app.status?.toLowerCase() === 'waitlisted'
+              )
+            );
+            
+            // Always show matches where user is waitlisted, regardless of match status
+            if (hasWaitlistedApplication) return true;
+            
+            // Hide confirmed matches from other users (unless they have a waitlisted application, which we already handled above)
+            if (match.status?.toLowerCase() === 'confirmed' && user && match.creatorUserId !== user.id) return false;
+            return true;
+          });
+          setMatches(filtered);
+        })
+        .catch(console.error)
+        .finally(() => setIsLoading(false));
+    }
+  }, [currentDate, filters, user, propMatches]);
 
   const monthStart = startOfMonth(currentDate);
   const monthEnd = endOfMonth(currentDate);
@@ -291,11 +300,18 @@ export const CalendarView = ({ filters, onDateSelect }: CalendarViewProps) => {
                   </span>
                 );
                 
+                const meetsCriteria = (match as any).meetsCriteria !== false; // Default to true if not set
+                const isGreyedOut = !meetsCriteria;
+                
                 return (
                   <div 
                     key={match.id} 
-                    className={`border-2 rounded-lg p-4 hover:shadow-md transition-all ${surfaceColor} ${
+                    className={`border-2 rounded-lg p-4 transition-all ${surfaceColor} ${
                       isConfirmedSingles ? 'opacity-75 border-gray-300' : ''
+                    } ${
+                      isGreyedOut 
+                        ? 'opacity-40 grayscale cursor-not-allowed pointer-events-none' 
+                        : 'hover:shadow-md cursor-pointer'
                     }`}
                   >
                     <div className="flex justify-between items-start mb-3">
@@ -363,15 +379,26 @@ export const CalendarView = ({ filters, onDateSelect }: CalendarViewProps) => {
                           </div>
                         )}
                       </div>
-                      <Link href={`/matches/${match.id}`}>
+                      {isGreyedOut ? (
                         <Button 
-                          variant="primary" 
+                          variant="secondary" 
                           size="sm" 
-                          className="bg-blue-600 text-white hover:bg-blue-700 font-semibold shadow-md"
+                          disabled
+                          className="bg-gray-400 text-white font-semibold cursor-not-allowed opacity-50"
                         >
                           View Details
                         </Button>
-                      </Link>
+                      ) : (
+                        <Link href={`/matches/${match.id}`}>
+                          <Button 
+                            variant="primary" 
+                            size="sm" 
+                            className="bg-blue-600 text-white hover:bg-blue-700 font-semibold shadow-md"
+                          >
+                            View Details
+                          </Button>
+                        </Link>
+                      )}
                     </div>
                   </div>
                 );
