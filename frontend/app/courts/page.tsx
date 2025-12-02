@@ -2,27 +2,45 @@
 
 import { useEffect, useState } from 'react';
 import { courtsApi } from '@/lib/courts';
+import { reviewsApi, CourtReviewStats } from '@/lib/reviews';
 import { Layout } from '@/components/layout/Layout';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { SkeletonCard } from '@/components/ui/Skeleton';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { GoogleMap } from '@/components/GoogleMap';
+import { StarRating } from '@/components/ui/StarRating';
 import { Court } from '@/types';
 import { useRequireAuth } from '@/hooks/useRequireAuth';
 import { PageLoader } from '@/components/ui/PageLoader';
 import { useRouter } from 'next/navigation';
 
+interface CourtWithStats extends Court {
+  reviewStats?: CourtReviewStats;
+}
+
 function CourtsPageContent() {
   const router = useRouter();
   const { isLoading: authLoading, user } = useRequireAuth();
-  const [courts, setCourts] = useState<Court[]>([]);
+  const [courts, setCourts] = useState<CourtWithStats[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     if (user) {
-      courtsApi.getAll().then((data) => {
-        setCourts(data);
+      courtsApi.getAll().then(async (data) => {
+        // Fetch review stats for all courts in parallel
+        const courtsWithStats = await Promise.all(
+          data.map(async (court) => {
+            try {
+              const stats = await reviewsApi.getCourtStats(court.id);
+              return { ...court, reviewStats: stats };
+            } catch (error) {
+              // If no reviews exist, stats will be undefined
+              return { ...court, reviewStats: undefined };
+            }
+          })
+        );
+        setCourts(courtsWithStats);
         setIsLoading(false);
       }).catch(() => {
         setIsLoading(false);
@@ -78,7 +96,21 @@ function CourtsPageContent() {
                 >
                   <div className="space-y-3">
                     <div>
-                      <h3 className="text-lg font-semibold text-gray-900">{court.name}</h3>
+                      <div className="flex items-start justify-between">
+                        <h3 className="text-lg font-semibold text-gray-900">{court.name}</h3>
+                        {court.reviewStats && court.reviewStats.count > 0 && (
+                          <div className="flex items-center gap-1">
+                            <StarRating 
+                              rating={court.reviewStats.average} 
+                              readonly 
+                              size="sm"
+                            />
+                            <span className="text-xs text-gray-600 ml-1">
+                              ({court.reviewStats.count})
+                            </span>
+                          </div>
+                        )}
+                      </div>
                       <p className="text-sm text-gray-600 mt-1">{court.address}</p>
                     </div>
 
