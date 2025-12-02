@@ -453,16 +453,7 @@ export const CalendarView = ({ filters, matches: propMatches, selectedDate: prop
                                       </div>
                                     ) : null}
                                   </div>
-                                  {isGreyedOut ? (
-                                    <Button 
-                                      variant="secondary" 
-                                      size="sm" 
-                                      disabled
-                                      className="bg-gray-400 text-white font-semibold cursor-not-allowed opacity-50"
-                                    >
-                                      View Details
-                                    </Button>
-                                  ) : (
+                                  {!isGreyedOut && (
                                     <Link href={`/matches/${match.id}`}>
                                       <Button 
                                         variant="primary" 
@@ -677,16 +668,7 @@ export const CalendarView = ({ filters, matches: propMatches, selectedDate: prop
                           </div>
                         ) : null}
                       </div>
-                      {isGreyedOut ? (
-                        <Button 
-                          variant="secondary" 
-                          size="sm" 
-                          disabled
-                          className="bg-gray-400 text-white font-semibold cursor-not-allowed opacity-50"
-                        >
-                          View Details
-                        </Button>
-                      ) : (
+                      {!isGreyedOut && (
                         <Link href={`/matches/${match.id}`}>
                           <Button 
                             variant="primary" 
