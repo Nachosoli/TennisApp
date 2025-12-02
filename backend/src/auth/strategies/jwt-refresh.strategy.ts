@@ -28,15 +28,32 @@ export class JwtRefreshStrategy extends PassportStrategy(
   }
 
   async validate(payload: any): Promise<User> {
-    const user = await this.userRepository.findOne({
-      where: { id: payload.sub },
-    });
+    try {
+      if (!payload || !payload.sub) {
+        throw new UnauthorizedException('Invalid token payload');
+      }
 
-    if (!user || user.isBanned || user.isSuspended) {
-      throw new UnauthorizedException('User not found or account suspended');
+      const user = await this.userRepository.findOne({
+        where: { id: payload.sub },
+      });
+
+      if (!user) {
+        throw new UnauthorizedException('User not found');
+      }
+
+      if (user.isBanned || user.isSuspended) {
+        throw new UnauthorizedException('Account suspended');
+      }
+
+      return user;
+    } catch (error) {
+      if (error instanceof UnauthorizedException) {
+        throw error;
+      }
+      // Log unexpected errors
+      console.error('Error in JwtRefreshStrategy.validate:', error);
+      throw new UnauthorizedException('Token validation failed');
     }
-
-    return user;
   }
 }
 

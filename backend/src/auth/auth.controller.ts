@@ -8,6 +8,7 @@ import {
   HttpCode,
   HttpStatus,
   Res,
+  UnauthorizedException,
 } from '@nestjs/common';
 import type { Response } from 'express';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
@@ -77,7 +78,16 @@ export class AuthController {
   @ApiResponse({ status: 200, type: AuthResponseDto })
   @ApiResponse({ status: 401, description: 'Invalid refresh token' })
   async refreshToken(@Request() req) {
-    return this.authService.refreshToken(req.user.id);
+    try {
+      if (!req.user || !req.user.id) {
+        throw new UnauthorizedException('Invalid refresh token');
+      }
+      return await this.authService.refreshToken(req.user.id);
+    } catch (error) {
+      // Log the error for debugging
+      console.error('Error in refreshToken endpoint:', error);
+      throw error;
+    }
   }
 
   @Post('verify-email')

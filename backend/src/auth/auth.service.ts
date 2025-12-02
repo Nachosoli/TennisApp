@@ -310,15 +310,29 @@ export class AuthService {
     accessToken: string;
     refreshToken: string;
   }> {
-    const user = await this.userRepository.findOne({
-      where: { id: userId },
-    });
+    try {
+      const user = await this.userRepository.findOne({
+        where: { id: userId },
+      });
 
-    if (!user || user.isBanned || user.isSuspended) {
-      throw new UnauthorizedException('User not found or account suspended');
+      if (!user) {
+        this.logger.warn(`Refresh token attempt for non-existent user: ${userId}`);
+        throw new UnauthorizedException('User not found');
+      }
+
+      if (user.isBanned || user.isSuspended) {
+        this.logger.warn(`Refresh token attempt for banned/suspended user: ${userId}`);
+        throw new UnauthorizedException('Account suspended');
+      }
+
+      return await this.generateTokens(user);
+    } catch (error) {
+      if (error instanceof UnauthorizedException) {
+        throw error;
+      }
+      this.logger.error(`Error refreshing token for user ${userId}:`, error);
+      throw new UnauthorizedException('Failed to refresh token');
     }
-
-    return this.generateTokens(user);
   }
 
   async generateTokens(user: User): Promise<{
