@@ -107,8 +107,26 @@ export default function CalendarPage() {
         if (!isRatingInRange(creatorRating, creatorRatingType, filters.skillLevel)) return false;
       }
       
-      // Gender filter: only apply if filter is set
-      if (filters.gender && match.gender !== filters.gender) return false;
+      // Gender filter: check match.genderFilter (not match.gender)
+      // If filter is "ANY", show all matches (no filtering)
+      // If filter is "MALE" or "FEMALE", show matches where genderFilter is NULL, "ANY", or matches the filter
+      if (filters.gender && filters.gender !== 'ANY') {
+        const matchGenderFilter = (match as any).genderFilter || match.gender;
+        // Normalize to uppercase for comparison
+        const normalizedFilter = filters.gender.toUpperCase();
+        const normalizedMatchFilter = matchGenderFilter ? matchGenderFilter.toUpperCase() : null;
+        
+        // Show match if:
+        // 1. matchGenderFilter is NULL/undefined (accepts all)
+        // 2. matchGenderFilter is "ANY" (accepts all)
+        // 3. matchGenderFilter matches the selected filter
+        // Otherwise, filter it out
+        if (normalizedMatchFilter && 
+            normalizedMatchFilter !== 'ANY' && 
+            normalizedMatchFilter !== normalizedFilter) {
+          return false;
+        }
+      }
       
       // Surface filter: only apply if filter is set
       // Check match.surfaceFilter (from backend), match.surface, or fallback to court.surface
