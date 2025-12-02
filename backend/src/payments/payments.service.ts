@@ -29,7 +29,7 @@ export class PaymentsService {
       this.logger.warn('STRIPE_SECRET_KEY not configured. Payment features will be disabled.');
     } else {
       this.stripe = new Stripe(stripeSecretKey, {
-        apiVersion: '2024-12-18.acacia',
+        apiVersion: '2025-11-17.clover',
       });
     }
   }
@@ -153,7 +153,8 @@ export class PaymentsService {
     } else if (paymentIntent.status === 'canceled') {
       transaction.status = TransactionStatus.CANCELLED;
       await this.transactionRepository.save(transaction);
-    } else if (paymentIntent.status === 'payment_failed') {
+    } else if (paymentIntent.status === 'requires_payment_method') {
+      // Payment failed - requires new payment method
       transaction.status = TransactionStatus.FAILED;
       await this.transactionRepository.save(transaction);
     }

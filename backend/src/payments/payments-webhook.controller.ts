@@ -2,13 +2,13 @@ import {
   Controller,
   Post,
   Req,
-  RawBodyRequest,
   Headers,
   HttpCode,
   HttpStatus,
   Logger,
   BadRequestException,
 } from '@nestjs/common';
+import type { RawBodyRequest } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PaymentsService } from './payments.service';
 import Stripe from 'stripe';
@@ -25,7 +25,7 @@ export class PaymentsWebhookController {
     const stripeSecretKey = this.configService.get<string>('STRIPE_SECRET_KEY');
     if (stripeSecretKey) {
       this.stripe = new Stripe(stripeSecretKey, {
-        apiVersion: '2024-12-18.acacia',
+        apiVersion: '2025-11-17.clover',
       });
     }
   }
@@ -59,6 +59,9 @@ export class PaymentsWebhookController {
         );
       } else {
         // Parse without verification (not recommended for production)
+        if (!req.rawBody) {
+          throw new BadRequestException('Raw body is required for webhook processing');
+        }
         event = JSON.parse(req.rawBody.toString()) as Stripe.Event;
       }
     } catch (err: any) {
