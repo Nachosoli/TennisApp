@@ -346,7 +346,11 @@ export const CalendarView = ({ filters, onDateSelect }: CalendarViewProps) => {
                     <div className="flex items-center justify-between mt-3 pt-3 border-t border-current border-opacity-20">
                       <div className="text-sm opacity-80 space-y-1">
                         <div>
-                          <span>Gender: {match.gender?.toLowerCase() === 'male' ? 'Male' : match.gender?.toLowerCase() === 'female' ? 'Female' : 'Any'}</span>
+                          <span>Gender: {(() => {
+                            const genderValue = (match as any).genderFilter || match.gender;
+                            const normalized = genderValue?.toLowerCase();
+                            return normalized === 'male' ? 'Man' : normalized === 'female' ? 'Woman' : 'Any';
+                          })()}</span>
                         </div>
                         {match.format && (
                           <div>

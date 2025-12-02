@@ -306,7 +306,11 @@ export default function MatchDetailPage() {
               <div>
                 <span className="font-medium text-gray-700">Looking for Gender:</span>{' '}
                 <span className="text-gray-900">
-                  {currentMatch.gender?.toLowerCase() === 'male' ? 'Male' : currentMatch.gender?.toLowerCase() === 'female' ? 'Female' : 'Any'}
+                  {(() => {
+                    const genderValue = (currentMatch as any).genderFilter || currentMatch.gender;
+                    const normalized = genderValue?.toLowerCase();
+                    return normalized === 'male' ? 'Man' : normalized === 'female' ? 'Woman' : 'Any';
+                  })()}
                 </span>
               </div>
               <div>

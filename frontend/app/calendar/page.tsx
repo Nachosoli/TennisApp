@@ -108,9 +108,8 @@ export default function CalendarPage() {
       }
       
       // Gender filter: check match.genderFilter (not match.gender)
-      // If filter is "ANY", show all matches (no filtering)
       // If filter is "MALE" or "FEMALE", show matches where genderFilter is NULL, "ANY", or matches the filter
-      if (filters.gender && filters.gender !== 'ANY') {
+      if (filters.gender) {
         const matchGenderFilter = (match as any).genderFilter || match.gender;
         // Normalize to uppercase for comparison
         const normalizedFilter = filters.gender.toUpperCase();
@@ -290,9 +289,8 @@ export default function CalendarPage() {
                 onChange={(e) => setFilters({ ...filters, gender: e.target.value || undefined })}
               >
                 <option value="">All Genders</option>
-                <option value="MALE">Male</option>
-                <option value="FEMALE">Female</option>
-                <option value="ANY">Any</option>
+                <option value="MALE">Man</option>
+                <option value="FEMALE">Woman</option>
               </select>
 
               <select
