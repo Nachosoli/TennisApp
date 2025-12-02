@@ -7,8 +7,8 @@ import {
   HttpStatus,
   Logger,
   BadRequestException,
+  type RawBodyRequest,
 } from '@nestjs/common';
-import type { RawBodyRequest } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PaymentsService } from './payments.service';
 import Stripe from 'stripe';
