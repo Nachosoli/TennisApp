@@ -165,7 +165,7 @@ export default function DashboardPage() {
           <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900">
             Welcome back, {user.firstName}!
           </h1>
-          <p className="text-base sm:text-lg text-gray-600 mt-2">Ready to play some tennis?</p>
+          <p className="text-base sm:text-lg text-gray-600 mt-2">Ready to play some games?</p>
         </div>
 
         {/* Home Court Warning */}
