@@ -430,10 +430,10 @@ export const CalendarView = ({ filters, matches: propMatches, selectedDate: prop
                                 <div className="flex items-center justify-between mt-3 pt-3 border-t border-current border-opacity-20">
                                   <div className="text-sm opacity-80 space-y-1">
                                     <div>
-                                      <span>Gender: {(() => {
+                                      <span>Looking for: {(() => {
                                         const genderValue = (match as any).genderFilter || match.gender;
                                         const normalized = genderValue?.toLowerCase();
-                                        return normalized === 'male' ? 'Man' : normalized === 'female' ? 'Woman' : 'Any';
+                                        return normalized === 'male' ? 'Man' : normalized === 'female' ? 'Woman' : 'Any Gender';
                                       })()}</span>
                                     </div>
                                     {match.format && (
@@ -645,10 +645,10 @@ export const CalendarView = ({ filters, matches: propMatches, selectedDate: prop
                     <div className={`flex items-center justify-between mt-3 pt-3 border-t ${isGreyedOut ? 'border-gray-400' : 'border-current border-opacity-20'}`}>
                       <div className={`text-sm space-y-1 ${isGreyedOut ? 'text-gray-600' : 'opacity-80'}`}>
                         <div>
-                          <span>Gender: {(() => {
+                          <span>Looking for: {(() => {
                             const genderValue = (match as any).genderFilter || match.gender;
                             const normalized = genderValue?.toLowerCase();
-                            return normalized === 'male' ? 'Man' : normalized === 'female' ? 'Woman' : 'Any';
+                            return normalized === 'male' ? 'Man' : normalized === 'female' ? 'Woman' : 'Any Gender';
                           })()}</span>
                         </div>
                         {match.format && (
