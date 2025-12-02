@@ -410,11 +410,17 @@ export const CalendarView = ({ filters, matches: propMatches, onDateSelect }: Ca
                             <span>Format: {match.format === 'singles' ? 'Singles' : match.format === 'doubles' ? 'Doubles' : match.format || 'N/A'}</span>
                           </div>
                         )}
-                        {!hasUserWaitlisted && match.slots && match.slots.length > 0 && (
+                        {isGreyedOut ? (
+                          <div>
+                            <span className="text-red-600 font-medium">
+                              Does not meet filter criteria{greyedOutReason ? ` (${greyedOutReason})` : ''}
+                            </span>
+                          </div>
+                        ) : !hasUserWaitlisted && match.slots && match.slots.length > 0 ? (
                           <div>
                             <span>{match.slots.length} time slot{match.slots.length !== 1 ? 's' : ''} available</span>
                           </div>
-                        )}
+                        ) : null}
                       </div>
                       {isGreyedOut ? (
                         <Button 
