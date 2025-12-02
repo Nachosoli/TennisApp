@@ -29,6 +29,7 @@ export default function CalendarPage() {
   const [filteredMatches, setFilteredMatches] = useState<(Match & { meetsCriteria: boolean })[]>([]);
   const [matchCount, setMatchCount] = useState(0);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  const [selectedCourtId, setSelectedCourtId] = useState<string | null>(null);
   // Hide map by default on mobile, show on desktop
   const [showMap, setShowMap] = useState(false);
   const [homeCourt, setHomeCourt] = useState<Court | null>(null);
@@ -157,6 +158,23 @@ export default function CalendarPage() {
     // Count only matches that meet all criteria
     setMatchCount(matchesWithCriteria.filter(m => m.meetsCriteria).length);
   }, [filters, allMatches, user]);
+
+  // Handle court selection from map
+  const handleCourtSelect = (courtId: string) => {
+    setSelectedCourtId(courtId);
+    setSelectedDate(null); // Clear date selection when court is selected
+    // Scroll to matches section on mobile
+    if (window.innerWidth < 1024 && matchesSectionRef.current) {
+      setTimeout(() => {
+        matchesSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 100);
+    }
+  };
+
+  // Get matches to display - filter by court if selected
+  const displayMatches = selectedCourtId
+    ? filteredMatches.filter(m => m.courtId === selectedCourtId)
+    : filteredMatches;
 
   // Auto-collapse filters on mobile when scrolling down (more aggressive)
   useEffect(() => {
@@ -333,15 +351,23 @@ export default function CalendarPage() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 h-[calc(100vh-280px)] min-h-[400px]">
           {/* Left Side - Calendar/List */}
           <div ref={matchesSectionRef} className="overflow-y-auto order-2 lg:order-1">
-            <CalendarView filters={filters} matches={filteredMatches} onDateSelect={(date) => {
-              setSelectedDate(date);
-              // Scroll to matches section when date with matches is selected
-              if (date && matchesSectionRef.current) {
-                setTimeout(() => {
-                  matchesSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                }, 100);
-              }
-            }} />
+            <CalendarView 
+              filters={filters} 
+              matches={displayMatches}
+              selectedDate={selectedDate}
+              selectedCourtId={selectedCourtId}
+              onDateSelect={(date) => {
+                setSelectedDate(date);
+                setSelectedCourtId(null); // Clear court selection when date is selected
+                // Scroll to matches section when date with matches is selected
+                if (date && matchesSectionRef.current) {
+                  setTimeout(() => {
+                    matchesSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                  }, 100);
+                }
+              }}
+              onClearCourtSelection={() => setSelectedCourtId(null)}
+            />
           </div>
 
           {/* Right Side - Map */}
@@ -355,6 +381,7 @@ export default function CalendarPage() {
                   }
                 } : null}
                 currentUserId={user?.id}
+                onCourtSelect={handleCourtSelect}
               />
             </Card>
           </div>

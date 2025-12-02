@@ -15,6 +15,7 @@ import { GoogleStrategy } from './strategies/google.strategy';
 import { User } from '../entities/user.entity';
 import { UserStats } from '../entities/user-stats.entity';
 import { NotificationsModule } from '../notifications/notifications.module';
+import { getRepositoryToken } from '@nestjs/typeorm';
 
 @Module({
   imports: [
@@ -48,6 +49,7 @@ import { NotificationsModule } from '../notifications/notifications.module';
     PasswordResetService,
     JwtStrategy,
     JwtRefreshStrategy,
+    // GoogleStrategy - will gracefully handle missing credentials
     GoogleStrategy,
   ],
   exports: [AuthService, PasswordService],

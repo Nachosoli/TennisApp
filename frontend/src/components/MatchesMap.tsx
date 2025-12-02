@@ -20,6 +20,7 @@ interface MatchesMapProps {
     };
   } | null;
   currentUserId?: string;
+  onCourtSelect?: (courtId: string) => void;
 }
 
 const mapContainerStyle = {
@@ -49,7 +50,7 @@ const formatGender = (gender: string | undefined): string => {
   return gender.toUpperCase();
 };
 
-export const MatchesMap = ({ matches, onMapLoad, homeCourt, currentUserId }: MatchesMapProps) => {
+export const MatchesMap = ({ matches, onMapLoad, homeCourt, currentUserId, onCourtSelect }: MatchesMapProps) => {
   const [selectedCourt, setSelectedCourt] = useState<string | null>(null);
   const [map, setMap] = useState<google.maps.Map | null>(null);
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
@@ -313,11 +314,20 @@ export const MatchesMap = ({ matches, onMapLoad, homeCourt, currentUserId }: Mat
                 )}
               </div>
               
-              <Link href={`/matches/${courtMatchesMap.get(selectedCourt)!.matches[0].id}`}>
-                <Button variant="primary" size="sm" className="w-full text-xs">
-                  View Matches
-                </Button>
-              </Link>
+              <Button 
+                variant="primary" 
+                size="sm" 
+                className="w-full text-xs"
+                onClick={() => {
+                  const courtId = courtMatchesMap.get(selectedCourt)!.court.id;
+                  if (onCourtSelect) {
+                    onCourtSelect(courtId);
+                    setSelectedCourt(null); // Close the popup
+                  }
+                }}
+              >
+                View Matches
+              </Button>
             </div>
           </InfoWindow>
         )}

@@ -6,14 +6,17 @@ export default registerAs(
   (): TypeOrmModuleOptions => {
     const databaseUrl = process.env.DATABASE_URL;
     
-    if (databaseUrl) {
+    // Only use DATABASE_URL if it's set and not empty
+    if (databaseUrl && databaseUrl.trim() !== '') {
       console.log('Using DATABASE_URL for database connection');
+      // Check if this is a local Docker connection (postgres service name) - disable SSL
+      const isLocalDocker = databaseUrl.includes('@postgres:') || databaseUrl.includes('@localhost:');
       return {
         type: 'postgres',
         url: databaseUrl,
         autoLoadEntities: true,
         synchronize: false, // Disabled - use migrations instead
-        ssl: {
+        ssl: isLocalDocker ? false : {
           rejectUnauthorized: false,
         },
         entities: [__dirname + '/../entities/*.entity{.ts,.js}'],

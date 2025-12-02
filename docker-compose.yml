@@ -44,6 +44,7 @@ services:
       NODE_ENV: development
       PORT: 3001
       HOST: 0.0.0.0
+      # Use individual DB vars instead of DATABASE_URL so it uses Docker service name
       DB_HOST: postgres
       DB_PORT: 5432
       DB_USER: ${DB_USER:-courtmate}
@@ -54,7 +55,9 @@ services:
       GOOGLE_MAPS_API_KEY: AIzaSyBvnXZupi70e61FtH9aDgnQ0qwqBsbIe18
       FRONTEND_URL: ${FRONTEND_URL:-http://localhost:3002}
       BACKEND_URL: ${BACKEND_URL:-http://localhost:3001}
-      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3002,http://107.139.214.38:3002,http://192.168.1.65:3002}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3000,http://localhost:3002,http://107.139.214.38:3002,http://192.168.1.65:3002}
+      # Build DATABASE_URL using Docker service name 'postgres'
+      DATABASE_URL: "postgresql://${DB_USER:-courtmate}:${DB_PASSWORD:-courtmate123}@postgres:5432/${DB_NAME:-courtmate_db}"
     ports:
       - "0.0.0.0:3001:3001"
     depends_on:
@@ -79,11 +82,15 @@ services:
       NEXT_PUBLIC_WS_URL: ${NEXT_PUBLIC_WS_URL:-ws://localhost:3001}
       NEXT_PUBLIC_GOOGLE_MAPS_API_KEY: AIzaSyBvnXZupi70e61FtH9aDgnQ0qwqBsbIe18
       PORT: 3000
-      NODE_ENV: production
+      NODE_ENV: development
     ports:
       - "0.0.0.0:3002:3000"
     depends_on:
       - backend
+    volumes:
+      - ./frontend:/app
+      - ./frontend/node_modules:/app/node_modules
+    command: npm run dev
     networks:
       - courtmate_network
 
