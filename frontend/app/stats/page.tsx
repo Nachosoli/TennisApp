@@ -11,6 +11,7 @@ import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { UserStats } from '@/types';
 import { EloHistoryEntry } from '@/lib/stats';
+import { EloGraph } from '@/components/stats/EloGraph';
 
 export default function StatsPage() {
   const router = useRouter();
@@ -214,49 +215,7 @@ export default function StatsPage() {
             </Button>
           </div>
 
-          {eloHistory.length === 0 ? (
-            <div className="text-center py-8 text-gray-500">
-              <p>No ELO history available</p>
-            </div>
-          ) : (
-            <div className="space-y-2">
-              {eloHistory.slice(0, 20).map((entry) => (
-                <div
-                  key={entry.id}
-                  className="flex justify-between items-center p-3 bg-gray-50 rounded-lg"
-                >
-                  <div>
-                    <p className="text-sm font-medium text-gray-900">
-                      {entry.matchType === 'singles' ? 'Singles' : 'Doubles'} Match
-                    </p>
-                    <p className="text-xs text-gray-500">
-                      {new Date(entry.createdAt).toLocaleDateString()}
-                    </p>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <span className="text-gray-600">{entry.eloBefore}</span>
-                    <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                    </svg>
-                    <span className={`font-semibold ${
-                      entry.eloAfter > entry.eloBefore ? 'text-green-600' : 
-                      entry.eloAfter < entry.eloBefore ? 'text-red-600' : 
-                      'text-gray-900'
-                    }`}>
-                      {entry.eloAfter}
-                    </span>
-                    <span className={`text-xs ${
-                      entry.eloAfter > entry.eloBefore ? 'text-green-600' : 
-                      entry.eloAfter < entry.eloBefore ? 'text-red-600' : 
-                      'text-gray-500'
-                    }`}>
-                      ({entry.eloAfter > entry.eloBefore ? '+' : ''}{entry.eloAfter - entry.eloBefore})
-                    </span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
+          <EloGraph data={eloHistory} height={300} />
         </Card>
       </div>
     </Layout>
