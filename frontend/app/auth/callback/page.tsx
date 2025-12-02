@@ -25,7 +25,7 @@ function AuthCallbackContent() {
       const fetchUser = async () => {
         try {
           const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api/v1';
-          const response = await fetch(`${apiUrl}/users/me`, {
+          const response = await fetch(`${apiUrl}/auth/me`, {
             headers: {
               Authorization: `Bearer ${accessToken}`,
             },
