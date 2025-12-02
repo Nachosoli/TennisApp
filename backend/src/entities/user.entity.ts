@@ -150,7 +150,7 @@ export class User {
   @Column({ name: 'payment_required', default: false })
   paymentRequired: boolean; // System-wide flag for payment requirement
 
-  @Column({ name: 'stripe_customer_id', nullable: true, unique: true })
+  @Column({ name: 'stripe_customer_id', type: 'varchar', nullable: true, unique: true })
   stripeCustomerId: string | null;
 
   @CreateDateColumn({ name: 'created_at' })

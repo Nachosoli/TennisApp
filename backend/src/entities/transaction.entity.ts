@@ -68,13 +68,13 @@ export class Transaction {
   @Column({ length: 3, default: 'usd' })
   currency: string; // ISO currency code
 
-  @Column({ name: 'stripe_payment_intent_id', nullable: true, unique: true })
+  @Column({ name: 'stripe_payment_intent_id', type: 'varchar', nullable: true, unique: true })
   stripePaymentIntentId: string | null;
 
-  @Column({ name: 'stripe_charge_id', nullable: true })
+  @Column({ name: 'stripe_charge_id', type: 'varchar', nullable: true })
   stripeChargeId: string | null;
 
-  @Column({ name: 'stripe_customer_id', nullable: true })
+  @Column({ name: 'stripe_customer_id', type: 'varchar', nullable: true })
   stripeCustomerId: string | null;
 
   @Column({ type: 'text', nullable: true })
