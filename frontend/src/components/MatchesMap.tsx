@@ -240,8 +240,8 @@ export const MatchesMap = ({ matches, onMapLoad, homeCourt, currentUserId }: Mat
           const labelFontSize = getLabelFontSize(matchCount);
           
           // Grey out marker if any matches don't meet criteria
-          const markerColor = hasNonMatching ? '#9ca3af' : '#2563eb'; // Grey if non-matching, blue if all match
-          const markerOpacity = hasNonMatching ? 0.4 : 0.8;
+          const markerColor = hasNonMatching ? '#6b7280' : '#2563eb'; // Darker grey if non-matching, blue if all match
+          const markerOpacity = hasNonMatching ? 0.9 : 0.8; // More opaque for better visibility
           
           return (
             <Marker

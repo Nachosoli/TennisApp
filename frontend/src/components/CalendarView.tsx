@@ -10,6 +10,7 @@ import Link from 'next/link';
 import { useAuthStore } from '@/stores/auth-store';
 import { parseLocalDate } from '@/lib/date-utils';
 import { sanitizeText } from '@/lib/sanitize';
+import { isRatingInSkillLevel, SkillLevel, RatingType } from '@/lib/rating-utils';
 
 interface CalendarViewProps {
   filters?: {
@@ -303,6 +304,42 @@ export const CalendarView = ({ filters, matches: propMatches, onDateSelect }: Ca
                 const meetsCriteria = (match as any).meetsCriteria !== false; // Default to true if not set
                 const isGreyedOut = !meetsCriteria;
                 
+                // Determine why match doesn't meet criteria
+                const getGreyedOutReason = () => {
+                  if (!isGreyedOut || !filters) return null;
+                  const reasons = [];
+                  if (filters.gender) {
+                    const filterGender = filters.gender.toUpperCase();
+                    const creatorGender = match.creator?.gender?.toUpperCase();
+                    const matchGenderFilter = (match as any).genderFilter?.toUpperCase() || null;
+                    const applicantGender = user?.gender?.toUpperCase();
+                    
+                    if (creatorGender !== filterGender) {
+                      reasons.push('creator gender');
+                    } else if (matchGenderFilter && matchGenderFilter !== 'ANY' && matchGenderFilter !== applicantGender) {
+                      reasons.push('gender preference');
+                    }
+                  }
+                  if (filters.skillLevel) {
+                    const creatorRating = match.creator?.ratingValue;
+                    const creatorRatingType = match.creator?.ratingType as RatingType | undefined;
+                    if (creatorRating === undefined || creatorRating === null || !creatorRatingType) {
+                      reasons.push('skill level');
+                    } else if (!isRatingInSkillLevel(creatorRatingType, creatorRating, filters.skillLevel as SkillLevel)) {
+                      reasons.push('skill level');
+                    }
+                  }
+                  if (filters.surface) {
+                    const matchSurface = (match as any).surfaceFilter || match.surface || match.court?.surface;
+                    if (!matchSurface || matchSurface.toLowerCase() !== filters.surface.toLowerCase()) {
+                      reasons.push('surface');
+                    }
+                  }
+                  return reasons.join(', ');
+                };
+                
+                const greyedOutReason = getGreyedOutReason();
+                
                 return (
                   <div 
                     key={match.id} 
@@ -310,18 +347,30 @@ export const CalendarView = ({ filters, matches: propMatches, onDateSelect }: Ca
                       isConfirmedSingles ? 'opacity-75 border-gray-300' : ''
                     } ${
                       isGreyedOut 
-                        ? 'opacity-40 grayscale cursor-not-allowed pointer-events-none' 
+                        ? 'bg-gray-200 border-gray-400 cursor-not-allowed' 
                         : 'hover:shadow-md cursor-pointer'
                     }`}
                   >
                     <div className="flex justify-between items-start mb-3">
                       <div className="flex-1">
-                        <h4 className="font-bold text-lg mb-1">{sanitizeText(match.court?.name) || 'Court TBD'}</h4>
-                        <p className="text-sm opacity-80 mb-2">{sanitizeText(match.court?.address)}</p>
+                        {isGreyedOut && (
+                          <div className="mb-2 p-2 bg-gray-300 border border-gray-400 rounded text-xs text-gray-700">
+                            <span className="font-semibold">Does not meet filter criteria</span>
+                            {greyedOutReason && (
+                              <span className="ml-1">({greyedOutReason})</span>
+                            )}
+                          </div>
+                        )}
+                        <h4 className={`font-bold text-lg mb-1 ${isGreyedOut ? 'text-gray-600' : ''}`}>
+                          {sanitizeText(match.court?.name) || 'Court TBD'}
+                        </h4>
+                        <p className={`text-sm mb-2 ${isGreyedOut ? 'text-gray-500' : 'opacity-80'}`}>
+                          {sanitizeText(match.court?.address)}
+                        </p>
                         
                         {/* Creator Info */}
                         <div className="mb-2">
-                          <p className="text-sm font-medium">
+                          <p className={`text-sm font-medium ${isGreyedOut ? 'text-gray-600' : ''}`}>
                             Player: {creator?.firstName && creator?.lastName 
                               ? `${sanitizeText(creator.firstName)} ${sanitizeText(creator.lastName)}`
                               : sanitizeText(creator?.email) || 'Unknown'}
@@ -329,13 +378,13 @@ export const CalendarView = ({ filters, matches: propMatches, onDateSelect }: Ca
                         </div>
                         
                         {/* Stats Grid */}
-                        <div className="grid grid-cols-2 gap-2 mt-3 text-sm">
+                        <div className={`grid grid-cols-2 gap-2 mt-3 text-sm ${isGreyedOut ? 'text-gray-600' : ''}`}>
                           {creator?.ratingValue && (
                             <div>
                               <span className="font-medium">Rating: </span>
                               <span>{creator.ratingValue}</span>
                               {creator.ratingType && (
-                                <span className="text-xs opacity-75"> ({creator.ratingType})</span>
+                                <span className={`text-xs ${isGreyedOut ? 'text-gray-500' : 'opacity-75'}`}> ({creator.ratingType})</span>
                               )}
                             </div>
                           )}
@@ -359,8 +408,8 @@ export const CalendarView = ({ filters, matches: propMatches, onDateSelect }: Ca
                       </div>
                     </div>
                     
-                    <div className="flex items-center justify-between mt-3 pt-3 border-t border-current border-opacity-20">
-                      <div className="text-sm opacity-80 space-y-1">
+                    <div className={`flex items-center justify-between mt-3 pt-3 border-t ${isGreyedOut ? 'border-gray-400' : 'border-current border-opacity-20'}`}>
+                      <div className={`text-sm space-y-1 ${isGreyedOut ? 'text-gray-600' : 'opacity-80'}`}>
                         <div>
                           <span>Gender: {(() => {
                             const genderValue = (match as any).genderFilter || match.gender;
