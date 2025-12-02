@@ -175,16 +175,21 @@ export default function CalendarPage() {
     setSelectedCourtId(courtId);
     setSelectedDate(null); // Clear date selection when court is selected
     setShowMap(false); // Hide the map
-    // Only collapse filters on mobile, keep visible on desktop
-    if (typeof window !== 'undefined' && window.innerWidth < 640) {
-      setFiltersCollapsed(true);
-    }
-    // Scroll to matches section
-    if (matchesSectionRef.current) {
-      setTimeout(() => {
-        matchesSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }, 100);
-    }
+    setFiltersCollapsed(true); // Collapse filters (always, not just mobile)
+    // Scroll to matches section and then to first game card
+    setTimeout(() => {
+      if (matchesSectionRef.current) {
+        matchesSectionRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        // After scrolling to matches section, scroll to first game card
+        setTimeout(() => {
+          // Find the first game card in the court matches section
+          const firstGameCard = document.querySelector('[data-court-matches]')?.querySelector('.border-2.rounded-lg');
+          if (firstGameCard) {
+            firstGameCard.scrollIntoView({ behavior: 'smooth', block: 'start', inline: 'nearest' });
+          }
+        }, 300);
+      }
+    }, 100);
   };
 
   // Get matches to display - filter by court if selected

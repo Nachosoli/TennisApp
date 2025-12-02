@@ -174,9 +174,9 @@ export const MatchesMap = ({ matches, onMapLoad, homeCourt, currentUserId, onCou
       });
       map.fitBounds(bounds);
       
-      // Prevent too much zoom for single marker
+      // Prevent too much zoom for single marker - cap at 13 for more zoomed out view
       const listener = google.maps.event.addListener(map, 'idle', () => {
-        if (map.getZoom()! > 15) map.setZoom(15);
+        if (map.getZoom()! > 13) map.setZoom(13);
         google.maps.event.removeListener(listener);
       });
     }
@@ -221,7 +221,7 @@ export const MatchesMap = ({ matches, onMapLoad, homeCourt, currentUserId, onCou
       <GoogleMap
         mapContainerStyle={mapContainerStyle}
         center={center}
-        zoom={12}
+        zoom={10}
         onLoad={onLoad}
         options={{
           streetViewControl: false,

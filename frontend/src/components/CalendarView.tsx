@@ -268,7 +268,7 @@ export const CalendarView = ({ filters, matches: propMatches, selectedDate: prop
         }, {} as Record<string, typeof courtMatches>);
         
         return (
-          <div ref={matchesCardRef}>
+          <div ref={matchesCardRef} data-court-matches>
             <Card>
               <div className="p-6">
                 <div className="flex justify-between items-center mb-4">
