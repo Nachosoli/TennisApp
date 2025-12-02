@@ -5,6 +5,7 @@ import {
   BadRequestException,
   Inject,
   forwardRef,
+  Logger,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -22,6 +23,7 @@ import { MatchUpdatesGateway } from '../gateways/match-updates.gateway';
 
 @Injectable()
 export class MatchesService {
+  private readonly logger = new Logger(MatchesService.name);
   private readonly MATCH_CACHE_TTL = 2 * 60 * 1000; // 2 minutes
   private readonly COURT_LIST_CACHE_TTL = 10 * 60 * 1000; // 10 minutes
 
@@ -463,32 +465,38 @@ export class MatchesService {
   }
 
   async findUserMatches(userId: string): Promise<Match[]> {
-    // Find matches where user is creator OR has a confirmed OR waitlisted application
-    // Optimized query with only essential relations for dashboard display
-    const query = this.matchRepository
-      .createQueryBuilder('match')
-      .leftJoinAndSelect('match.court', 'court')
-      .leftJoinAndSelect('match.creator', 'creator')
-      .leftJoinAndSelect('match.slots', 'slots')
-      .leftJoinAndSelect('slots.applications', 'applications')
-      .leftJoinAndSelect('applications.applicant', 'applicant')
-      .leftJoinAndSelect('match.results', 'results')
-      .leftJoinAndSelect('results.player1', 'player1')
-      .leftJoinAndSelect('results.player2', 'player2')
-      .where(
-        '(match.creatorUserId = :userId OR EXISTS (SELECT 1 FROM applications app INNER JOIN match_slots ms ON app.match_slot_id = ms.id WHERE ms.match_id = match.id AND app.applicant_user_id = :userId AND (app.status = :confirmedStatus OR app.status = :waitlistedStatus OR app.status = :pendingStatus)))',
-        {
-          userId,
-          confirmedStatus: ApplicationStatus.CONFIRMED,
-          waitlistedStatus: ApplicationStatus.WAITLISTED,
-          pendingStatus: ApplicationStatus.PENDING,
-        },
-      )
-      .orderBy('match.date', 'DESC')
-      .addOrderBy('match.createdAt', 'DESC')
-      .limit(50); // Limit results to prevent excessive data loading
+    try {
+      // Find matches where user is creator OR has a confirmed OR waitlisted application
+      // Optimized query with only essential relations for dashboard display
+      const query = this.matchRepository
+        .createQueryBuilder('match')
+        .leftJoinAndSelect('match.court', 'court')
+        .leftJoinAndSelect('match.creator', 'creator')
+        .leftJoinAndSelect('match.slots', 'slots')
+        .leftJoinAndSelect('slots.applications', 'applications')
+        .leftJoinAndSelect('applications.applicant', 'applicant')
+        .leftJoinAndSelect('match.results', 'results')
+        .leftJoinAndSelect('results.player1', 'player1')
+        .leftJoinAndSelect('results.player2', 'player2')
+        .leftJoinAndSelect('results.submittedBy', 'submittedBy')
+        .where(
+          '(match.creatorUserId = :userId OR EXISTS (SELECT 1 FROM applications app INNER JOIN match_slots ms ON app.match_slot_id = ms.id WHERE ms.match_id = match.id AND app.applicant_user_id = :userId AND (app.status = :confirmedStatus OR app.status = :waitlistedStatus OR app.status = :pendingStatus)))',
+          {
+            userId,
+            confirmedStatus: ApplicationStatus.CONFIRMED,
+            waitlistedStatus: ApplicationStatus.WAITLISTED,
+            pendingStatus: ApplicationStatus.PENDING,
+          },
+        )
+        .orderBy('match.date', 'DESC')
+        .addOrderBy('match.createdAt', 'DESC')
+        .limit(50); // Limit results to prevent excessive data loading
 
-    return query.getMany();
+      return await query.getMany();
+    } catch (error) {
+      this.logger.error(`Error fetching user matches for userId ${userId}:`, error);
+      throw error;
+    }
   }
 
   async clearMatchCache(matchId: string): Promise<void> {

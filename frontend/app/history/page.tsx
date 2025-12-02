@@ -163,9 +163,10 @@ export default function HistoryPage() {
         });
 
         setMatches(historyEntries);
-      } catch (err) {
+      } catch (err: any) {
         console.error('Failed to load match history:', err);
-        setError('Failed to load match history. Please try again.');
+        const errorMessage = err?.response?.data?.message || err?.message || 'Failed to load match history. Please try again.';
+        setError(errorMessage);
       } finally {
         setIsLoading(false);
       }
