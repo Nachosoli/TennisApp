@@ -235,13 +235,14 @@ export const MatchesMap = ({ matches, onMapLoad, homeCourt, currentUserId }: Mat
           const matchCount = matches.length;
           const matchingMatches = matches.filter(m => (m as any).meetsCriteria !== false);
           const matchingCount = matchingMatches.length;
-          const hasNonMatching = matchingCount < matchCount;
+          // Show blue if at least one match meets criteria, grey only if ALL matches don't meet criteria
+          const hasAtLeastOneMatching = matchingCount > 0;
           const circleScale = getCircleScale(matchCount);
           const labelFontSize = getLabelFontSize(matchCount);
           
-          // Grey out marker if any matches don't meet criteria
-          const markerColor = hasNonMatching ? '#6b7280' : '#2563eb'; // Darker grey if non-matching, blue if all match
-          const markerOpacity = hasNonMatching ? 0.9 : 0.8; // More opaque for better visibility
+          // Grey out marker only if ALL matches don't meet criteria
+          const markerColor = hasAtLeastOneMatching ? '#2563eb' : '#6b7280'; // Blue if at least one matches, grey if none match
+          const markerOpacity = hasAtLeastOneMatching ? 0.8 : 0.9; // More opaque for grey markers
           
           return (
             <Marker
@@ -288,12 +289,22 @@ export const MatchesMap = ({ matches, onMapLoad, homeCourt, currentUserId }: Mat
                   {courtMatchesMap.get(selectedCourt)!.matches.length} {courtMatchesMap.get(selectedCourt)!.matches.length === 1 ? 'match' : 'matches'} available
                 </p>
                 
-                {courtMatchesMap.get(selectedCourt)!.matches.slice(0, 3).map((match) => (
-                  <div key={match.id} className="text-xs text-gray-600 border-l-2 border-blue-500 pl-2">
-                    <div className="font-medium">{format(parseLocalDate(match.date), 'MMM d, yyyy')}</div>
-                    <div>{getSkillLevelFromRating(match.creator?.ratingValue)} • {formatGender(match.creator?.gender)}</div>
-                  </div>
-                ))}
+                {courtMatchesMap.get(selectedCourt)!.matches.slice(0, 3).map((match) => {
+                  const meetsCriteria = (match as any).meetsCriteria !== false;
+                  return (
+                    <div 
+                      key={match.id} 
+                      className={`text-xs border-l-2 pl-2 ${
+                        meetsCriteria 
+                          ? 'text-gray-600 border-blue-500' 
+                          : 'text-gray-400 border-gray-400 opacity-60'
+                      }`}
+                    >
+                      <div className="font-medium">{format(parseLocalDate(match.date), 'MMM d, yyyy')}</div>
+                      <div>{getSkillLevelFromRating(match.creator?.ratingValue)} • {formatGender(match.creator?.gender)}</div>
+                    </div>
+                  );
+                })}
                 
                 {courtMatchesMap.get(selectedCourt)!.matches.length > 3 && (
                   <p className="text-xs text-gray-500">
