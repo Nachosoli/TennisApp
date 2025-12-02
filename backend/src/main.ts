@@ -55,6 +55,7 @@ async function bootstrap() {
   }
 
   const app = await NestFactory.create(AppModule, {
+    rawBody: true, // Enable raw body for Stripe webhook signature verification
     logger: WinstonModule.createLogger({
       level: process.env.LOG_LEVEL || 'info',
       format: winston.format.combine(
