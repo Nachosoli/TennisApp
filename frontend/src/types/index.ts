@@ -15,11 +15,6 @@ export interface User {
   homeCourtId?: string | null;
   homeCourt?: Court | null; // Home court relation
   bio?: string;
-  address?: string;
-  city?: string;
-  state?: string;
-  zipCode?: string;
-  country?: string;
   photoUrl?: string;
   isActive?: boolean;
   createdAt?: string;

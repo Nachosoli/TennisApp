@@ -89,21 +89,6 @@ export class User {
   @Column({ type: 'text', nullable: true })
   bio: string;
 
-  @Column({ type: 'text', nullable: true })
-  address: string;
-
-  @Column({ nullable: true })
-  city: string;
-
-  @Column({ nullable: true })
-  state: string;
-
-  @Column({ name: 'zip_code', nullable: true })
-  zipCode: string;
-
-  @Column({ nullable: true })
-  country: string;
-
   @Column({ name: 'play_style', nullable: true })
   playStyle: string;
 

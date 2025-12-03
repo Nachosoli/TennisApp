@@ -28,11 +28,6 @@ const profileSchema = z.object({
   email: z.string().email('Invalid email'),
   phone: z.string().optional(),
   bio: z.string().optional(),
-  address: z.string().optional(),
-  city: z.string().optional(),
-  state: z.string().optional(),
-  zipCode: z.string().optional(),
-  country: z.string().optional(),
   gender: z.union([z.enum(['male', 'female']), z.literal('')]).refine(
     (val) => val !== '',
     { message: 'Please select your gender' }
@@ -88,8 +83,6 @@ function ProfilePageContent() {
   const [isClearingHomeCourt, setIsClearingHomeCourt] = useState(false);
   const addressInputRef = useRef<HTMLInputElement>(null);
   const autocompleteRef = useRef<google.maps.places.Autocomplete | null>(null);
-  const userAddressInputRef = useRef<HTMLInputElement>(null);
-  const userAddressAutocompleteRef = useRef<google.maps.places.Autocomplete | null>(null);
   const facilityInputRef = useRef<HTMLInputElement>(null);
   const facilityDropdownRef = useRef<HTMLDivElement>(null);
   const formRef = useRef<HTMLFormElement>(null);
@@ -132,63 +125,6 @@ function ProfilePageContent() {
       }
     };
   }, [isGoogleMapsLoaded, googleMapsApiKey, showNewFacilityForm]);
-
-  // Initialize Google Places Autocomplete for user address
-  useEffect(() => {
-    if (isGoogleMapsLoaded && userAddressInputRef.current && googleMapsApiKey && !userAddressAutocompleteRef.current) {
-      try {
-        const autocomplete = new google.maps.places.Autocomplete(userAddressInputRef.current, {
-          types: ['address'],
-          fields: ['formatted_address', 'address_components'],
-        });
-
-        autocomplete.addListener('place_changed', () => {
-          const place = autocomplete.getPlace();
-          if (place) {
-            const formattedAddress = place.formatted_address || '';
-            setValue('address', formattedAddress);
-            
-            // Extract address components
-            const addressComponents = place.address_components || [];
-            let city = '';
-            let state = '';
-            let zipCode = '';
-            let country = '';
-            
-            addressComponents.forEach((component) => {
-              const types = component.types;
-              
-              if (types.includes('locality')) {
-                city = component.long_name;
-              } else if (types.includes('administrative_area_level_1')) {
-                state = component.short_name;
-              } else if (types.includes('postal_code')) {
-                zipCode = component.long_name;
-              } else if (types.includes('country')) {
-                country = component.long_name;
-              }
-            });
-            
-            setValue('city', city);
-            setValue('state', state);
-            setValue('zipCode', zipCode);
-            setValue('country', country);
-          }
-        });
-
-        userAddressAutocompleteRef.current = autocomplete;
-      } catch (error) {
-        console.error('Failed to initialize user address Google Places Autocomplete:', error);
-      }
-    }
-
-    return () => {
-      if (userAddressAutocompleteRef.current) {
-        google.maps.event.clearInstanceListeners(userAddressAutocompleteRef.current);
-        userAddressAutocompleteRef.current = null;
-      }
-    };
-  }, [isGoogleMapsLoaded, googleMapsApiKey, setValue]);
 
   const {
     register,
@@ -252,11 +188,6 @@ function ProfilePageContent() {
         email: user.email,
         phone: user.phone || '',
         bio: user.bio || '',
-        address: (user as any).address || '',
-        city: (user as any).city || '',
-        state: (user as any).state || '',
-        zipCode: (user as any).zipCode || '',
-        country: (user as any).country || '',
         gender: normalizedGender,
         ratingType: user.ratingType || '',
         ratingValue: user.ratingValue ?? undefined, // Only set if ratingType is set
@@ -591,11 +522,6 @@ function ProfilePageContent() {
         email: data.email,
         phone: data.phone || undefined,
         bio: data.bio || undefined,
-        address: data.address || undefined,
-        city: data.city || undefined,
-        state: data.state || undefined,
-        zipCode: data.zipCode || undefined,
-        country: data.country || undefined,
         gender: data.gender as 'male' | 'female',
         ratingType: (data.ratingType && String(data.ratingType) !== '') ? (data.ratingType as 'utr' | 'usta' | 'ultimate' | 'custom') : undefined,
         ratingValue: (data.ratingType && String(data.ratingType) !== '') ? data.ratingValue : undefined,
@@ -778,55 +704,6 @@ function ProfilePageContent() {
                 rows={4}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
-            </div>
-
-            {/* Address Section */}
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Address
-              </label>
-              <Input
-                ref={userAddressInputRef}
-                label="Address"
-                type="text"
-                {...register('address')}
-                placeholder={isGoogleMapsLoaded ? "Search for an address..." : "Enter address"}
-                error={errors.address?.message}
-              />
-
-              <div className="grid grid-cols-2 gap-4 mt-4">
-                <Input
-                  label="City"
-                  type="text"
-                  {...register('city')}
-                  placeholder="City"
-                  error={errors.city?.message}
-                />
-                <Input
-                  label="State"
-                  type="text"
-                  {...register('state')}
-                  placeholder="State"
-                  error={errors.state?.message}
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4 mt-4">
-                <Input
-                  label="Zip Code"
-                  type="text"
-                  {...register('zipCode')}
-                  placeholder="Zip Code"
-                  error={errors.zipCode?.message}
-                />
-                <Input
-                  label="Country"
-                  type="text"
-                  {...register('country')}
-                  placeholder="Country"
-                  error={errors.country?.message}
-                />
-              </div>
             </div>
 
             {/* Home Court Section */}
