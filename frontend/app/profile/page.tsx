@@ -852,36 +852,38 @@ function ProfilePageContent() {
                         required
                       />
 
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Surface Type *
-                        </label>
-                        <select
-                          value={newFacilitySurfaceType}
-                          onChange={(e) => setNewFacilitySurfaceType(e.target.value as any)}
-                          className="w-full px-4 py-2 border border-gray-300 rounded-lg text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                          required
-                        >
-                          <option value="hard">Hard</option>
-                          <option value="clay">Clay</option>
-                          <option value="grass">Grass</option>
-                          <option value="indoor">Indoor</option>
-                        </select>
-                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Surface Type *
+                          </label>
+                          <select
+                            value={newFacilitySurfaceType}
+                            onChange={(e) => setNewFacilitySurfaceType(e.target.value as any)}
+                            className="w-full px-4 py-2 border border-gray-300 rounded-lg text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            required
+                          >
+                            <option value="hard">Hard</option>
+                            <option value="clay">Clay</option>
+                            <option value="grass">Grass</option>
+                            <option value="indoor">Indoor</option>
+                          </select>
+                        </div>
 
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                          Court Type *
-                        </label>
-                        <select
-                          value={newFacilityIsPublic ? 'public' : 'private'}
-                          onChange={(e) => setNewFacilityIsPublic(e.target.value === 'public')}
-                          className="w-full px-4 py-2 border border-gray-300 rounded-lg text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                          required
-                        >
-                          <option value="public">Public</option>
-                          <option value="private">Private</option>
-                        </select>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Court Type *
+                          </label>
+                          <select
+                            value={newFacilityIsPublic ? 'public' : 'private'}
+                            onChange={(e) => setNewFacilityIsPublic(e.target.value === 'public')}
+                            className="w-full px-4 py-2 border border-gray-300 rounded-lg text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            required
+                          >
+                            <option value="public">Public</option>
+                            <option value="private">Private</option>
+                          </select>
+                        </div>
                       </div>
 
                       <Button
