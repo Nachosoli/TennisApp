@@ -95,6 +95,11 @@ export const authApi = {
     email?: string;
     phone?: string;
     bio?: string;
+    address?: string;
+    city?: string;
+    state?: string;
+    zipCode?: string;
+    country?: string;
     homeCourtId?: string | null;
     ratingType?: 'utr' | 'usta' | 'ultimate' | 'custom';
     ratingValue?: number;

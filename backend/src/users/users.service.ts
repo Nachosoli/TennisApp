@@ -79,6 +79,21 @@ export class UsersService {
     if (sanitizedUpdates.bio) {
       sanitizedUpdates.bio = sanitizeTextContent(sanitizedUpdates.bio);
     }
+    if (sanitizedUpdates.address) {
+      sanitizedUpdates.address = sanitizeInput(sanitizedUpdates.address);
+    }
+    if (sanitizedUpdates.city) {
+      sanitizedUpdates.city = sanitizeInput(sanitizedUpdates.city);
+    }
+    if (sanitizedUpdates.state) {
+      sanitizedUpdates.state = sanitizeInput(sanitizedUpdates.state);
+    }
+    if (sanitizedUpdates.zipCode) {
+      sanitizedUpdates.zipCode = sanitizeInput(sanitizedUpdates.zipCode);
+    }
+    if (sanitizedUpdates.country) {
+      sanitizedUpdates.country = sanitizeInput(sanitizedUpdates.country);
+    }
     if (sanitizedUpdates.playStyle) {
       sanitizedUpdates.playStyle = sanitizeInput(sanitizedUpdates.playStyle);
     }
