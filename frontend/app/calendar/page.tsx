@@ -209,11 +209,20 @@ export default function CalendarPage() {
 
   // Auto-collapse filters on mobile when scrolling down (more aggressive)
   useEffect(() => {
+    // Initialize lastScrollY to current scroll position
+    const initialScrollY = window.scrollY || document.documentElement.scrollTop || 0;
+    lastScrollY.current = initialScrollY;
+    
+    // If page is already scrolled down on mobile, collapse filters
+    if (window.innerWidth < 640 && initialScrollY > 100 && !filtersCollapsed) {
+      setFiltersCollapsed(true);
+    }
+    
     const handleScroll = () => {
       // Only on mobile
       if (window.innerWidth >= 640) return; // sm breakpoint
       
-      const currentScrollY = window.scrollY;
+      const currentScrollY = window.scrollY || document.documentElement.scrollTop || 0;
       
       // Clear existing timeout
       if (scrollTimeoutRef.current) {
