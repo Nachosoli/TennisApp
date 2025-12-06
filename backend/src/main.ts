@@ -166,4 +166,36 @@ async function bootstrap() {
   console.log(`🚀 Backend is running on: ${backendUrl}/api/v1`);
   console.log(`📚 API Documentation: ${backendUrl}/api/v1/docs`);
 }
-bootstrap();
+
+// Handle unhandled promise rejections
+process.on('unhandledRejection', (reason: any, promise: Promise<any>) => {
+  console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+  // Log to Sentry if available
+  if (process.env.SENTRY_DSN) {
+    Sentry.captureException(reason);
+  }
+  // Don't exit - let the process continue, but log the error
+});
+
+// Handle uncaught exceptions
+process.on('uncaughtException', (error: Error) => {
+  console.error('Uncaught Exception:', error);
+  // Log to Sentry if available
+  if (process.env.SENTRY_DSN) {
+    Sentry.captureException(error);
+  }
+  // Exit gracefully after logging
+  process.exit(1);
+});
+
+// Bootstrap with error handling
+bootstrap().catch((error) => {
+  console.error('Failed to start application:', error);
+  console.error('Error stack:', error.stack);
+  // Log to Sentry if available
+  if (process.env.SENTRY_DSN) {
+    Sentry.captureException(error);
+  }
+  // Exit with error code
+  process.exit(1);
+});
