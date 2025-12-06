@@ -192,10 +192,20 @@ export default function CalendarPage() {
     }, 100);
   };
 
-  // Get matches to display - filter by court if selected
-  const displayMatches = selectedCourtId
+  // Get matches to display - filter by court if selected, and only show matches that meet criteria when filters are applied
+  const hasActiveFilters = !!(filters.gender || filters.skillLevel || filters.surface);
+  const displayMatches = (selectedCourtId
     ? filteredMatches.filter(m => m.courtId === selectedCourtId)
-    : filteredMatches;
+    : filteredMatches
+  ).filter(m => {
+    // If filters are active, only show matches that meet all criteria
+    // If no filters are active, show all matches (they may still be greyed out if they don't accept user's gender)
+    if (hasActiveFilters) {
+      return m.meetsCriteria;
+    }
+    // When no filters are active, show all matches (they'll be greyed out if they don't accept user's gender)
+    return true;
+  });
 
   // Auto-collapse filters on mobile when scrolling down (more aggressive)
   useEffect(() => {
@@ -381,7 +391,7 @@ export default function CalendarPage() {
           <div className={`${showMap ? 'block' : 'hidden'} lg:block lg:sticky lg:top-4 lg:h-[calc(100vh-280px)] order-1 lg:order-2`}>
             <Card className="h-full overflow-hidden">
               <MatchesMap 
-                matches={filteredMatches} 
+                matches={displayMatches} 
                 homeCourt={homeCourt && homeCourt.location ? {
                   coordinates: {
                     coordinates: homeCourt.location.coordinates

@@ -114,9 +114,15 @@ export const CalendarView = ({ filters, matches: propMatches, selectedDate: prop
 
   const getMatchesForDay = (day: Date) => {
     const dayStart = startOfDay(day);
+    const hasActiveFilters = !!(filters?.gender || filters?.skillLevel || filters?.surface);
     return matches.filter(match => {
       const matchDate = startOfDay(parseLocalDate(match.date));
-      return isSameDay(matchDate, dayStart);
+      const sameDay = isSameDay(matchDate, dayStart);
+      // If filters are active, only show matches that meet criteria
+      if (hasActiveFilters && sameDay) {
+        return (match as any).meetsCriteria !== false;
+      }
+      return sameDay;
     });
   };
 

@@ -63,6 +63,7 @@ export const MatchesMap = ({ matches, onMapLoad, homeCourt, currentUserId, onCou
 
   // Group matches by court, excluding user's own matches, cancelled matches, and completed matches
   // Note: Confirmed matches are already filtered by the parent component before being passed here
+  // When filters are active, only include matches that meet criteria
   const courtMatchesMap = useMemo(() => {
     const map = new Map<string, { court: any; matches: Match[] }>();
     
@@ -73,6 +74,9 @@ export const MatchesMap = ({ matches, onMapLoad, homeCourt, currentUserId, onCou
       if (match.status?.toLowerCase() === 'completed') return;
       // Exclude matches created by the current user
       if (currentUserId && match.creatorUserId === currentUserId) return;
+      // When filters are active, only include matches that meet criteria
+      // (matches passed here should already be filtered, but this is a defensive check)
+      if ((match as any).meetsCriteria === false) return;
       
       if (match.court && match.court.id) {
         const existing = map.get(match.court.id);
@@ -233,17 +237,15 @@ export const MatchesMap = ({ matches, onMapLoad, homeCourt, currentUserId, onCou
           if (!court.coordinates?.coordinates) return null;
           
           const [lng, lat] = court.coordinates.coordinates;
+          // Since we're already filtering by meetsCriteria in courtMatchesMap, 
+          // all matches here should meet criteria when filters are active
           const matchCount = matches.length;
-          const matchingMatches = matches.filter(m => (m as any).meetsCriteria !== false);
-          const matchingCount = matchingMatches.length;
-          // Show blue if at least one match meets criteria, grey only if ALL matches don't meet criteria
-          const hasAtLeastOneMatching = matchingCount > 0;
           const circleScale = getCircleScale(matchCount);
           const labelFontSize = getLabelFontSize(matchCount);
           
-          // Grey out marker only if ALL matches don't meet criteria
-          const markerColor = hasAtLeastOneMatching ? '#2563eb' : '#6b7280'; // Blue if at least one matches, grey if none match
-          const markerOpacity = hasAtLeastOneMatching ? 0.8 : 0.9; // More opaque for grey markers
+          // All markers should be blue since we only include matching matches
+          const markerColor = '#2563eb'; // Blue for all markers
+          const markerOpacity = 0.8;
           
           return (
             <Marker
@@ -291,15 +293,11 @@ export const MatchesMap = ({ matches, onMapLoad, homeCourt, currentUserId, onCou
                 </p>
                 
                 {courtMatchesMap.get(selectedCourt)!.matches.slice(0, 3).map((match) => {
-                  const meetsCriteria = (match as any).meetsCriteria !== false;
+                  // All matches in courtMatchesMap should meet criteria (already filtered)
                   return (
                     <div 
                       key={match.id} 
-                      className={`text-xs border-l-2 pl-2 ${
-                        meetsCriteria 
-                          ? 'text-gray-600 border-blue-500' 
-                          : 'text-gray-400 border-gray-400 opacity-60'
-                      }`}
+                      className="text-xs border-l-2 pl-2 text-gray-600 border-blue-500"
                     >
                       <div className="font-medium">{format(parseLocalDate(match.date), 'MMM d, yyyy')}</div>
                       <div>{getSkillLevelFromRating(match.creator?.ratingValue)} • {formatGender(match.creator?.gender)}</div>
