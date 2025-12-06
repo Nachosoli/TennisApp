@@ -26,7 +26,7 @@ const profileSchema = z.object({
   firstName: z.string().min(1, 'First name is required'),
   lastName: z.string().min(1, 'Last name is required'),
   email: z.string().email('Invalid email'),
-  phone: z.string().optional(),
+  phone: z.string().min(10, 'Phone number is required').regex(/^\d{10}$/, 'Phone must be a valid US phone number (10 digits)'),
   bio: z.string().optional(),
   gender: z.union([z.enum(['male', 'female']), z.literal('')]).refine(
     (val) => val !== '',
@@ -140,6 +140,38 @@ function ProfilePageContent() {
 
   const selectedRatingType = watch('ratingType');
 
+  // Auto-format phone number
+  const phoneRegister = register('phone');
+  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    let value = e.target.value;
+    // Remove all non-digit characters
+    const digits = value.replace(/\D/g, '');
+    // Limit to 10 digits
+    if (digits.length <= 10) {
+      // Update the event's target value to the formatted digits
+      e.target.value = digits;
+      // Update form state
+      setValue('phone', digits, { shouldValidate: true, shouldDirty: true });
+    }
+    // Call the original onChange from register with the updated event
+    phoneRegister.onChange(e);
+  };
+
+  const formatPhoneForSubmit = (phone: string): string => {
+    // Remove all non-digit characters
+    const digits = phone.replace(/\D/g, '');
+    // If it's 10 digits, prepend +1
+    if (digits.length === 10) {
+      return `+1${digits}`;
+    }
+    // If it's 11 digits and starts with 1, prepend +
+    if (digits.length === 11 && digits.startsWith('1')) {
+      return `+${digits}`;
+    }
+    // Return as is (backend will handle validation)
+    return phone;
+  };
+
   // Reset rating value when rating type changes
   useEffect(() => {
     if (selectedRatingType && (selectedRatingType === 'utr' || selectedRatingType === 'usta' || selectedRatingType === 'ultimate' || selectedRatingType === 'custom')) {
@@ -182,11 +214,19 @@ function ProfilePageContent() {
       const userGender = (user as any).gender?.toLowerCase();
       const normalizedGender = (userGender === 'male' || userGender === 'female') ? userGender : '';
       
+      // Normalize phone: strip +1 prefix if present to show just 10 digits
+      let normalizedPhone = user.phone || '';
+      if (normalizedPhone.startsWith('+1')) {
+        normalizedPhone = normalizedPhone.substring(2);
+      } else if (normalizedPhone.startsWith('1') && normalizedPhone.length === 11) {
+        normalizedPhone = normalizedPhone.substring(1);
+      }
+      
       reset({
         firstName: user.firstName,
         lastName: user.lastName,
         email: user.email,
-        phone: user.phone || '',
+        phone: normalizedPhone,
         bio: user.bio || '',
         gender: normalizedGender,
         ratingType: user.ratingType || '',
@@ -520,7 +560,7 @@ function ProfilePageContent() {
         firstName: data.firstName,
         lastName: data.lastName,
         email: data.email,
-        phone: data.phone || undefined,
+        phone: formatPhoneForSubmit(data.phone),
         bio: data.bio || undefined,
         gender: data.gender as 'male' | 'female',
         ratingType: (data.ratingType && String(data.ratingType) !== '') ? (data.ratingType as 'utr' | 'usta' | 'ultimate' | 'custom') : undefined,
@@ -595,10 +635,10 @@ function ProfilePageContent() {
             {/* Email Verification Status */}
             {user && !user.emailVerified && (
               <div className="bg-yellow-50 border border-yellow-200 text-yellow-800 px-4 py-3 rounded">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="font-medium">Email not verified</p>
-                    <p className="text-sm mt-1">Please verify your email address to access all features.</p>
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                  <div className="flex-1">
+                    <p className="font-medium text-sm sm:text-base">Email not verified</p>
+                    <p className="text-xs sm:text-sm mt-1">Please verify your email address to access all features.</p>
                   </div>
                   <Button
                     type="button"
@@ -606,6 +646,7 @@ function ProfilePageContent() {
                     size="sm"
                     onClick={handleResendVerificationEmail}
                     isLoading={resendingEmail}
+                    className="w-full sm:w-auto shrink-0"
                   >
                     Resend Email
                   </Button>
@@ -645,11 +686,14 @@ function ProfilePageContent() {
               <div className="flex items-center gap-2">
                 <div className="flex-1">
                   <Input
-                    label="Phone"
+                    label="Phone *"
                     type="tel"
-                    {...register('phone')}
+                    {...phoneRegister}
+                    onChange={handlePhoneChange}
                     error={errors.phone?.message}
+                    placeholder="1234567890"
                   />
+                  <p className="text-xs text-gray-500 -mt-2">Enter your 10-digit US phone number</p>
                 </div>
                 {user?.phone && !user?.phoneVerified && (
                   <div className="flex items-end pb-1">
