@@ -8,7 +8,7 @@ export class DeleteAllDataExceptCourts1734570300000 implements MigrationInterfac
     const safeDelete = async (tableName: string, displayName: string) => {
       try {
         const result = await queryRunner.query(`DELETE FROM ${tableName};`);
-        const rowCount = result[1] || 0; // PostgreSQL returns [command, rowCount]
+        const rowCount = result.rowCount || 0; // TypeORM returns object with rowCount property
         console.log(`🗑️  Deleted from ${displayName} (${rowCount} rows)`);
       } catch (error: any) {
         if (error.code === '42P01') {
