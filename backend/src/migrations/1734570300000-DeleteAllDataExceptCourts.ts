@@ -75,14 +75,27 @@ export class DeleteAllDataExceptCourts1734570300000 implements MigrationInterfac
     await safeDelete('push_subscriptions', 'Push Subscriptions');
 
     // 17. Clear home court references before deleting users
+    // Check if users table exists first to avoid transaction abort
     try {
-      await queryRunner.query('UPDATE users SET home_court_id = NULL WHERE home_court_id IS NOT NULL;');
-      console.log('🗑️  Cleared home court references from users');
-    } catch (error: any) {
-      if (error.code !== '42P01') {
-        console.error('❌ Error clearing home court references:', error.message);
-        throw error;
+      const tableExists = await queryRunner.query(`
+        SELECT EXISTS (
+          SELECT FROM information_schema.tables 
+          WHERE table_schema = 'public' 
+          AND table_name = 'users'
+        ) as exists;
+      `);
+      
+      if (tableExists[0]?.exists) {
+        const result = await queryRunner.query('UPDATE users SET home_court_id = NULL WHERE home_court_id IS NOT NULL;');
+        const rowCount = result.rowCount || 0;
+        console.log(`🗑️  Cleared home court references from users (${rowCount} rows)`);
+      } else {
+        console.log('⏭️  Skipping home court reference clearing (users table doesn\'t exist)');
       }
+    } catch (error: any) {
+      // If error occurs, log but don't throw - we'll still try to delete users
+      console.log(`⚠️  Warning: Could not clear home court references: ${error.message}`);
+      // Don't throw - continue with deletion
     }
 
     // 18. Delete users (but we keep courts)
