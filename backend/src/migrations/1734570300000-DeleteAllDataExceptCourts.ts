@@ -4,19 +4,53 @@ export class DeleteAllDataExceptCourts1734570300000 implements MigrationInterfac
   name = 'DeleteAllDataExceptCourts1734570300000';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
-    // Helper function to safely delete from a table
+    // Helper function to safely delete from a table using savepoints
+    // This prevents one failure from aborting the entire transaction
     const safeDelete = async (tableName: string, displayName: string) => {
+      const savepointName = `sp_${tableName.replace(/[^a-zA-Z0-9]/g, '_')}`;
       try {
+        // Create a savepoint before the operation
+        await queryRunner.query(`SAVEPOINT ${savepointName};`);
+        
+        // Check if table exists first
+        const tableExists = await queryRunner.query(`
+          SELECT EXISTS (
+            SELECT FROM information_schema.tables 
+            WHERE table_schema = 'public' 
+            AND table_name = $1
+          ) as exists;
+        `, [tableName]);
+        
+        if (!tableExists[0]?.exists) {
+          await queryRunner.query(`ROLLBACK TO SAVEPOINT ${savepointName};`);
+          console.log(`⏭️  Skipping ${displayName} (table doesn't exist)`);
+          return;
+        }
+        
+        // Perform the delete
         const result = await queryRunner.query(`DELETE FROM ${tableName};`);
-        const rowCount = result.rowCount || 0; // TypeORM returns object with rowCount property
+        const rowCount = result.rowCount || 0;
+        
+        // Release the savepoint on success
+        await queryRunner.query(`RELEASE SAVEPOINT ${savepointName};`);
         console.log(`🗑️  Deleted from ${displayName} (${rowCount} rows)`);
       } catch (error: any) {
+        // Rollback to savepoint on error to prevent transaction abort
+        try {
+          await queryRunner.query(`ROLLBACK TO SAVEPOINT ${savepointName};`);
+        } catch (rollbackError: any) {
+          // Savepoint might not exist if error occurred before creating it
+          if (rollbackError.code !== '3B001') {
+            throw rollbackError;
+          }
+        }
+        
         if (error.code === '42P01') {
           // Table doesn't exist, skip it
           console.log(`⏭️  Skipping ${displayName} (table doesn't exist)`);
         } else {
-          console.error(`❌ Error deleting from ${displayName}:`, error.message);
-          throw error;
+          // Log error but continue - we'll try to delete anyway
+          console.log(`⚠️  Warning: Error deleting from ${displayName}: ${error.message}`);
         }
       }
     };
@@ -75,8 +109,11 @@ export class DeleteAllDataExceptCourts1734570300000 implements MigrationInterfac
     await safeDelete('push_subscriptions', 'Push Subscriptions');
 
     // 17. Clear home court references before deleting users
-    // Check if users table exists first to avoid transaction abort
+    // Use savepoint to prevent transaction abort on error
+    const clearHomeCourtRefsSavepoint = 'sp_clear_home_court_refs';
     try {
+      await queryRunner.query(`SAVEPOINT ${clearHomeCourtRefsSavepoint};`);
+      
       const tableExists = await queryRunner.query(`
         SELECT EXISTS (
           SELECT FROM information_schema.tables 
@@ -88,14 +125,23 @@ export class DeleteAllDataExceptCourts1734570300000 implements MigrationInterfac
       if (tableExists[0]?.exists) {
         const result = await queryRunner.query('UPDATE users SET home_court_id = NULL WHERE home_court_id IS NOT NULL;');
         const rowCount = result.rowCount || 0;
+        await queryRunner.query(`RELEASE SAVEPOINT ${clearHomeCourtRefsSavepoint};`);
         console.log(`🗑️  Cleared home court references from users (${rowCount} rows)`);
       } else {
+        await queryRunner.query(`ROLLBACK TO SAVEPOINT ${clearHomeCourtRefsSavepoint};`);
         console.log('⏭️  Skipping home court reference clearing (users table doesn\'t exist)');
       }
     } catch (error: any) {
-      // If error occurs, log but don't throw - we'll still try to delete users
+      // Rollback to savepoint on error to prevent transaction abort
+      try {
+        await queryRunner.query(`ROLLBACK TO SAVEPOINT ${clearHomeCourtRefsSavepoint};`);
+      } catch (rollbackError: any) {
+        if (rollbackError.code !== '3B001') {
+          throw rollbackError;
+        }
+      }
+      // Log warning but continue - we'll still try to delete users
       console.log(`⚠️  Warning: Could not clear home court references: ${error.message}`);
-      // Don't throw - continue with deletion
     }
 
     // 18. Delete users (but we keep courts)
