@@ -94,11 +94,6 @@ export class ApplicationsService {
       throw new NotFoundException('Match slot not found');
     }
 
-    // Check if slot is available
-    if (slot.status !== SlotStatus.AVAILABLE) {
-      throw new BadRequestException('Slot is not available');
-    }
-
     // Check if user is the creator
     if (slot.match.creatorUserId === userId) {
       throw new BadRequestException('Cannot apply to your own match');
@@ -110,7 +105,7 @@ export class ApplicationsService {
       throw new BadRequestException('Match is not accepting applications');
     }
 
-    // For confirmed singles matches, allow waitlist applications
+    // For confirmed singles matches, allow waitlist applications (skip slot availability check)
     if (slot.match.status === MatchStatus.CONFIRMED && isSingles) {
       // Allow application but set status to WAITLISTED immediately
       // Sanitize guest partner name if provided
@@ -183,6 +178,11 @@ export class ApplicationsService {
       }
 
       return savedApplication;
+    }
+
+    // For pending matches, check slot availability
+    if (slot.status !== SlotStatus.AVAILABLE) {
+      throw new BadRequestException('Slot is not available');
     }
 
     // For pending matches, continue with normal flow
