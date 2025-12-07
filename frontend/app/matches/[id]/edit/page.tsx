@@ -231,13 +231,6 @@ function EditMatchPageContent() {
   // Pre-fill form when match is loaded (and courts are available)
   useEffect(() => {
     if (currentMatch && user && courts.length > 0) {
-      // Validate user is creator
-      if (currentMatch.creatorUserId !== user.id) {
-        setError('You can only edit matches you created.');
-        setErrorAction({ link: '/dashboard', text: 'Go to Dashboard' });
-        return;
-      }
-
       // Validate match is pending
       if (currentMatch.status?.toLowerCase() !== 'pending') {
         setError('You can only edit pending matches.');
