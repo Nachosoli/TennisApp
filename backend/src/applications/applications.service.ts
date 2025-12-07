@@ -314,9 +314,16 @@ export class ApplicationsService {
       throw new ForbiddenException('Only match creator can confirm applications');
     }
 
-    // Check if application is still pending
-    if (application.status !== ApplicationStatus.PENDING) {
-      throw new BadRequestException('Application is not pending');
+    // Check if application is pending or waitlisted (can confirm waitlisted when match is pending)
+    const match = application.matchSlot.match;
+    const isMatchPending = match.status === MatchStatus.PENDING;
+    
+    if (application.status === ApplicationStatus.WAITLISTED && !isMatchPending) {
+      throw new BadRequestException('Can only confirm waitlisted applications when match is pending');
+    }
+    
+    if (application.status !== ApplicationStatus.PENDING && application.status !== ApplicationStatus.WAITLISTED) {
+      throw new BadRequestException('Application must be pending or waitlisted to confirm');
     }
 
     // Confirm application
@@ -859,16 +866,22 @@ export class ApplicationsService {
 
       const isSingles = updatedMatch.format === MatchFormat.SINGLES;
 
-      // Check if there are any other confirmed applications for this match
-      const hasOtherConfirmedApplications = updatedMatch.slots?.some(s => 
-        s.applications?.some(app => 
-          app.status === ApplicationStatus.CONFIRMED
-        )
-      ) || false;
+      // Count remaining confirmed applications for this match
+      const confirmedApplicationsCount = await this.applicationRepository
+        .createQueryBuilder('app')
+        .innerJoin('app.matchSlot', 'slot')
+        .innerJoin('slot.match', 'm')
+        .where('m.id = :matchId', { matchId: updatedMatch.id })
+        .andWhere('app.status = :confirmed', { confirmed: ApplicationStatus.CONFIRMED })
+        .getCount();
 
-      // For singles: If no other confirmed applications, revert match to pending and notify waitlisted users
-      // For doubles: Keep existing logic
-      if (!hasOtherConfirmedApplications) {
+      // For singles: If no other confirmed applications, revert match to pending
+      // For doubles: If fewer than 3 confirmed applications, revert match to pending
+      const shouldRevertToPending = isSingles 
+        ? confirmedApplicationsCount === 0
+        : confirmedApplicationsCount < 3;
+
+      if (shouldRevertToPending) {
         updatedMatch.status = MatchStatus.PENDING;
         await this.matchRepository.save(updatedMatch);
 
@@ -890,17 +903,17 @@ export class ApplicationsService {
           await this.matchSlotRepository.save(updatedSlot);
         }
 
-        // For singles matches, notify all waitlisted users that a spot opened up
-        if (isSingles) {
-          const waitlistedApplications = await this.applicationRepository
-            .createQueryBuilder('app')
-            .innerJoin('app.matchSlot', 'slot')
-            .innerJoin('slot.match', 'm')
-            .where('m.id = :matchId', { matchId: updatedMatch.id })
-            .andWhere('app.status = :waitlisted', { waitlisted: ApplicationStatus.WAITLISTED })
-            .getMany();
+        // Notify all waitlisted users that a spot opened up
+        const waitlistedApplications = await this.applicationRepository
+          .createQueryBuilder('app')
+          .innerJoin('app.matchSlot', 'slot')
+          .innerJoin('slot.match', 'm')
+          .where('m.id = :matchId', { matchId: updatedMatch.id })
+          .andWhere('app.status = :waitlisted', { waitlisted: ApplicationStatus.WAITLISTED })
+          .getMany();
 
-          for (const waitlistedApp of waitlistedApplications) {
+        for (const waitlistedApp of waitlistedApplications) {
+          try {
             await this.notificationsService.createNotification(
               waitlistedApp.applicantUserId,
               NotificationType.MATCH_ACCEPTED,
@@ -909,6 +922,8 @@ export class ApplicationsService {
                 matchId: updatedMatch.id,
               },
             );
+          } catch (error) {
+            console.warn(`Failed to send notification to waitlisted user ${waitlistedApp.applicantUserId}:`, error);
           }
         }
       }
