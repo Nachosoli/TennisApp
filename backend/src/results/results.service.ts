@@ -206,6 +206,82 @@ export class ResultsService {
     return hasApplication;
   }
 
+  private isValidTennisSetScore(playerGames: number, opponentGames: number): boolean {
+    // Both must be non-negative integers
+    if (playerGames < 0 || opponentGames < 0 || !Number.isInteger(playerGames) || !Number.isInteger(opponentGames)) {
+      return false;
+    }
+
+    // If both are 0, it's empty (valid for partial entry)
+    if (playerGames === 0 && opponentGames === 0) {
+      return true;
+    }
+
+    // A set must be won by at least 2 games
+    const diff = Math.abs(playerGames - opponentGames);
+    
+    // If one player has 6 or more games, they must win by 2
+    if (playerGames >= 6 || opponentGames >= 6) {
+      // Check for tiebreak (7-6 or 6-7)
+      if ((playerGames === 7 && opponentGames === 6) || (playerGames === 6 && opponentGames === 7)) {
+        return true; // Valid tiebreak
+      }
+      // Otherwise, must win by 2 and winner must have at least 6
+      if (diff >= 2 && Math.max(playerGames, opponentGames) >= 6) {
+        // But can't have scores like 7-4, 8-5, etc. (must be 6-0 to 6-4, or 7-5, or 7-6)
+        const winner = Math.max(playerGames, opponentGames);
+        const loser = Math.min(playerGames, opponentGames);
+        
+        // Valid scores: 6-0, 6-1, 6-2, 6-3, 6-4, 7-5, 7-6
+        if (winner === 6 && loser <= 4) {
+          return true;
+        }
+        if (winner === 7 && (loser === 5 || loser === 6)) {
+          return true;
+        }
+        // Invalid: 7-4, 8-6, etc.
+        return false;
+      }
+      return false;
+    }
+
+    // If neither has 6, it's incomplete (valid for partial entry or retirement)
+    return true;
+  }
+
+  private isSetComplete(playerGames: number, opponentGames: number): boolean {
+    // If both are 0, it's empty (not complete)
+    if (playerGames === 0 && opponentGames === 0) {
+      return false;
+    }
+
+    // Check if one player has won the set
+    const diff = Math.abs(playerGames - opponentGames);
+    
+    // If one player has 6+ games and leads by 2+, set is complete
+    if ((playerGames >= 6 || opponentGames >= 6) && diff >= 2) {
+      // Validate it's a valid winning score
+      const winner = Math.max(playerGames, opponentGames);
+      const loser = Math.min(playerGames, opponentGames);
+      
+      // Valid winning scores: 6-0 to 6-4, 7-5, 7-6
+      if (winner === 6 && loser <= 4) {
+        return true;
+      }
+      if (winner === 7 && (loser === 5 || loser === 6)) {
+        return true;
+      }
+    }
+    
+    // Tiebreak (7-6 or 6-7) is complete
+    if ((playerGames === 7 && opponentGames === 6) || (playerGames === 6 && opponentGames === 7)) {
+      return true;
+    }
+    
+    // Otherwise, set is incomplete
+    return false;
+  }
+
   private validateScore(score: string): void {
     // Allow alternative outcomes or standard score format
     const alternativeOutcomes = ['won by default', 'opponent retired'];
@@ -214,6 +290,24 @@ export class ResultsService {
     );
     
     if (isAlternative) {
+      // For alternative outcomes, allow incomplete scores
+      // Extract set scores from the string (they may be before or after the alternative outcome text)
+      const sets = score.trim().split(/\s+/).filter(s => /\d+-\d+/.test(s));
+      
+      if (sets.length > 0) {
+        // Parse and validate incomplete scores are allowed
+        for (const set of sets) {
+          const [playerGamesStr, opponentGamesStr] = set.split('-');
+          const playerGames = parseInt(playerGamesStr, 10);
+          const opponentGames = parseInt(opponentGamesStr, 10);
+          
+          // Incomplete sets are allowed with alternative outcomes
+          // But still validate format (non-negative integers)
+          if (isNaN(playerGames) || isNaN(opponentGames) || playerGames < 0 || opponentGames < 0) {
+            throw new BadRequestException('Invalid score format. Games must be non-negative integers.');
+          }
+        }
+      }
       return; // Alternative outcomes are valid
     }
     
@@ -222,6 +316,41 @@ export class ResultsService {
     if (!scoreRegex.test(score.trim())) {
       throw new BadRequestException(
         'Invalid score format. Use format like "6-4 3-6 6-2" or "6-4 6-3", or select an alternative outcome',
+      );
+    }
+
+    // Parse and validate each set score
+    const sets = score.trim().split(/\s+/);
+    let hasIncompleteSet = false;
+
+    for (const set of sets) {
+      const [playerGamesStr, opponentGamesStr] = set.split('-');
+      const playerGames = parseInt(playerGamesStr, 10);
+      const opponentGames = parseInt(opponentGamesStr, 10);
+
+      if (isNaN(playerGames) || isNaN(opponentGames)) {
+        throw new BadRequestException(`Invalid score format in set: ${set}. Games must be numbers.`);
+      }
+
+      // Check if set is incomplete
+      if (!this.isSetComplete(playerGames, opponentGames)) {
+        hasIncompleteSet = true;
+      }
+
+      // Validate complete sets
+      if (this.isSetComplete(playerGames, opponentGames)) {
+        if (!this.isValidTennisSetScore(playerGames, opponentGames)) {
+          throw new BadRequestException(
+            `Invalid set score: ${set}. A set must be won by at least 2 games (e.g., 6-4, 7-5, or 7-6 for tiebreak). Scores like 6-5 are not valid.`,
+          );
+        }
+      }
+    }
+
+    // If there are incomplete sets without alternative outcome, reject
+    if (hasIncompleteSet) {
+      throw new BadRequestException(
+        'Incomplete scores require indicating opponent retired or won by default',
       );
     }
   }

@@ -42,10 +42,20 @@ export function EloGraph({ data, height = 300 }: EloGraphProps) {
   const innerWidth = graphWidth - padding.left - padding.right;
   const innerHeight = graphHeight - padding.top - padding.bottom;
 
-  // Calculate min/max ELO values for scaling
-  const eloValues = sortedData.map(d => [d.eloBefore, d.eloAfter]).flat();
-  const minElo = Math.min(...eloValues);
-  const maxElo = Math.max(...eloValues);
+  // Calculate cumulative ELO starting from 1500
+  const initialElo = 1500;
+  let currentElo = initialElo;
+  const cumulativeElos = [initialElo];
+  
+  sortedData.forEach((entry) => {
+    const eloChange = entry.eloAfter - entry.eloBefore;
+    currentElo = currentElo + eloChange;
+    cumulativeElos.push(currentElo);
+  });
+
+  // Calculate min/max ELO values for scaling (always include 1500 and all cumulative values)
+  const minElo = Math.min(...cumulativeElos);
+  const maxElo = Math.max(...cumulativeElos);
   const eloRange = maxElo - minElo || 100; // Avoid division by zero
   
   // Add some padding to the range
@@ -59,19 +69,29 @@ export function EloGraph({ data, height = 300 }: EloGraphProps) {
   };
 
   // Scale function for X axis (dates)
+  // We have sortedData.length + 1 points (1500 at index 0, then each match result)
   const scaleX = (index: number) => {
-    return (index / (sortedData.length - 1 || 1)) * innerWidth;
+    const totalPoints = sortedData.length + 1;
+    return (index / (totalPoints - 1 || 1)) * innerWidth;
   };
 
   // Generate path for the line
   const generatePath = () => {
     if (sortedData.length === 0) return '';
     
-    let path = `M ${padding.left + scaleX(0)} ${padding.top + scaleY(sortedData[0].eloBefore)}`;
+    // Always start from 1500 (initial ELO)
+    let path = `M ${padding.left + scaleX(0)} ${padding.top + scaleY(initialElo)}`;
     
+    // Calculate cumulative ELO starting from 1500
+    let currentElo = initialElo;
     sortedData.forEach((entry, index) => {
-      const x = padding.left + scaleX(index);
-      const y = padding.top + scaleY(entry.eloAfter);
+      // Calculate the ELO change for this match
+      const eloChange = entry.eloAfter - entry.eloBefore;
+      // Add the change to current ELO
+      currentElo = currentElo + eloChange;
+      
+      const x = padding.left + scaleX(index + 1); // +1 because first point is at index 0
+      const y = padding.top + scaleY(currentElo);
       path += ` L ${x} ${y}`;
     });
     
@@ -137,7 +157,7 @@ export function EloGraph({ data, height = 300 }: EloGraphProps) {
           
           if (!showLabel) return null;
           
-          const x = padding.left + scaleX(index);
+          const x = padding.left + scaleX(index + 1); // +1 because first point (1500) is at index 0
           return (
             <g key={`date-${index}`}>
               <line
@@ -183,13 +203,19 @@ export function EloGraph({ data, height = 300 }: EloGraphProps) {
         
         {/* Area fill under the line */}
         {sortedData.length > 0 && (() => {
-          let areaPath = `M ${padding.left + scaleX(0)} ${padding.top + scaleY(sortedData[0].eloBefore)}`;
+          // Always start from 1500
+          let areaPath = `M ${padding.left + scaleX(0)} ${padding.top + scaleY(initialElo)}`;
+          
+          let currentElo = initialElo;
           sortedData.forEach((entry, index) => {
-            const x = padding.left + scaleX(index);
-            const y = padding.top + scaleY(entry.eloAfter);
+            const eloChange = entry.eloAfter - entry.eloBefore;
+            currentElo = currentElo + eloChange;
+            const x = padding.left + scaleX(index + 1);
+            const y = padding.top + scaleY(currentElo);
             areaPath += ` L ${x} ${y}`;
           });
-          areaPath += ` L ${padding.left + scaleX(sortedData.length - 1)} ${padding.top + innerHeight}`;
+          
+          areaPath += ` L ${padding.left + scaleX(sortedData.length)} ${padding.top + innerHeight}`;
           areaPath += ` L ${padding.left + scaleX(0)} ${padding.top + innerHeight} Z`;
           return (
             <path
@@ -201,8 +227,15 @@ export function EloGraph({ data, height = 300 }: EloGraphProps) {
 
         {/* Data points */}
         {sortedData.map((entry, index) => {
-          const x = padding.left + scaleX(index);
-          const y = padding.top + scaleY(entry.eloAfter);
+          // Calculate cumulative ELO for this point
+          let currentElo = initialElo;
+          for (let i = 0; i <= index; i++) {
+            const eloChange = sortedData[i].eloAfter - sortedData[i].eloBefore;
+            currentElo = currentElo + eloChange;
+          }
+          
+          const x = padding.left + scaleX(index + 1); // +1 because first point is at index 0
+          const y = padding.top + scaleY(currentElo);
           const eloChange = entry.eloAfter - entry.eloBefore;
           
           return (
@@ -226,40 +259,38 @@ export function EloGraph({ data, height = 300 }: EloGraphProps) {
                 textAnchor="middle"
                 fontWeight="600"
               >
-                {formatElo(entry.eloAfter)}
+                {formatElo(currentElo)}
               </text>
               
               {/* Tooltip on hover - using title for accessibility */}
               <title>
-                {formatDate(entry.createdAt)}: {formatElo(entry.eloAfter)} ({eloChange >= 0 ? '+' : ''}{eloChange.toFixed(1)})
+                {formatDate(entry.createdAt)}: {formatElo(currentElo)} ({eloChange >= 0 ? '+' : ''}{eloChange.toFixed(1)})
               </title>
             </g>
           );
         })}
 
-        {/* Start point (eloBefore of first entry) */}
-        {sortedData.length > 0 && (
-          <g>
-            <circle
-              cx={padding.left + scaleX(0)}
-              cy={padding.top + scaleY(sortedData[0].eloBefore)}
-              r="5"
-              fill="#3B82F6"
-              stroke="white"
-              strokeWidth="2"
-            />
-            <text
-              x={padding.left + scaleX(0)}
-              y={padding.top + scaleY(sortedData[0].eloBefore) - 12}
-              fill="#2563EB"
-              fontSize="12"
-              textAnchor="middle"
-              fontWeight="600"
-            >
-              {formatElo(sortedData[0].eloBefore)}
-            </text>
-          </g>
-        )}
+        {/* Start point (always 1500) */}
+        <g>
+          <circle
+            cx={padding.left + scaleX(0)}
+            cy={padding.top + scaleY(initialElo)}
+            r="5"
+            fill="#3B82F6"
+            stroke="white"
+            strokeWidth="2"
+          />
+          <text
+            x={padding.left + scaleX(0)}
+            y={padding.top + scaleY(initialElo) - 12}
+            fill="#2563EB"
+            fontSize="12"
+            textAnchor="middle"
+            fontWeight="600"
+          >
+            {formatElo(initialElo)}
+          </text>
+        </g>
       </svg>
     </div>
   );
