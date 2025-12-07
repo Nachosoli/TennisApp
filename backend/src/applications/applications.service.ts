@@ -562,36 +562,39 @@ export class ApplicationsService {
       // Don't fail confirmation if notification fails
     }
 
-    // Create automatic match confirmation messages for both participants
-    try {
-      // Load match with relations for message creation
-      const matchWithRelations = await this.matchRepository.findOne({
-        where: { id: notificationMatch.id },
-        relations: ['court', 'slots'],
-      });
+    // Create automatic match confirmation messages for both participants (singles only)
+    // For doubles, skip automatic messages - let them socialize naturally
+    if (isSingles) {
+      try {
+        // Load match with relations for message creation
+        const matchWithRelations = await this.matchRepository.findOne({
+          where: { id: notificationMatch.id },
+          relations: ['court', 'slots'],
+        });
 
-      if (matchWithRelations) {
-        // Message from applicant to creator
-        await this.chatService.createContactInfoMessage(
-          notificationMatch.id,
-          application.applicantUserId, // Sender: applicant
-          creatorUserId, // Recipient: creator
-          matchWithRelations,
-          application.matchSlot,
-        );
+        if (matchWithRelations) {
+          // Message from applicant to creator
+          await this.chatService.createContactInfoMessage(
+            notificationMatch.id,
+            application.applicantUserId, // Sender: applicant
+            creatorUserId, // Recipient: creator
+            matchWithRelations,
+            application.matchSlot,
+          );
 
-        // Message from creator to applicant
-        await this.chatService.createContactInfoMessage(
-          notificationMatch.id,
-          creatorUserId, // Sender: creator
-          application.applicantUserId, // Recipient: applicant
-          matchWithRelations,
-          application.matchSlot,
-        );
+          // Message from creator to applicant
+          await this.chatService.createContactInfoMessage(
+            notificationMatch.id,
+            creatorUserId, // Sender: creator
+            application.applicantUserId, // Recipient: applicant
+            matchWithRelations,
+            application.matchSlot,
+          );
+        }
+      } catch (error) {
+        // Log error but don't fail confirmation if message creation fails
+        console.warn('Failed to create match confirmation messages:', error);
       }
-    } catch (error) {
-      // Log error but don't fail confirmation if message creation fails
-      console.warn('Failed to create match confirmation messages:', error);
     }
 
     // Emit real-time updates
@@ -696,36 +699,39 @@ export class ApplicationsService {
       },
     );
 
-    // Create automatic match confirmation messages for both participants
-    try {
-      // Load match with relations for message creation
-      const matchWithRelations = await this.matchRepository.findOne({
-        where: { id: currentMatch.id },
-        relations: ['court', 'slots'],
-      });
+    // Create automatic match confirmation messages for both participants (singles only)
+    // For doubles, skip automatic messages - let them socialize naturally
+    if (currentMatch.format === MatchFormat.SINGLES) {
+      try {
+        // Load match with relations for message creation
+        const matchWithRelations = await this.matchRepository.findOne({
+          where: { id: currentMatch.id },
+          relations: ['court', 'slots'],
+        });
 
-      if (matchWithRelations) {
-        // Message from new applicant to creator
-        await this.chatService.createContactInfoMessage(
-          currentMatch.id,
-          application.applicantUserId, // Sender: new applicant
-          creatorUserId, // Recipient: creator
-          matchWithRelations,
-          application.matchSlot,
-        );
+        if (matchWithRelations) {
+          // Message from new applicant to creator
+          await this.chatService.createContactInfoMessage(
+            currentMatch.id,
+            application.applicantUserId, // Sender: new applicant
+            creatorUserId, // Recipient: creator
+            matchWithRelations,
+            application.matchSlot,
+          );
 
-        // Message from creator to new applicant
-        await this.chatService.createContactInfoMessage(
-          currentMatch.id,
-          creatorUserId, // Sender: creator
-          application.applicantUserId, // Recipient: new applicant
-          matchWithRelations,
-          application.matchSlot,
-        );
+          // Message from creator to new applicant
+          await this.chatService.createContactInfoMessage(
+            currentMatch.id,
+            creatorUserId, // Sender: creator
+            application.applicantUserId, // Recipient: new applicant
+            matchWithRelations,
+            application.matchSlot,
+          );
+        }
+      } catch (error) {
+        // Log error but don't fail approval if message creation fails
+        console.warn('Failed to create match confirmation messages:', error);
       }
-    } catch (error) {
-      // Log error but don't fail approval if message creation fails
-      console.warn('Failed to create match confirmation messages:', error);
     }
 
     // Clear match cache

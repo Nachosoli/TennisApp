@@ -630,7 +630,84 @@ export default function MatchDetailPage() {
           </div>
         )}
 
-        {/* Chat Section - Only show for creator or confirmed applicant */}
+        {/* Confirmed Participants Section - Only for doubles matches */}
+        {(() => {
+          const isDoubles = currentMatch.format === 'doubles';
+          const isCreator = currentMatch.creatorUserId === user?.id;
+          const hasConfirmedApplication = user && currentMatch.slots?.some(slot =>
+            slot.applications?.some(app =>
+              (app.applicantUserId === user.id || app.userId === user.id) &&
+              app.status?.toLowerCase() === 'confirmed'
+            )
+          );
+          const isConfirmedParticipant = isCreator || hasConfirmedApplication;
+
+          if (!isDoubles || !isConfirmedParticipant) {
+            return null;
+          }
+
+          // Get all confirmed participants
+          const confirmedParticipants: Array<{ name: string; isCreator: boolean; guestPartner?: string }> = [];
+          
+          // Add creator
+          if (currentMatch.creator) {
+            confirmedParticipants.push({
+              name: `${currentMatch.creator.firstName} ${currentMatch.creator.lastName}`,
+              isCreator: true,
+            });
+          }
+
+          // Add confirmed applicants
+          currentMatch.slots?.forEach(slot => {
+            slot.applications?.forEach(app => {
+              if (app.status?.toLowerCase() === 'confirmed') {
+                const applicant = app.applicant || app.user;
+                if (applicant) {
+                  confirmedParticipants.push({
+                    name: `${applicant.firstName} ${applicant.lastName}`,
+                    isCreator: false,
+                    guestPartner: app.guestPartnerName || undefined,
+                  });
+                }
+              }
+            });
+          });
+
+          if (confirmedParticipants.length === 0) {
+            return null;
+          }
+
+          return (
+            <Card>
+              <div className="p-4">
+                <h3 className="text-lg font-semibold text-gray-900 mb-3">Confirmed Participants</h3>
+                <div className="space-y-2">
+                  {confirmedParticipants.map((participant, index) => (
+                    <div key={index} className="flex items-center justify-between py-2 border-b border-gray-100 last:border-b-0">
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium text-gray-900">
+                          {participant.name}
+                        </span>
+                        {participant.isCreator && (
+                          <span className="px-2 py-0.5 text-xs font-medium bg-blue-100 text-blue-800 rounded">
+                            Creator
+                          </span>
+                        )}
+                      </div>
+                      {participant.guestPartner && (
+                        <span className="text-sm text-gray-600">
+                          + {participant.guestPartner}
+                        </span>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </Card>
+          );
+        })()}
+
+        {/* Chat Section - Show for confirmed participants */}
         {(() => {
           const isCreator = currentMatch.creatorUserId === user?.id;
           const hasConfirmedApplication = user && currentMatch.slots?.some(slot =>
@@ -639,7 +716,13 @@ export default function MatchDetailPage() {
               app.status?.toLowerCase() === 'confirmed'
             )
           );
-          const shouldShowChat = currentMatch.status?.toLowerCase() === 'confirmed' && (isCreator || hasConfirmedApplication);
+          
+          // For doubles: show chat if user is confirmed participant (regardless of match status)
+          // For singles: show chat only when match is confirmed
+          const isDoubles = currentMatch.format === 'doubles';
+          const shouldShowChat = isDoubles
+            ? (isCreator || hasConfirmedApplication) // Doubles: show if user is confirmed participant
+            : (currentMatch.status?.toLowerCase() === 'confirmed' && (isCreator || hasConfirmedApplication)); // Singles: existing logic
           
           return shouldShowChat ? (
             <Card>
