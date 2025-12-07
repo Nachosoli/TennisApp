@@ -1,5 +1,5 @@
-import { IsEnum, IsOptional, IsDateString, IsString, IsNumber, IsArray, Min, Max } from 'class-validator';
-import { Type, ValidateNested } from 'class-transformer';
+import { IsEnum, IsOptional, IsDateString, IsString, IsNumber, IsArray, Min, Max, ValidateNested } from 'class-validator';
+import { Type } from 'class-transformer';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { MatchStatus, MatchFormat } from '../../entities/match.entity';
 import { SurfaceType } from '../../entities/court.entity';
