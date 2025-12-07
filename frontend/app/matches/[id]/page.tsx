@@ -175,6 +175,19 @@ export default function MatchDetailPage() {
     )
   );
 
+  // Check if user has any active application (confirmed, waitlisted, or pending)
+  const hasActiveApplication = user && currentMatch.slots?.some(slot =>
+    slot.applications?.some(app =>
+      (app.applicantUserId === user.id || app.userId === user.id) &&
+      (app.status?.toLowerCase() === 'confirmed' ||
+       app.status?.toLowerCase() === 'waitlisted' ||
+       app.status?.toLowerCase() === 'pending')
+    )
+  );
+
+  // Only show rejection message if user has rejected application AND no active applications
+  const shouldShowRejectionMessage = hasRejectedApplication && !hasActiveApplication;
+
   // Helper function to format time by combining match date with time string
   const formatSlotTime = (timeString: string | undefined): string => {
     if (!timeString || !currentMatch.date) {
@@ -217,8 +230,8 @@ export default function MatchDetailPage() {
   return (
     <Layout>
       <div className="max-w-4xl mx-auto space-y-6">
-        {/* Rejection Message - Show at top if user was rejected */}
-        {hasRejectedApplication && !isCreator && (
+        {/* Rejection Message - Show at top if user was rejected and has no active applications */}
+        {shouldShowRejectionMessage && !isCreator && (
           <Card className="bg-red-50 border-red-200">
             <div className="flex items-start gap-3">
               <svg className="w-5 h-5 text-red-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -252,7 +265,7 @@ export default function MatchDetailPage() {
             {currentMatch.status?.toLowerCase() === 'confirmed' && 
              currentMatch.format === 'singles' && 
              !isCreator && 
-             !hasRejectedApplication &&
+             !shouldShowRejectionMessage &&
              !currentMatch.slots?.some(slot => 
                slot.applications?.some(app => 
                  (app.applicantUserId === user?.id || app.userId === user?.id) &&
@@ -479,8 +492,8 @@ export default function MatchDetailPage() {
                         </div>
                         {!isCreator && isAvailable && isMatchPending && !hasApplicationForSlot && (
                           (() => {
-                            // Check if user has rejected application - disable apply button
-                            if (hasRejectedApplication) {
+                            // Check if user has rejected application and no active applications - disable apply button
+                            if (shouldShowRejectionMessage) {
                               return (
                                 <Button
                                   variant="outline"
