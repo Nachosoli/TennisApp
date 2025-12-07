@@ -488,9 +488,8 @@ export class MatchesService {
             pendingStatus: ApplicationStatus.PENDING,
           },
         )
-        .andWhere(
-          "NOT (match.status = 'completed' AND EXISTS (SELECT 1 FROM results r WHERE r.match_id = match.id))"
-        ) // Exclude completed matches that have a score (those go to match history)
+        // Note: Excluding completed matches with scores is handled on the frontend (dashboard only)
+        // Match history page needs these matches, so we don't filter them here
         .orderBy('match.date', 'ASC') // Sort by date, earlier to later
         .addOrderBy('match.createdAt', 'DESC') // Tie-breaker: most recently created
         .limit(50); // Limit results to prevent excessive data loading

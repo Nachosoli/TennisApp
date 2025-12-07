@@ -63,7 +63,7 @@ export default function DashboardPage() {
         matchesApi.getMyMatches().catch(() => []),
       ]);
       setStats(userStats);
-      // Filter out cancelled matches and matches where user has rejected application
+      // Filter out cancelled matches, matches where user has rejected application, and completed matches with scores
       const activeMatches = (matches || []).filter(match => {
         if (match.status?.toLowerCase() === 'cancelled') return false;
         
@@ -75,6 +75,10 @@ export default function DashboardPage() {
           )
         );
         if (hasRejectedApplication) return false;
+        
+        // Exclude completed matches that have a score (those go to match history)
+        const hasResult = match.results && match.results.length > 0;
+        if (match.status?.toLowerCase() === 'completed' && hasResult) return false;
         
         return true;
       });
