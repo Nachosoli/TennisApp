@@ -167,6 +167,14 @@ export default function MatchDetailPage() {
 
   const isCreator = currentMatch.creatorUserId === user?.id;
 
+  // Check if user has a rejected application for any slot in this match
+  const hasRejectedApplication = user && currentMatch.slots?.some(slot =>
+    slot.applications?.some(app =>
+      (app.applicantUserId === user.id || app.userId === user.id) &&
+      app.status?.toLowerCase() === 'rejected'
+    )
+  );
+
   // Helper function to format time by combining match date with time string
   const formatSlotTime = (timeString: string | undefined): string => {
     if (!timeString || !currentMatch.date) {
@@ -209,6 +217,23 @@ export default function MatchDetailPage() {
   return (
     <Layout>
       <div className="max-w-4xl mx-auto space-y-6">
+        {/* Rejection Message - Show at top if user was rejected */}
+        {hasRejectedApplication && !isCreator && (
+          <Card className="bg-red-50 border-red-200">
+            <div className="flex items-start gap-3">
+              <svg className="w-5 h-5 text-red-600 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <div className="flex-1">
+                <h3 className="font-semibold text-red-900 mb-1">Application Rejected</h3>
+                <p className="text-sm text-red-800">
+                  Your application to this match was rejected by the match creator. You cannot re-apply to this match.
+                </p>
+              </div>
+            </div>
+          </Card>
+        )}
+
         <div className="flex justify-between items-start">
           <div>
             <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900">{currentMatch.court?.name}</h1>
@@ -227,6 +252,7 @@ export default function MatchDetailPage() {
             {currentMatch.status?.toLowerCase() === 'confirmed' && 
              currentMatch.format === 'singles' && 
              !isCreator && 
+             !hasRejectedApplication &&
              !currentMatch.slots?.some(slot => 
                slot.applications?.some(app => 
                  (app.applicantUserId === user?.id || app.userId === user?.id) &&
@@ -453,6 +479,21 @@ export default function MatchDetailPage() {
                         </div>
                         {!isCreator && isAvailable && isMatchPending && !hasApplicationForSlot && (
                           (() => {
+                            // Check if user has rejected application - disable apply button
+                            if (hasRejectedApplication) {
+                              return (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  disabled
+                                  className="opacity-50 cursor-not-allowed"
+                                  title="You cannot re-apply to this match as your previous application was rejected"
+                                >
+                                  Cannot Apply
+                                </Button>
+                              );
+                            }
+                            
                             // Users can apply to multiple slots, so only check if they've applied to THIS specific slot
                             if (hasApplicationForSlot) {
                               return (
