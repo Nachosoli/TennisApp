@@ -375,7 +375,7 @@ function EditMatchPageContent() {
       }
       
       await matchesApi.update(matchId, requestData);
-      router.push(`/matches/${matchId}`);
+      router.push('/dashboard');
     } catch (err: any) {
       console.error('Error updating match:', err);
       const errorMessage = err?.response?.data?.message || getErrorMessage(err);
