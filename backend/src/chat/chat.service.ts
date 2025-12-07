@@ -76,12 +76,15 @@ export class ChatService {
         participants.push(matchWithRelations.creatorUserId);
       }
 
-      // Add applicants (handle multiple applications per slot)
+      // Add applicants (only confirmed applicants for chat notifications)
       if (matchWithRelations.slots) {
         matchWithRelations.slots.forEach((slot) => {
           if (slot.applications && slot.applications.length > 0) {
             slot.applications.forEach((application) => {
-              if (application.applicantUserId && application.applicantUserId !== userId) {
+              // Only include confirmed applicants in chat notifications
+              if (application.applicantUserId && 
+                  application.applicantUserId !== userId && 
+                  application.status === 'confirmed') {
                 if (!participants.includes(application.applicantUserId)) {
                   participants.push(application.applicantUserId);
                 }

@@ -332,7 +332,7 @@ export class ApplicationsService {
     const isSingles = currentMatch.format === MatchFormat.SINGLES;
 
     // For singles: Match is confirmed when creator + 1 applicant (2 total)
-    // For doubles: Keep existing logic (will be updated separately)
+    // For doubles: Match is confirmed when creator + 3 applicants (4 total)
     if (isSingles) {
       // Count confirmed applications (creator + confirmed applicants)
       const confirmedApplications = await this.applicationRepository
@@ -388,41 +388,59 @@ export class ApplicationsService {
         // Don't waitlist other applications yet - they can still be confirmed
       }
     } else {
-      // Doubles: Keep existing logic (confirm immediately and waitlist others)
-      currentMatch.status = MatchStatus.CONFIRMED;
-      await this.matchRepository.save(currentMatch);
-
-      // Auto-waitlist all other pending and rejected applications for this match
-      const matchOtherApplications = await this.applicationRepository
+      // Doubles: Match is confirmed when creator + 3 applicants (4 total)
+      // Count confirmed applications (creator + confirmed applicants)
+      const confirmedApplications = await this.applicationRepository
         .createQueryBuilder('app')
         .innerJoin('app.matchSlot', 'slot')
         .innerJoin('slot.match', 'm')
         .where('m.id = :matchId', { matchId: currentMatch.id })
-        .andWhere('app.id != :applicationId', { applicationId: application.id })
-        .andWhere('(app.status = :pending OR app.status = :rejected)', { 
-          pending: ApplicationStatus.PENDING,
-          rejected: ApplicationStatus.REJECTED 
-        })
-        .getMany();
+        .andWhere('app.status = :confirmed', { confirmed: ApplicationStatus.CONFIRMED })
+        .getCount();
 
-      for (const otherApp of matchOtherApplications) {
-        otherApp.status = ApplicationStatus.WAITLISTED;
-        await this.applicationRepository.save(otherApp);
-        
-        // Notify waitlisted applicant
-        try {
-          await this.notificationsService.createNotification(
-            otherApp.applicantUserId,
-            NotificationType.MATCH_ACCEPTED,
-            `Your application has been waitlisted for this match. You may be selected if the confirmed participant withdraws.`,
-            {
-              matchId: currentMatch.id,
-            },
-          );
-        } catch (error) {
-          console.warn(`Failed to send waitlist notification to user ${otherApp.applicantUserId}:`, error);
-          // Don't fail confirmation if notification fails
+      // Creator + 3 confirmed applicants = 4 total (match is full)
+      if (confirmedApplications >= 3) { // At least 3 confirmed applicants (plus creator = 4)
+        currentMatch.status = MatchStatus.CONFIRMED;
+        await this.matchRepository.save(currentMatch);
+
+        // Now waitlist all other pending applications (match is full)
+        const matchOtherApplications = await this.applicationRepository
+          .createQueryBuilder('app')
+          .innerJoin('app.matchSlot', 'slot')
+          .innerJoin('slot.match', 'm')
+          .where('m.id = :matchId', { matchId: currentMatch.id })
+          .andWhere('app.id != :applicationId', { applicationId: application.id })
+          .andWhere('(app.status = :pending OR app.status = :rejected)', { 
+            pending: ApplicationStatus.PENDING,
+            rejected: ApplicationStatus.REJECTED 
+          })
+          .getMany();
+
+        for (const otherApp of matchOtherApplications) {
+          otherApp.status = ApplicationStatus.WAITLISTED;
+          await this.applicationRepository.save(otherApp);
+          
+          // Notify waitlisted applicant
+          try {
+            await this.notificationsService.createNotification(
+              otherApp.applicantUserId,
+              NotificationType.MATCH_ACCEPTED,
+              `Your application has been waitlisted for this match. You may be selected if the confirmed participant withdraws.`,
+              {
+                matchId: currentMatch.id,
+              },
+            );
+          } catch (error: any) {
+            console.error(`Failed to send waitlist notification to user ${otherApp.applicantUserId}:`, error);
+            console.error('Error details:', error.message, error.stack);
+            // Don't fail confirmation if notification fails
+          }
         }
+      } else {
+        // Not enough confirmed applications yet, keep match as pending
+        currentMatch.status = MatchStatus.PENDING;
+        await this.matchRepository.save(currentMatch);
+        // Don't waitlist other applications yet - they can still be confirmed
       }
     }
     
