@@ -183,6 +183,12 @@ function EditMatchPageContent() {
   const form = useForm<EditMatchFormData>({
     resolver: zodResolver(editMatchSchema),
     mode: 'onChange',
+    defaultValues: {
+      courtId: '',
+      date: '',
+      format: 'SINGLES',
+      slots: [{ startTime: '', endTime: '' }],
+    },
   });
 
   const {
@@ -191,7 +197,7 @@ function EditMatchPageContent() {
     control,
     setValue,
     reset,
-    formState: { errors },
+    formState: { errors, isValid },
   } = form;
 
   const { fields, append, remove } = useFieldArray({
@@ -332,7 +338,9 @@ function EditMatchPageContent() {
         <h1 className="text-3xl font-bold text-gray-900 mb-6">Edit Match</h1>
 
         <Card>
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+          <form onSubmit={handleSubmit(onSubmit, (errors) => {
+            console.log('Form validation errors:', errors);
+          })} className="space-y-6">
             {error && (
               <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
                 <div className="flex items-start justify-between">
@@ -458,6 +466,9 @@ function EditMatchPageContent() {
                 variant="primary"
                 className="flex-1"
                 isLoading={isLoading}
+                onClick={(e) => {
+                  console.log('Update Match button clicked', { isValid, errors, isLoading });
+                }}
               >
                 Update Match
               </Button>
