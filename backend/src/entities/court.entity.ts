@@ -4,14 +4,11 @@ import {
   Column,
   CreateDateColumn,
   UpdateDateColumn,
-  ManyToOne,
   OneToMany,
-  JoinColumn,
   Index,
   DeleteDateColumn,
 } from 'typeorm';
 import type { Point } from 'geojson';
-import { User } from './user.entity';
 import { Match } from './match.entity';
 import { CourtReview } from './court-review.entity';
 
@@ -24,7 +21,6 @@ export enum SurfaceType {
 
 @Entity('courts')
 // Spatial index removed - requires PostGIS. Using regular index if needed.
-@Index(['createdByUserId'])
 export class Court {
   @PrimaryGeneratedColumn('uuid')
   id: string;
@@ -70,13 +66,6 @@ export class Court {
 
   @Column({ name: 'is_public', default: true })
   isPublic: boolean;
-
-  @Column({ name: 'created_by_user_id' })
-  createdByUserId: string;
-
-  @ManyToOne(() => User)
-  @JoinColumn({ name: 'created_by_user_id' })
-  createdBy: User;
 
   @DeleteDateColumn({ name: 'deleted_at', nullable: true })
   deletedAt: Date;

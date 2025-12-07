@@ -39,7 +39,6 @@ describe('CourtsService', () => {
     } as Point,
     surfaceType: SurfaceType.HARD,
     isPublic: true,
-    createdByUserId: 'user-1',
     createdAt: new Date(),
     updatedAt: new Date(),
   } as Court;
@@ -175,7 +174,6 @@ describe('CourtsService', () => {
 
       expect(result).toEqual([mockCourt]);
       expect(courtRepository.find).toHaveBeenCalledWith({
-        relations: ['createdBy'],
         order: { createdAt: 'DESC' },
         withDeleted: false,
       });
@@ -191,7 +189,7 @@ describe('CourtsService', () => {
       expect(result).toEqual(mockCourt);
       expect(courtRepository.findOne).toHaveBeenCalledWith({
         where: { id: 'court-1' },
-        relations: ['createdBy', 'matches'],
+        relations: ['matches'],
         withDeleted: false,
       });
     });
@@ -230,21 +228,18 @@ describe('CourtsService', () => {
 
     it('should validate update permissions - admin can update', async () => {
       const adminUser = { ...mockUser, role: UserRole.ADMIN };
-      const courtByOther = { ...mockCourt, createdByUserId: 'other-user' };
 
-      jest.spyOn(courtRepository, 'findOne').mockResolvedValue(courtByOther);
+      jest.spyOn(courtRepository, 'findOne').mockResolvedValue(mockCourt);
       jest.spyOn(userRepository, 'findOne').mockResolvedValue(adminUser);
-      jest.spyOn(courtRepository, 'save').mockResolvedValue(courtByOther);
+      jest.spyOn(courtRepository, 'save').mockResolvedValue(mockCourt);
 
       await service.update('admin-user', 'court-1', updateDto);
 
       expect(courtRepository.save).toHaveBeenCalled();
     });
 
-    it('should reject non-creator non-admin', async () => {
-      const courtByOther = { ...mockCourt, createdByUserId: 'other-user' };
-
-      jest.spyOn(courtRepository, 'findOne').mockResolvedValue(courtByOther);
+    it('should reject non-admin', async () => {
+      jest.spyOn(courtRepository, 'findOne').mockResolvedValue(mockCourt);
       jest.spyOn(userRepository, 'findOne').mockResolvedValue(mockUser);
 
       await expect(service.update('user-1', 'court-1', updateDto)).rejects.toThrow(ForbiddenException);

@@ -143,7 +143,6 @@ export class AdminService {
     search?: string,
   ): Promise<{ courts: Court[]; total: number }> {
     const query = this.courtRepository.createQueryBuilder('court')
-      .leftJoinAndSelect('court.createdBy', 'createdBy')
       .where('court.deletedAt IS NULL');
 
     // Search by name or address
@@ -180,15 +179,6 @@ export class AdminService {
     await this.logAdminAction(adminId, ActionType.DELETE_COURT, TargetType.COURT, courtId, {
       reason,
     });
-
-    // Notify court creator if exists
-    if (court.createdByUserId) {
-      await this.notificationsService.createNotification(
-        court.createdByUserId,
-        NotificationType.COURT_CHANGES,
-        `Your court "${court.name}" has been deleted by an admin. Reason: ${reason}`,
-      );
-    }
 
     return court;
   }

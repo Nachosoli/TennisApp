@@ -187,7 +187,6 @@ async function seedCourts(dataSource: DataSource, users: User[], count: number):
       } as any,
       surfaceType: randomElement(SURFACES),
       isPublic: Math.random() > 0.3, // 70% public
-      createdByUserId: creator.id,
     } as any);
 
     const savedCourt = await courtRepository.save(court);

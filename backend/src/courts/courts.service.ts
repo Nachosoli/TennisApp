@@ -93,7 +93,6 @@ export class CourtsService {
       coordinates,
       surfaceType: createDto.surfaceType,
       isPublic: createDto.isPublic ?? true,
-      createdByUserId: userId,
     });
 
     return this.courtRepository.save(court);
@@ -137,7 +136,6 @@ export class CourtsService {
       coordinates,
       surfaceType: SurfaceType.HARD, // Default to HARD for Google Places
       isPublic: true, // Assume public for Google Places
-      createdByUserId: userId,
     });
 
     return this.courtRepository.save(court);
@@ -145,7 +143,6 @@ export class CourtsService {
 
   async findAll(): Promise<Court[]> {
     return this.courtRepository.find({
-      relations: ['createdBy'],
       order: { createdAt: 'DESC' },
       withDeleted: false,
     });
@@ -154,7 +151,7 @@ export class CourtsService {
   async findById(id: string): Promise<Court> {
     const court = await this.courtRepository.findOne({
       where: { id },
-      relations: ['createdBy', 'matches'],
+      relations: ['matches'],
       withDeleted: false,
     });
 
@@ -189,12 +186,10 @@ export class CourtsService {
   ): Promise<Court> {
     const court = await this.findById(courtId);
 
-    // Only creator or admin can update
-    if (court.createdByUserId !== userId) {
-      const user = await this.userRepository.findOne({ where: { id: userId } });
-      if (!user || !user.isAdmin) {
-        throw new ForbiddenException('Not authorized to update this court');
-      }
+    // Only admins can update courts
+    const user = await this.userRepository.findOne({ where: { id: userId } });
+    if (!user || !user.isAdmin) {
+      throw new ForbiddenException('Only admins can update courts');
     }
 
     // Sanitize name and address if provided
@@ -212,12 +207,10 @@ export class CourtsService {
   async delete(userId: string, courtId: string): Promise<void> {
     const court = await this.findById(courtId);
 
-    // Only creator or admin can delete
-    if (court.createdByUserId !== userId) {
-      const user = await this.userRepository.findOne({ where: { id: userId } });
-      if (!user || !user.isAdmin) {
-        throw new ForbiddenException('Not authorized to delete this court');
-      }
+    // Only admins can delete courts
+    const user = await this.userRepository.findOne({ where: { id: userId } });
+    if (!user || !user.isAdmin) {
+      throw new ForbiddenException('Only admins can delete courts');
     }
 
     // Soft delete

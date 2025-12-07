@@ -297,7 +297,6 @@ async function seedJacksonvilleCourts(dataSource: DataSource): Promise<void> {
         } as any,
         surfaceType: courtData.surfaceType || SurfaceType.HARD,
         isPublic: courtData.isPublic !== undefined ? courtData.isPublic : true,
-        createdByUserId: adminUser.id,
       } as any);
 
       const savedCourt = await courtRepository.save(court);

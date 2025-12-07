@@ -63,7 +63,6 @@ async function addCourt() {
       } as any,
       surfaceType: SurfaceType.CLAY, // Clay surface
       isPublic: true,
-      createdByUserId: creator.id,
     } as any);
 
     const savedCourt = await courtRepository.save(court);

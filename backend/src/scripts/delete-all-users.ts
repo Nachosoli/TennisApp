@@ -84,7 +84,7 @@ async function deleteAllUsers() {
     // - admin_actions
     // - applications (via matches)
     // - chat_messages (via matches)
-    // - courts (created_by_user_id)
+    // Note: Courts are no longer deleted when users are deleted (removed created_by_user_id)
     console.log('\n🗑️  Deleting all users and related profiles...');
     await userRepository.createQueryBuilder().delete().execute();
 

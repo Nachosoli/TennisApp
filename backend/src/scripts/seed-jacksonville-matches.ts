@@ -121,7 +121,6 @@ async function seedJacksonvilleMatches() {
           } as any,
           surfaceType: surfaces[i % surfaces.length],
           isPublic: true,
-          createdByUserId: adminUser.id,
         } as any);
         const savedCourt = await courtRepository.save(court);
         jacksonvilleCourts.push(Array.isArray(savedCourt) ? savedCourt[0] : savedCourt);

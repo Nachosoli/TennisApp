@@ -46,7 +46,6 @@ export interface Court {
   };
   surface: 'hard' | 'clay' | 'grass' | 'indoor';
   isPublic: boolean;
-  createdByUserId?: string;
   createdAt: string;
   updatedAt: string;
 }
