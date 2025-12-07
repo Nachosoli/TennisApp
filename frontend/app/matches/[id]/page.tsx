@@ -463,9 +463,9 @@ export default function MatchDetailPage() {
                   ) || false;
                   
                   // Grey out if:
-                  // 1. Slot is confirmed and user hasn't applied to it (other slot confirmed)
+                  // 1. Slot is confirmed and user hasn't applied to it AND user cannot join waitlist (other slot confirmed)
                   // 2. User has already applied to this slot (but it's not confirmed yet)
-                  const shouldGreyOut = (isConfirmed && !hasApplicationForSlot) || (hasApplicationForSlot && !isConfirmed);
+                  const shouldGreyOut = (isConfirmed && !hasApplicationForSlot && !(isMatchConfirmed && currentMatch.format === 'singles' && canJoinWaitlist)) || (hasApplicationForSlot && !isConfirmed);
                   
                   return (
                     <div
@@ -500,6 +500,10 @@ export default function MatchDetailPage() {
                           {isAvailable && !isCreator && (isMatchPending || (isMatchConfirmed && currentMatch.format === 'singles')) && !hasApplicationForSlot && (
                             <p className="text-xs text-blue-600 mt-1">Click Apply to join this time slot</p>
                           )}
+                          {/* Also show helper text for confirmed slots when user can join waitlist */}
+                          {isConfirmed && !isCreator && isMatchConfirmed && currentMatch.format === 'singles' && canJoinWaitlist && !hasApplicationForSlot && (
+                            <p className="text-xs text-blue-600 mt-1">Click Apply to join the waitlist for this time slot</p>
+                          )}
                           {hasApplicationForSlot && !isConfirmed && !isCreator && (
                             <p className="text-xs text-gray-500 mt-1">Application sent</p>
                           )}
@@ -507,7 +511,8 @@ export default function MatchDetailPage() {
                             <p className="text-xs text-gray-500 mt-1">Match is confirmed</p>
                           )}
                         </div>
-                        {!isCreator && isAvailable && (isMatchPending || (isMatchConfirmed && currentMatch.format === 'singles')) && !hasApplicationForSlot && (
+                        {/* Show Apply button for available slots OR confirmed slots when user can join waitlist */}
+                        {!isCreator && (isAvailable || (isConfirmed && isMatchConfirmed && currentMatch.format === 'singles' && canJoinWaitlist)) && (isMatchPending || (isMatchConfirmed && currentMatch.format === 'singles')) && !hasApplicationForSlot && (
                           (() => {
                             // Check if user has rejected application and no active applications - disable apply button
                             if (shouldShowRejectionMessage) {
