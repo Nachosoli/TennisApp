@@ -23,10 +23,10 @@ const editMatchSchema = z.object({
   courtId: z.string().min(1, 'Court is required'),
   date: z.string().min(1, 'Date is required'),
   format: z.enum(['SINGLES', 'DOUBLES']),
-  skillLevelMin: z.number().min(0).max(10).optional(),
-  skillLevelMax: z.number().min(0).max(10).optional(),
+  skillLevelMin: z.number().min(0).max(10).optional().nullable(),
+  skillLevelMax: z.number().min(0).max(10).optional().nullable(),
   genderFilter: z.union([z.enum(['male', 'female']), z.literal('')]).optional(),
-  maxDistance: z.number().optional(),
+  maxDistance: z.number().optional().nullable(),
   surfaceFilter: z.enum(['hard', 'clay', 'grass', 'indoor']).optional(),
   slots: z.array(z.object({
     startTime: z.string().min(1, 'Start time is required'),
@@ -260,20 +260,29 @@ function EditMatchPageContent() {
       const formattedDate = matchDate.toISOString().split('T')[0];
 
       // Map slots safely - handle different time formats and ensure we have valid data
-      const mappedSlots = currentMatch.slots && currentMatch.slots.length > 0
-        ? currentMatch.slots
-            .filter(slot => slot.startTime && slot.endTime) // Filter out invalid slots
-            .map(slot => {
-              // Handle time format - could be HH:MM:SS or HH:MM
-              const startTime = typeof slot.startTime === 'string' 
-                ? slot.startTime.substring(0, 5) 
-                : '08:00';
-              const endTime = typeof slot.endTime === 'string' 
-                ? slot.endTime.substring(0, 5) 
-                : '09:00';
-              return { startTime, endTime };
-            })
-        : [{ startTime: '08:00', endTime: '09:00' }];
+      // If slots array exists but is empty, or slots don't exist, use default
+      let mappedSlots: Array<{ startTime: string; endTime: string }>;
+      
+      if (currentMatch.slots && Array.isArray(currentMatch.slots) && currentMatch.slots.length > 0) {
+        const validSlots = currentMatch.slots
+          .filter(slot => slot && slot.startTime && slot.endTime) // Filter out invalid slots
+          .map(slot => {
+            // Handle time format - could be HH:MM:SS or HH:MM
+            const startTime = typeof slot.startTime === 'string' 
+              ? slot.startTime.substring(0, 5) 
+              : '08:00';
+            const endTime = typeof slot.endTime === 'string' 
+              ? slot.endTime.substring(0, 5) 
+              : '09:00';
+            return { startTime, endTime };
+          });
+        
+        // If all slots were filtered out, use default
+        mappedSlots = validSlots.length > 0 ? validSlots : [{ startTime: '08:00', endTime: '09:00' }];
+      } else {
+        // No slots or empty array - use default
+        mappedSlots = [{ startTime: '08:00', endTime: '09:00' }];
+      }
 
       // Handle gender - backend uses genderFilter, frontend type might use gender
       const genderValue = (currentMatch as any).genderFilter || (currentMatch as any).gender || '';
@@ -309,7 +318,9 @@ function EditMatchPageContent() {
         format,
         genderFilter: genderFilter as 'male' | 'female' | '',
         surfaceFilter,
-        maxDistance: currentMatch.maxDistance,
+        maxDistance: currentMatch.maxDistance ?? undefined, // Convert null to undefined for Zod
+        skillLevelMin: (currentMatch as any).skillLevelMin ?? undefined,
+        skillLevelMax: (currentMatch as any).skillLevelMax ?? undefined,
         slots: mappedSlots,
       };
 
