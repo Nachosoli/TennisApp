@@ -67,25 +67,14 @@ export default function CalendarPage() {
   // Load all matches to calculate counts by distance
   useEffect(() => {
     matchesApi.getAll().then((matches) => {
-      // Filter out cancelled matches, completed matches, confirmed matches (for non-creators), and user's own matches
+      // Filter out cancelled matches, completed matches, and user's own matches
+      // Show confirmed matches so users can join the waitlist
       const filtered = matches.filter(match => {
         if (match.status?.toLowerCase() === 'cancelled') return false;
         if (match.status?.toLowerCase() === 'completed') return false;
         if (user && match.creatorUserId === user.id) return false;
         
-        // Check if user has a waitlisted application for this match
-        const hasWaitlistedApplication = user && match.slots?.some(slot =>
-          slot.applications?.some(app =>
-            (app.applicantUserId === user.id || app.userId === user.id) &&
-            app.status?.toLowerCase() === 'waitlisted'
-          )
-        );
-        
-        // Always show matches where user is waitlisted, regardless of match status
-        if (hasWaitlistedApplication) return true;
-        
-        // Hide confirmed matches from other users (unless they have a waitlisted application, which we already handled above)
-        if (match.status?.toLowerCase() === 'confirmed' && user && match.creatorUserId !== user.id) return false;
+        // Show all other matches (including confirmed) so users can view and join waitlist
         return true;
       });
       setAllMatches(filtered);
