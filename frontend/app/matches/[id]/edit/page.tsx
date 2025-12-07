@@ -228,9 +228,9 @@ function EditMatchPageContent() {
     }
   }, [user]);
 
-  // Pre-fill form when match is loaded
+  // Pre-fill form when match is loaded (and courts are available)
   useEffect(() => {
-    if (currentMatch && user) {
+    if (currentMatch && user && courts.length > 0) {
       // Validate user is creator
       if (currentMatch.creatorUserId !== user.id) {
         setError('You can only edit matches you created.');
@@ -275,29 +275,52 @@ function EditMatchPageContent() {
             })
         : [{ startTime: '08:00', endTime: '09:00' }];
 
+      // Handle gender - backend uses genderFilter, frontend type might use gender
+      const genderValue = (currentMatch as any).genderFilter || (currentMatch as any).gender || '';
+      const genderFilter = genderValue === 'any' ? '' : genderValue;
+
+      // Handle surface - backend uses surfaceFilter, frontend type might use surface
+      const surfaceValue = (currentMatch as any).surfaceFilter || (currentMatch as any).surface;
+      const surfaceFilter = surfaceValue as 'hard' | 'clay' | 'grass' | 'indoor' | undefined;
+
+      // Handle format - ensure it's uppercase
+      const formatValue = currentMatch.format?.toUpperCase() || 'SINGLES';
+      const format = (formatValue === 'SINGLES' || formatValue === 'DOUBLES') 
+        ? formatValue as 'SINGLES' | 'DOUBLES' 
+        : 'SINGLES';
+
       console.log('Loading match for edit:', {
         matchId: currentMatch.id,
+        courtId: currentMatch.courtId,
+        date: formattedDate,
+        format: formatValue,
+        genderFilter,
+        surfaceFilter,
+        maxDistance: currentMatch.maxDistance,
         slotsCount: currentMatch.slots?.length || 0,
         slots: currentMatch.slots,
         mappedSlots,
+        rawMatch: currentMatch,
       });
 
-      reset({
-        courtId: currentMatch.courtId,
+      const formData = {
+        courtId: currentMatch.courtId || '',
         date: formattedDate,
-        format: (currentMatch.format?.toUpperCase() || 'SINGLES') as 'SINGLES' | 'DOUBLES',
-        genderFilter: (currentMatch.gender === 'any' ? '' : currentMatch.gender) as 'male' | 'female' | '',
-        surfaceFilter: currentMatch.surface as 'hard' | 'clay' | 'grass' | 'indoor' | undefined,
+        format,
+        genderFilter: genderFilter as 'male' | 'female' | '',
+        surfaceFilter,
         maxDistance: currentMatch.maxDistance,
         slots: mappedSlots,
-      }, {
+      };
+
+      reset(formData, {
         keepDefaultValues: false,
       });
 
       // Explicitly replace the field array to ensure it updates
       replace(mappedSlots);
     }
-  }, [currentMatch, user, matchId, reset]);
+  }, [currentMatch, user, matchId, courts, reset, replace]);
 
   if (authLoading || isLoadingMatch) {
     return (
