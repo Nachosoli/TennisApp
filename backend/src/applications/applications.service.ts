@@ -824,6 +824,7 @@ export class ApplicationsService {
     const match = application.matchSlot.match;
     const slot = application.matchSlot;
     const matchId = match.id;
+    const matchFormat = match.format; // Store format before deletion
     const applicantUserId = application.applicantUserId; // Store before deletion
 
     // Increment cancelledMatches counter if applicant was confirmed and match is confirmed
@@ -848,14 +849,20 @@ export class ApplicationsService {
     await this.applicationRepository.remove(application);
 
     // If this was a confirmed application, delete all chat messages for this match
-    // This clears the chat history so creator doesn't see old messages from withdrawn participant
+    // For singles: Clear chat history since there are only 2 people
+    // For doubles: Keep chat history since other confirmed participants remain
     if (wasConfirmed) {
-      try {
-        await this.chatService.deleteAllMatchMessages(matchId);
-      } catch (error) {
-        console.warn(`Failed to delete chat messages for match ${matchId}:`, error);
-        // Don't fail withdrawal if message deletion fails
+      const isSingles = matchFormat === MatchFormat.SINGLES;
+      
+      if (isSingles) {
+        try {
+          await this.chatService.deleteAllMatchMessages(matchId);
+        } catch (error) {
+          console.warn(`Failed to delete chat messages for match ${matchId}:`, error);
+          // Don't fail withdrawal if message deletion fails
+        }
       }
+      // For doubles, don't delete chat messages - keep history for remaining participants
     }
 
     // If this was a confirmed application, check if we need to revert match status
