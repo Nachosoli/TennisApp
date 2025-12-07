@@ -231,6 +231,12 @@ function EditMatchPageContent() {
   // Pre-fill form when match is loaded (and courts are available)
   useEffect(() => {
     if (currentMatch && user && courts.length > 0) {
+      // Prevent non-creators from accessing edit page - redirect immediately
+      if (currentMatch.creatorUserId !== user.id) {
+        router.push('/dashboard');
+        return;
+      }
+
       // Validate match is pending
       if (currentMatch.status?.toLowerCase() !== 'pending') {
         setError('You can only edit pending matches.');
@@ -324,7 +330,7 @@ function EditMatchPageContent() {
       // Explicitly replace the field array to ensure it updates
       replace(mappedSlots);
     }
-  }, [currentMatch, user, matchId, courts, reset, replace]);
+  }, [currentMatch, user, matchId, courts, reset, replace, router]);
 
   if (authLoading || isLoadingMatch) {
     return (
