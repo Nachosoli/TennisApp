@@ -37,6 +37,14 @@ export const ApplicationsTable = ({ matchId, matchFormat = 'singles', matchStatu
     };
   }, [matchId]);
 
+  // Refresh applications when match status changes (e.g., from confirmed to pending after withdrawal)
+  // This ensures the "Approve from Waitlist" button appears when match reverts to pending
+  useEffect(() => {
+    if (matchStatus) {
+      loadApplications();
+    }
+  }, [matchStatus, matchId]);
+
   const loadApplications = async () => {
     try {
       setError(null);
@@ -236,6 +244,7 @@ export const ApplicationsTable = ({ matchId, matchFormat = 'singles', matchStatu
                   {application.status}
                 </span>
               </div>
+              {/* Show action buttons for pending applications OR waitlisted applications when match is pending (e.g., after a confirmed applicant withdraws) */}
               {(application.status?.toLowerCase() === 'pending' || 
                 (application.status?.toLowerCase() === 'waitlisted' && matchStatus?.toLowerCase() === 'pending' && matchFormat === 'singles')) && (
                 <div className="flex flex-row gap-2 pt-2 border-t border-gray-200">

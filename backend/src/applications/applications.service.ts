@@ -854,6 +854,14 @@ export class ApplicationsService {
         updatedMatch.status = MatchStatus.PENDING;
         await this.matchRepository.save(updatedMatch);
 
+        // Invalidate match cache to ensure updated status is reflected
+        try {
+          await this.cacheManager.del(`match:${matchId}`);
+          await this.cacheManager.del(`match:details:${matchId}`);
+        } catch (error) {
+          console.warn(`Failed to invalidate match cache for ${matchId}:`, error);
+        }
+
         // Revert slot status
         const updatedSlot = await this.matchSlotRepository.findOne({
           where: { id: slot.id },
