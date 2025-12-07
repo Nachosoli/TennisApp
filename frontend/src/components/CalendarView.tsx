@@ -314,6 +314,13 @@ export const CalendarView = ({ filters, matches: propMatches, selectedDate: prop
                               )
                             ) || false;
                             
+                            const hasUserConfirmed = user && match.slots?.some(s => 
+                              s.applications?.some(app => 
+                                (app.applicantUserId === user.id || app.userId === user.id) &&
+                                app.status?.toLowerCase() === 'confirmed'
+                              )
+                            ) || false;
+                            
                             const isConfirmed = match.status?.toLowerCase() === 'confirmed';
                             const isSingles = match.format === 'singles';
                             const isConfirmedSingles = isConfirmed && isSingles;
@@ -460,15 +467,39 @@ export const CalendarView = ({ filters, matches: propMatches, selectedDate: prop
                                     ) : null}
                                   </div>
                                   {!isGreyedOut && (
-                                    <Link href={`/matches/${match.id}`}>
-                                      <Button 
-                                        variant="primary" 
-                                        size="sm" 
-                                        className="bg-blue-600 text-white hover:bg-blue-700 font-semibold shadow-md"
-                                      >
-                                        View Details
-                                      </Button>
-                                    </Link>
+                                    (() => {
+                                      // For confirmed singles matches, show "Join Waitlist" if user doesn't have confirmed application
+                                      if (isConfirmedSingles && !hasUserConfirmed) {
+                                        return (
+                                          <Link href={`/matches/${match.id}`}>
+                                            <Button 
+                                              variant="primary" 
+                                              size="sm" 
+                                              className={`font-semibold shadow-md ${
+                                                meetsCriteria 
+                                                  ? 'bg-blue-600 text-white hover:bg-blue-700' 
+                                                  : 'bg-gray-400 text-white cursor-not-allowed opacity-60'
+                                              }`}
+                                              disabled={!meetsCriteria}
+                                            >
+                                              Join Waitlist
+                                            </Button>
+                                          </Link>
+                                        );
+                                      }
+                                      // Otherwise show "View Details"
+                                      return (
+                                        <Link href={`/matches/${match.id}`}>
+                                          <Button 
+                                            variant="primary" 
+                                            size="sm" 
+                                            className="bg-blue-600 text-white hover:bg-blue-700 font-semibold shadow-md"
+                                          >
+                                            View Details
+                                          </Button>
+                                        </Link>
+                                      );
+                                    })()
                                   )}
                                 </div>
                               </div>
@@ -519,6 +550,13 @@ export const CalendarView = ({ filters, matches: propMatches, selectedDate: prop
                   s.applications?.some(app => 
                     (app.applicantUserId === user.id || app.userId === user.id) &&
                     app.status?.toLowerCase() === 'waitlisted'
+                  )
+                ) || false;
+                
+                const hasUserConfirmed = user && match.slots?.some(s => 
+                  s.applications?.some(app => 
+                    (app.applicantUserId === user.id || app.userId === user.id) &&
+                    app.status?.toLowerCase() === 'confirmed'
                   )
                 ) || false;
                 
@@ -675,15 +713,39 @@ export const CalendarView = ({ filters, matches: propMatches, selectedDate: prop
                         ) : null}
                       </div>
                       {!isGreyedOut && (
-                        <Link href={`/matches/${match.id}`}>
-                          <Button 
-                            variant="primary" 
-                            size="sm" 
-                            className="bg-blue-600 text-white hover:bg-blue-700 font-semibold shadow-md"
-                          >
-                            View Details
-                          </Button>
-                        </Link>
+                        (() => {
+                          // For confirmed singles matches, show "Join Waitlist" if user doesn't have confirmed application
+                          if (isConfirmedSingles && !hasUserConfirmed) {
+                            return (
+                              <Link href={`/matches/${match.id}`}>
+                                <Button 
+                                  variant="primary" 
+                                  size="sm" 
+                                  className={`font-semibold shadow-md ${
+                                    meetsCriteria 
+                                      ? 'bg-blue-600 text-white hover:bg-blue-700' 
+                                      : 'bg-gray-400 text-white cursor-not-allowed opacity-60'
+                                  }`}
+                                  disabled={!meetsCriteria}
+                                >
+                                  Join Waitlist
+                                </Button>
+                              </Link>
+                            );
+                          }
+                          // Otherwise show "View Details"
+                          return (
+                            <Link href={`/matches/${match.id}`}>
+                              <Button 
+                                variant="primary" 
+                                size="sm" 
+                                className="bg-blue-600 text-white hover:bg-blue-700 font-semibold shadow-md"
+                              >
+                                View Details
+                              </Button>
+                            </Link>
+                          );
+                        })()
                       )}
                     </div>
                   </div>
