@@ -488,9 +488,10 @@ export class MatchesService {
             pendingStatus: ApplicationStatus.PENDING,
           },
         )
-        .orderBy("CASE WHEN match.status = 'completed' THEN 1 ELSE 0 END", 'ASC') // Completed matches last (0 = not completed, 1 = completed)
-        .addOrderBy('CASE WHEN match.date >= CURRENT_DATE THEN 0 ELSE 1 END', 'ASC') // Upcoming matches first (0), then past (1)
-        .addOrderBy('ABS(EXTRACT(EPOCH FROM (match.date::timestamp - CURRENT_DATE::timestamp)))', 'ASC') // Closest to today first (cast to timestamp to get interval)
+        .andWhere(
+          "NOT (match.status = 'completed' AND EXISTS (SELECT 1 FROM results r WHERE r.match_id = match.id))"
+        ) // Exclude completed matches that have a score (those go to match history)
+        .orderBy('match.date', 'ASC') // Sort by date, earlier to later
         .addOrderBy('match.createdAt', 'DESC') // Tie-breaker: most recently created
         .limit(50); // Limit results to prevent excessive data loading
 
