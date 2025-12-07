@@ -181,6 +181,7 @@ function CreateMatchPageContent() {
   const [homeCourt, setHomeCourt] = useState<Court | null>(null);
   const [isLoadingHomeCourt, setIsLoadingHomeCourt] = useState(true);
   const [homeCourtError, setHomeCourtError] = useState<string | null>(null);
+  const [useHomeCourt, setUseHomeCourt] = useState(true);
 
   // Initialize form with default values - hooks must be called before any returns
   const form = useForm<CreateMatchFormData>({
@@ -426,56 +427,99 @@ function CreateMatchPageContent() {
             )}
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Court *
-              </label>
+              <div className="flex items-center justify-between mb-2">
+                <label className="block text-sm font-medium text-gray-700">
+                  Court *
+                </label>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-gray-600">Use Home Court</span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const newValue = !useHomeCourt;
+                      setUseHomeCourt(newValue);
+                      // If switching to home court, set the value back to home court
+                      if (newValue && homeCourt) {
+                        setValue('courtId', homeCourt.id);
+                      }
+                    }}
+                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
+                      useHomeCourt ? 'bg-blue-600' : 'bg-gray-300'
+                    }`}
+                  >
+                    <span
+                      className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                        useHomeCourt ? 'translate-x-6' : 'translate-x-1'
+                      }`}
+                    />
+                  </button>
+                </div>
+              </div>
+              
               {isLoadingHomeCourt ? (
                 <div className="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-gray-50 text-gray-500">
                   Loading your home court...
                 </div>
-              ) : homeCourtError ? (
-                <div className="w-full px-4 py-2.5 border border-red-300 rounded-lg bg-red-50">
-                  <div className="text-sm text-red-700">{homeCourtError}</div>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setIsLoadingHomeCourt(true);
-                      setHomeCourtError(null);
-                      if (user?.homeCourtId) {
-                        courtsApi.getById(user.homeCourtId)
-                          .then((court) => {
-                            setHomeCourt(court);
-                            setValue('courtId', court.id);
-                            setIsLoadingHomeCourt(false);
-                          })
-                          .catch((err) => {
-                            console.error('Retry failed:', err);
-                            setHomeCourtError('Failed to load home court. Please refresh the page.');
-                            setIsLoadingHomeCourt(false);
-                          });
-                      }
-                    }}
-                    className="mt-2 text-xs text-red-600 underline hover:text-red-800"
-                  >
-                    Retry
-                  </button>
-                </div>
-              ) : homeCourt ? (
-                <div className="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-gray-50">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <div className="font-medium text-gray-900">{homeCourt.name}</div>
-                      <div className="text-sm text-gray-600">{homeCourt.address}</div>
-                    </div>
-                    <span className="text-xs text-blue-600 font-medium">Your Home Court</span>
+              ) : useHomeCourt ? (
+                // Show home court display when toggle is ON
+                homeCourtError ? (
+                  <div className="w-full px-4 py-2.5 border border-red-300 rounded-lg bg-red-50">
+                    <div className="text-sm text-red-700">{homeCourtError}</div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsLoadingHomeCourt(true);
+                        setHomeCourtError(null);
+                        if (user?.homeCourtId) {
+                          courtsApi.getById(user.homeCourtId)
+                            .then((court) => {
+                              setHomeCourt(court);
+                              setValue('courtId', court.id);
+                              setIsLoadingHomeCourt(false);
+                            })
+                            .catch((err) => {
+                              console.error('Retry failed:', err);
+                              setHomeCourtError('Failed to load home court. Please refresh the page.');
+                              setIsLoadingHomeCourt(false);
+                            });
+                        }
+                      }}
+                      className="mt-2 text-xs text-red-600 underline hover:text-red-800"
+                    >
+                      Retry
+                    </button>
                   </div>
-                </div>
+                ) : homeCourt ? (
+                  <div className="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-gray-50">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <div className="font-medium text-gray-900">{homeCourt.name}</div>
+                        <div className="text-sm text-gray-600">{homeCourt.address}</div>
+                      </div>
+                      <span className="text-xs text-blue-600 font-medium">Your Home Court</span>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="w-full px-4 py-2.5 border border-red-300 rounded-lg bg-red-50 text-red-700">
+                    Home court not found. Please update your profile.
+                  </div>
+                )
               ) : (
-                <div className="w-full px-4 py-2.5 border border-red-300 rounded-lg bg-red-50 text-red-700">
-                  Home court not found. Please update your profile.
-                </div>
+                // Show dropdown when toggle is OFF
+                <select
+                  {...register('courtId')}
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="">Select court</option>
+                  {courts.map((court) => (
+                    <option key={court.id} value={court.id}>
+                      {court.name} - {court.address}
+                      {court.id === user?.homeCourtId ? ' (Home Court)' : ''}
+                    </option>
+                  ))}
+                </select>
               )}
-              <input type="hidden" {...register('courtId')} />
+              {useHomeCourt && <input type="hidden" {...register('courtId')} />}
               {errors.courtId && (
                 <p className="mt-1 text-sm text-red-600">{errors.courtId.message}</p>
               )}

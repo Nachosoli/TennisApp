@@ -332,8 +332,36 @@ export class MatchesService {
       throw new ForbiddenException('Only match creator can update the match');
     }
 
-    Object.assign(match, updateDto);
+    // If slots are being updated, we need to handle them separately
+    const { slots, ...matchUpdateData } = updateDto;
+
+    // Update match fields
+    Object.assign(match, matchUpdateData);
+
+    // Handle slot updates if provided
+    if (slots && Array.isArray(slots)) {
+      // Delete existing slots
+      await this.matchSlotRepository.delete({ matchId: match.id });
+      
+      // Create new slots
+      const newSlots = slots.map(slotDto => 
+        this.matchSlotRepository.create({
+          matchId: match.id,
+          startTime: slotDto.startTime,
+          endTime: slotDto.endTime,
+          status: SlotStatus.AVAILABLE,
+        })
+      );
+      await this.matchSlotRepository.save(newSlots);
+    }
+
     const updatedMatch = await this.matchRepository.save(match);
+
+    // Reload with relations for real-time update
+    const matchWithRelations = await this.matchRepository.findOne({
+      where: { id: match.id },
+      relations: ['court', 'creator', 'slots', 'slots.applications'],
+    });
 
     // Invalidate cache
     await this.cacheManager.del(`match:${matchId}`);
@@ -341,12 +369,12 @@ export class MatchesService {
 
     // Emit real-time update
     try {
-      this.matchUpdatesGateway.emitMatchUpdate(matchId, updatedMatch);
+      this.matchUpdatesGateway.emitMatchUpdate(matchId, matchWithRelations || updatedMatch);
     } catch (error) {
       console.warn('Failed to emit match update:', error);
     }
 
-    return updatedMatch;
+    return matchWithRelations || updatedMatch;
   }
 
   async cancelOld(
