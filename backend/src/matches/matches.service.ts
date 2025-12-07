@@ -486,10 +486,9 @@ export class MatchesService {
             confirmedStatus: ApplicationStatus.CONFIRMED,
             waitlistedStatus: ApplicationStatus.WAITLISTED,
             pendingStatus: ApplicationStatus.PENDING,
-            completedStatus: MatchStatus.COMPLETED,
           },
         )
-        .orderBy('CASE WHEN match.status = :completedStatus THEN 1 ELSE 0 END', 'ASC') // Completed matches last (0 = not completed, 1 = completed)
+        .orderBy("CASE WHEN match.status = 'completed' THEN 1 ELSE 0 END", 'ASC') // Completed matches last (0 = not completed, 1 = completed)
         .addOrderBy('CASE WHEN match.date >= CURRENT_DATE THEN 0 ELSE 1 END', 'ASC') // Upcoming matches first (0), then past (1)
         .addOrderBy('ABS(EXTRACT(EPOCH FROM (match.date - CURRENT_DATE)))', 'ASC') // Closest to today first
         .addOrderBy('match.createdAt', 'DESC') // Tie-breaker: most recently created
