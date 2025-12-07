@@ -693,7 +693,7 @@ function ProfilePageContent() {
                     error={errors.phone?.message}
                     placeholder="1234567890"
                   />
-                  <p className="text-xs text-gray-500 -mt-2">Enter your 10-digit US phone number</p>
+                  <p className="text-xs text-gray-500 mt-1.5">Enter your 10-digit US phone number</p>
                 </div>
                 {user?.phone && !user?.phoneVerified && (
                   <div className="flex items-end pb-1">
