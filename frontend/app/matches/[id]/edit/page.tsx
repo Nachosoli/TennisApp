@@ -200,7 +200,7 @@ function EditMatchPageContent() {
     formState: { errors, isValid },
   } = form;
 
-  const { fields, append, remove } = useFieldArray({
+  const { fields, append, remove, replace } = useFieldArray({
     control,
     name: 'slots',
   });
@@ -259,6 +259,29 @@ function EditMatchPageContent() {
       const matchDate = new Date(currentMatch.date);
       const formattedDate = matchDate.toISOString().split('T')[0];
 
+      // Map slots safely - handle different time formats and ensure we have valid data
+      const mappedSlots = currentMatch.slots && currentMatch.slots.length > 0
+        ? currentMatch.slots
+            .filter(slot => slot.startTime && slot.endTime) // Filter out invalid slots
+            .map(slot => {
+              // Handle time format - could be HH:MM:SS or HH:MM
+              const startTime = typeof slot.startTime === 'string' 
+                ? slot.startTime.substring(0, 5) 
+                : '08:00';
+              const endTime = typeof slot.endTime === 'string' 
+                ? slot.endTime.substring(0, 5) 
+                : '09:00';
+              return { startTime, endTime };
+            })
+        : [{ startTime: '08:00', endTime: '09:00' }];
+
+      console.log('Loading match for edit:', {
+        matchId: currentMatch.id,
+        slotsCount: currentMatch.slots?.length || 0,
+        slots: currentMatch.slots,
+        mappedSlots,
+      });
+
       reset({
         courtId: currentMatch.courtId,
         date: formattedDate,
@@ -266,11 +289,13 @@ function EditMatchPageContent() {
         genderFilter: (currentMatch.gender === 'any' ? '' : currentMatch.gender) as 'male' | 'female' | '',
         surfaceFilter: currentMatch.surface as 'hard' | 'clay' | 'grass' | 'indoor' | undefined,
         maxDistance: currentMatch.maxDistance,
-        slots: currentMatch.slots?.map(slot => ({
-          startTime: slot.startTime.substring(0, 5), // Extract HH:MM from HH:MM:SS
-          endTime: slot.endTime.substring(0, 5),
-        })) || [{ startTime: '08:00', endTime: '09:00' }],
+        slots: mappedSlots,
+      }, {
+        keepDefaultValues: false,
       });
+
+      // Explicitly replace the field array to ensure it updates
+      replace(mappedSlots);
     }
   }, [currentMatch, user, matchId, reset]);
 
