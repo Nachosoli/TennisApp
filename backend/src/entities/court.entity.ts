@@ -9,6 +9,7 @@ import {
   DeleteDateColumn,
 } from 'typeorm';
 import type { Point } from 'geojson';
+import { User } from './user.entity';
 import { Match } from './match.entity';
 import { CourtReview } from './court-review.entity';
 
