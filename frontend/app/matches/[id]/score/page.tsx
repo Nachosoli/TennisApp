@@ -102,20 +102,20 @@ function ScoreEntryPageContent() {
     }
   }
 
-  // Always show Creator vs Opponent (in that order)
-  const creator = participants.find(p => p.id === currentMatch.creatorUserId);
-  const opponent = participants.find(p => p.id !== currentMatch.creatorUserId);
-  const creatorName = creator?.name || 'Creator';
-  const opponentName = opponent?.name || 'Opponent';
+  // Determine current user and opponent from the reporting user's perspective
+  const currentUserParticipant = participants.find(p => p.id === user?.id);
+  const opponentParticipant = participants.find(p => p.id !== user?.id);
+  const currentUserName = currentUserParticipant?.name || 'You';
+  const opponentName = opponentParticipant?.name || 'Opponent';
   
   // Determine if user is creator (player1) or applicant (player2)
   const isCreator = currentMatch.creatorUserId === user?.id;
   const player1Id = currentMatch.creatorUserId;
-  const player2Id = opponent?.id || '';
+  const player2Id = opponentParticipant?.id || '';
   
-  // Determine which name to show for "You" - always show creator first, then opponent
-  const player1Name = creatorName;
-  const player2Name = opponentName;
+  // Keep creator/opponent names for winner determination in confirmation popup
+  const creator = participants.find(p => p.id === currentMatch.creatorUserId);
+  const creatorName = creator?.name || 'Creator';
 
   // Determine winner from scores (for confirmation popup)
   const determineWinner = (data: ScoreFormData): string | null => {
@@ -153,7 +153,7 @@ function ScoreEntryPageContent() {
     if (youSets >= 2) {
       return user?.id || null;
     } else if (opponentSets >= 2) {
-      return opponent?.id || null;
+      return opponentParticipant?.id || null;
     }
 
     // If we can't determine a clear winner (e.g., incomplete match), return null
@@ -255,23 +255,23 @@ function ScoreEntryPageContent() {
               </div>
             )}
 
-            {/* Player vs Opponent Display - Always show Creator vs Opponent */}
+            {/* Player vs Opponent Display - From the reporting user's perspective */}
             <div className="flex items-center gap-4 mb-6">
               <div className="flex items-center gap-2">
                 <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center text-white font-semibold">
-                  {creator?.name?.[0] || 'C'}
+                  {currentUserParticipant?.name?.[0] || 'Y'}
                 </div>
                 <span className="font-medium text-gray-900">
-                  {isCreator ? 'You' : creatorName}
+                  You
                 </span>
               </div>
               <span className="text-gray-500 text-lg">vs.</span>
               <div className="flex items-center gap-2">
                 <div className="w-10 h-10 bg-gray-400 rounded-full flex items-center justify-center text-white font-semibold">
-                  {opponent?.name?.[0] || 'O'}
+                  {opponentParticipant?.name?.[0] || 'O'}
                 </div>
                 <span className="font-medium text-gray-900">
-                  {!isCreator ? 'You' : opponentName}
+                  {opponentName}
                 </span>
               </div>
             </div>

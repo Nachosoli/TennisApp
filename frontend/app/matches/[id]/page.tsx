@@ -401,9 +401,25 @@ export default function MatchDetailPage() {
             </div>
           </Card>
 
-          {/* Time Slots - Hide on mobile when confirmed, show on desktop always */}
-          <div className={currentMatch.status?.toLowerCase() === 'confirmed' ? 'hidden lg:block' : ''}>
-            <Card title="Time Slots">
+          {/* Time Slots - Show for pending matches, or confirmed matches when user can join waitlist */}
+          {(() => {
+            const isMatchConfirmed = currentMatch.status?.toLowerCase() === 'confirmed';
+            const isMatchPending = currentMatch.status?.toLowerCase() === 'pending';
+            const canJoinWaitlist = isMatchConfirmed && 
+              currentMatch.format === 'singles' && 
+              !isCreator && 
+              !shouldShowRejectionMessage &&
+              !currentMatch.slots?.some(slot => 
+                slot.applications?.some(app => 
+                  (app.applicantUserId === user?.id || app.userId === user?.id) &&
+                  (app.status?.toLowerCase() === 'waitlisted' || app.status?.toLowerCase() === 'confirmed')
+                )
+              );
+            
+            // Show time slots if match is pending OR if confirmed and user can join waitlist
+            if (isMatchPending || canJoinWaitlist) {
+              return (
+                <Card title="Time Slots">
               {applyError && (
               <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg">
                 <div className="flex justify-between items-start">
@@ -432,10 +448,11 @@ export default function MatchDetailPage() {
             )}
             <div className="space-y-3">
               {currentMatch.slots && currentMatch.slots.length > 0 ? (
-                currentMatch.slots.map((slot) => {
+                 currentMatch.slots.map((slot) => {
                   const isAvailable = slot.status?.toLowerCase() === 'available';
                   const isConfirmed = slot.status?.toLowerCase() === 'confirmed';
                   const isMatchPending = currentMatch.status?.toLowerCase() === 'pending';
+                  const isMatchConfirmed = currentMatch.status?.toLowerCase() === 'confirmed';
                   
                   // Check if current user already has an application for THIS SPECIFIC SLOT
                   const hasApplicationForSlot = slot.applications?.some(app => 
@@ -480,7 +497,7 @@ export default function MatchDetailPage() {
                               return slot.status || 'Unknown';
                             })()}
                           </p>
-                          {isAvailable && !isCreator && !hasApplicationForSlot && (
+                          {isAvailable && !isCreator && (isMatchPending || (isMatchConfirmed && currentMatch.format === 'singles')) && !hasApplicationForSlot && (
                             <p className="text-xs text-blue-600 mt-1">Click Apply to join this time slot</p>
                           )}
                           {hasApplicationForSlot && !isConfirmed && !isCreator && (
@@ -490,7 +507,7 @@ export default function MatchDetailPage() {
                             <p className="text-xs text-gray-500 mt-1">Match is confirmed</p>
                           )}
                         </div>
-                        {!isCreator && isAvailable && isMatchPending && !hasApplicationForSlot && (
+                        {!isCreator && isAvailable && (isMatchPending || (isMatchConfirmed && currentMatch.format === 'singles')) && !hasApplicationForSlot && (
                           (() => {
                             // Check if user has rejected application and no active applications - disable apply button
                             if (shouldShowRejectionMessage) {
@@ -539,7 +556,10 @@ export default function MatchDetailPage() {
                                   
                                   // Then make API call
                                   await applicationsApi.applyToSlot({ matchSlotId: slot.id });
-                                  setApplySuccess('Application submitted successfully! The match creator will review your request.');
+                                  const successMessage = isMatchConfirmed && currentMatch.format === 'singles'
+                                    ? 'You have been added to the waitlist!'
+                                    : 'Application submitted successfully! The match creator will review your request.';
+                                  setApplySuccess(successMessage);
                                   
                                   // Refresh to get actual application data from server
                                   await fetchMatchById(matchId);
@@ -578,7 +598,10 @@ export default function MatchDetailPage() {
               )}
             </div>
             </Card>
-          </div>
+              );
+            }
+            return null; // Don't show time slots if match is confirmed and user can't join waitlist
+          })()}
         </div>
 
         {/* Manage Applications - Hide on mobile when confirmed, show on desktop always */}
