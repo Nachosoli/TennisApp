@@ -37,10 +37,28 @@ export default function HistoryPage() {
         // Fetch all user matches
         const allMatches = await matchesApi.getMyMatches();
         
-        // Filter for completed matches with results
+        // Filter for completed matches with results AND where user actually participated
         const completedMatches = allMatches.filter(match => {
           const hasResult = match.results && match.results.length > 0;
-          return match.status?.toLowerCase() === 'completed' && hasResult;
+          if (!hasResult || match.status?.toLowerCase() !== 'completed') {
+            return false;
+          }
+          
+          // User must be the creator OR have a confirmed application (actually participated)
+          const isCreator = match.creatorUserId === user?.id;
+          if (isCreator) {
+            return true;
+          }
+          
+          // Check if user has a confirmed application (they actually played)
+          const hasConfirmedApplication = match.slots?.some(slot =>
+            slot.applications?.some(app =>
+              (app.applicantUserId === user?.id || app.userId === user?.id) &&
+              app.status?.toLowerCase() === 'confirmed'
+            )
+          );
+          
+          return hasConfirmedApplication;
         });
 
         // Fetch ELO history
