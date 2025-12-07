@@ -338,15 +338,18 @@ export class MatchesService {
     // Update match fields
     Object.assign(match, matchUpdateData);
 
+    // Save match first to ensure it's persisted
+    const updatedMatch = await this.matchRepository.save(match);
+
     // Handle slot updates if provided
     if (slots && Array.isArray(slots)) {
       // Delete existing slots
       await this.matchSlotRepository.delete({ matchId: match.id });
       
-      // Create new slots
+      // Create new slots - match must be saved first
       const newSlots = slots.map(slotDto => 
         this.matchSlotRepository.create({
-          matchId: match.id,
+          matchId: updatedMatch.id, // Use the saved match's id
           startTime: slotDto.startTime,
           endTime: slotDto.endTime,
           status: SlotStatus.AVAILABLE,
@@ -354,8 +357,6 @@ export class MatchesService {
       );
       await this.matchSlotRepository.save(newSlots);
     }
-
-    const updatedMatch = await this.matchRepository.save(match);
 
     // Reload with relations for real-time update
     const matchWithRelations = await this.matchRepository.findOne({
