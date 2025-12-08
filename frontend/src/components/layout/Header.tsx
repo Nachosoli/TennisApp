@@ -20,23 +20,18 @@ export const Header = () => {
                 <div className="relative">
                   <div className="absolute inset-0 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg opacity-20 group-hover:opacity-30 transition-opacity"></div>
                   <div className="relative bg-gradient-to-br from-blue-600 to-indigo-700 rounded-lg p-2">
-                    <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-                      {/* Court outline */}
-                      <rect x="4" y="6" width="16" height="10" rx="0.5" />
-                      {/* Net line */}
-                      <line x1="12" y1="6" x2="12" y2="16" />
-                      {/* Service boxes */}
-                      <line x1="4" y1="9" x2="20" y2="9" />
-                      <line x1="4" y1="13" x2="20" y2="13" />
-                      <line x1="8" y1="6" x2="8" y2="16" />
-                      <line x1="16" y1="6" x2="16" y2="16" />
-                      {/* Center service line */}
-                      <line x1="8" y1="11" x2="16" y2="11" />
-                      {/* Tennis balls */}
-                      <circle cx="7" cy="19" r="2" fill="currentColor" />
-                      <path d="M 7 17 Q 8 19 7 21 M 7 17 Q 6 19 7 21" stroke="white" strokeWidth="0.5" fill="none" />
-                      <circle cx="17" cy="19" r="2" fill="currentColor" />
-                      <path d="M 17 17 Q 18 19 17 21 M 17 17 Q 16 19 17 21" stroke="white" strokeWidth="0.5" fill="none" />
+                    <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
+                      {/* Tennis court rectangle - very clear */}
+                      <rect x="2" y="4" width="20" height="14" rx="1.5" fill="white" fillOpacity="0.15"/>
+                      <rect x="2" y="4" width="20" height="14" rx="1.5"/>
+                      {/* Center net line - prominent */}
+                      <line x1="12" y1="4" x2="12" y2="18" strokeWidth={3}/>
+                      {/* Service boxes - clear T shape */}
+                      <line x1="2" y1="8" x2="22" y2="8"/>
+                      <line x1="2" y1="14" x2="22" y2="14"/>
+                      <line x1="6.5" y1="4" x2="6.5" y2="18"/>
+                      <line x1="17.5" y1="4" x2="17.5" y2="18"/>
+                      <line x1="6.5" y1="11" x2="17.5" y2="11"/>
                     </svg>
                   </div>
                 </div>
