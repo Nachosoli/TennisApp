@@ -2,25 +2,28 @@
   <!-- Background circle -->
   <circle cx="256" cy="256" r="240" fill="#2563eb"/>
   
-  <!-- Tennis racquet frame -->
-  <ellipse cx="256" cy="256" rx="180" ry="200" fill="none" stroke="white" stroke-width="20"/>
+  <!-- Tennis court background (lighter blue) -->
+  <rect x="80" y="140" width="352" height="240" rx="12" fill="white" opacity="0.2"/>
   
-  <!-- Racquet strings (vertical) -->
-  <line x1="150" y1="100" x2="150" y2="412" stroke="white" stroke-width="8"/>
-  <line x1="200" y1="90" x2="200" y2="422" stroke="white" stroke-width="8"/>
-  <line x1="256" y1="85" x2="256" y2="427" stroke="white" stroke-width="8"/>
-  <line x1="312" y1="90" x2="312" y2="422" stroke="white" stroke-width="8"/>
-  <line x1="362" y1="100" x2="362" y2="412" stroke="white" stroke-width="8"/>
+  <!-- Court outline -->
+  <rect x="80" y="140" width="352" height="240" rx="12" fill="none" stroke="white" stroke-width="14"/>
   
-  <!-- Racquet strings (horizontal) -->
-  <line x1="125" y1="150" x2="387" y2="150" stroke="white" stroke-width="8"/>
-  <line x1="135" y1="200" x2="377" y2="200" stroke="white" stroke-width="8"/>
-  <line x1="140" y1="256" x2="372" y2="256" stroke="white" stroke-width="8"/>
-  <line x1="135" y1="312" x2="377" y2="312" stroke="white" stroke-width="8"/>
-  <line x1="125" y1="362" x2="387" y2="362" stroke="white" stroke-width="8"/>
+  <!-- Net line (center) -->
+  <line x1="256" y1="140" x2="256" y2="380" stroke="white" stroke-width="14"/>
   
-  <!-- Racquet handle -->
-  <rect x="248" y="410" width="16" height="80" rx="8" fill="white"/>
-  <rect x="244" y="480" width="24" height="16" rx="8" fill="white"/>
+  <!-- Service boxes -->
+  <line x1="80" y1="220" x2="432" y2="220" stroke="white" stroke-width="10"/>
+  <line x1="80" y1="300" x2="432" y2="300" stroke="white" stroke-width="10"/>
+  <line x1="184" y1="140" x2="184" y2="380" stroke="white" stroke-width="10"/>
+  <line x1="328" y1="140" x2="328" y2="380" stroke="white" stroke-width="10"/>
+  
+  <!-- Center service line -->
+  <line x1="184" y1="260" x2="328" y2="260" stroke="white" stroke-width="10"/>
+  
+  <!-- Tennis balls (decorative) -->
+  <circle cx="140" cy="420" r="32" fill="white"/>
+  <path d="M 140 388 Q 156 420 140 452 M 140 388 Q 124 420 140 452" stroke="#2563eb" stroke-width="6" fill="none"/>
+  
+  <circle cx="372" cy="420" r="32" fill="white"/>
+  <path d="M 372 388 Q 388 420 372 452 M 372 388 Q 356 420 372 452" stroke="#2563eb" stroke-width="6" fill="none"/>
 </svg>
-

@@ -21,8 +21,12 @@ export const metadata: Metadata = {
   description: "Find and schedule tennis matches with players in your area",
   manifest: "/manifest.json",
   icons: {
-    icon: "/favicon.svg",
-    apple: "/icon.svg",
+    icon: [
+      { url: "/favicon.svg", type: "image/svg+xml" },
+    ],
+    apple: [
+      { url: "/icon.svg", type: "image/svg+xml" },
+    ],
   },
   appleWebApp: {
     capable: true,

@@ -1,23 +1,26 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
-  <!-- Tennis racquet frame -->
-  <ellipse cx="50" cy="50" rx="35" ry="40" fill="none" stroke="#2563eb" stroke-width="4"/>
+  <!-- Tennis court background (green) -->
+  <rect x="15" y="20" width="70" height="50" rx="2" fill="#2563eb" opacity="0.15"/>
   
-  <!-- Racquet strings (vertical) -->
-  <line x1="30" y1="20" x2="30" y2="80" stroke="#2563eb" stroke-width="1.5"/>
-  <line x1="40" y1="18" x2="40" y2="82" stroke="#2563eb" stroke-width="1.5"/>
-  <line x1="50" y1="17" x2="50" y2="83" stroke="#2563eb" stroke-width="1.5"/>
-  <line x1="60" y1="18" x2="60" y2="82" stroke="#2563eb" stroke-width="1.5"/>
-  <line x1="70" y1="20" x2="70" y2="80" stroke="#2563eb" stroke-width="1.5"/>
+  <!-- Court outline -->
+  <rect x="15" y="20" width="70" height="50" rx="2" fill="none" stroke="#2563eb" stroke-width="2.5"/>
   
-  <!-- Racquet strings (horizontal) -->
-  <line x1="25" y1="30" x2="75" y2="30" stroke="#2563eb" stroke-width="1.5"/>
-  <line x1="27" y1="40" x2="73" y2="40" stroke="#2563eb" stroke-width="1.5"/>
-  <line x1="28" y1="50" x2="72" y2="50" stroke="#2563eb" stroke-width="1.5"/>
-  <line x1="27" y1="60" x2="73" y2="60" stroke="#2563eb" stroke-width="1.5"/>
-  <line x1="25" y1="70" x2="75" y2="70" stroke="#2563eb" stroke-width="1.5"/>
+  <!-- Net line (center) -->
+  <line x1="50" y1="20" x2="50" y2="70" stroke="#2563eb" stroke-width="2.5"/>
   
-  <!-- Racquet handle -->
-  <rect x="48" y="80" width="4" height="15" rx="2" fill="#2563eb"/>
-  <rect x="47" y="92" width="6" height="3" rx="1.5" fill="#2563eb"/>
+  <!-- Service boxes -->
+  <line x1="15" y1="35" x2="85" y2="35" stroke="#2563eb" stroke-width="1.8"/>
+  <line x1="15" y1="55" x2="85" y2="55" stroke="#2563eb" stroke-width="1.8"/>
+  <line x1="32.5" y1="20" x2="32.5" y2="70" stroke="#2563eb" stroke-width="1.8"/>
+  <line x1="67.5" y1="20" x2="67.5" y2="70" stroke="#2563eb" stroke-width="1.8"/>
+  
+  <!-- Center service line -->
+  <line x1="32.5" y1="45" x2="67.5" y2="45" stroke="#2563eb" stroke-width="1.8"/>
+  
+  <!-- Tennis balls (small decorative elements) -->
+  <circle cx="25" cy="80" r="6" fill="#2563eb"/>
+  <path d="M 25 74 Q 28 80 25 86 M 25 74 Q 22 80 25 86" stroke="white" stroke-width="1" fill="none"/>
+  
+  <circle cx="75" cy="80" r="6" fill="#2563eb"/>
+  <path d="M 75 74 Q 78 80 75 86 M 75 74 Q 72 80 75 86" stroke="white" stroke-width="1" fill="none"/>
 </svg>
-
