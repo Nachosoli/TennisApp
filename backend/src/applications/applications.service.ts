@@ -1002,12 +1002,20 @@ export class ApplicationsService {
 
     // Emit real-time update with full relations
     try {
+      // ALWAYS clear cache before reloading to ensure fresh data (deleted application is not included)
+      await this.cacheManager.del(`match:${matchId}`);
+      await this.cacheManager.del(`match:details:${matchId}`);
+      
+      // Reload match with fresh query to ensure deleted application is not included
       const updatedMatch = await this.matchRepository.findOne({
         where: { id: matchId },
         relations: ['court', 'creator', 'slots', 'slots.applications', 'slots.applications.applicant'],
       });
+      
       if (updatedMatch) {
-        // Emit on /matches namespace
+        // Update cache with fresh data
+        await this.cacheManager.set(`match:details:${matchId}`, updatedMatch, 2 * 60 * 1000);
+        
         // Emit on /matches namespace
         this.matchUpdatesGateway.emitMatchUpdate(matchId, updatedMatch);
         this.matchUpdatesGateway.emitToUser(applicantUserId, 'application_withdrawn', {
