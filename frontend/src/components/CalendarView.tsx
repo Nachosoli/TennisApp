@@ -742,16 +742,16 @@ export const CalendarView = ({ filters, matches: propMatches, selectedDate: prop
                     return "You created this game";
                   }
                   
+                  if (hasUserConfirmed) {
+                    return "You are confirmed";
+                  }
+                  
                   if (isConfirmed) {
                     if (hasUserWaitlisted) {
                       return "You are already in the waitlist";
                     } else {
                       return "Join waitlist";
                     }
-                  }
-                  
-                  if (hasUserConfirmed) {
-                    return "You are confirmed";
                   }
                   
                   if (hasUserWaitlisted) {
