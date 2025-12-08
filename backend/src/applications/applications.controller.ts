@@ -99,7 +99,7 @@ export class ApplicationsController {
 
   @Put(':id/approve-from-waitlist')
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Approve a waitlisted application (match creator only, singles matches only)' })
+  @ApiOperation({ summary: 'Approve a waitlisted application (match creator only, works for both singles and doubles matches)' })
   @ApiResponse({ status: 200, description: 'Waitlisted application approved' })
   @ApiResponse({ status: 403, description: 'Not authorized' })
   @ApiResponse({ status: 400, description: 'Application is not waitlisted or match is not pending' })

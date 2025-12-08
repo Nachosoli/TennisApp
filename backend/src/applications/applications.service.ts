@@ -105,8 +105,8 @@ export class ApplicationsService {
       throw new BadRequestException('Match is not accepting applications');
     }
 
-    // For confirmed singles matches, allow waitlist applications (skip slot availability check)
-    if (slot.match.status === MatchStatus.CONFIRMED && isSingles) {
+    // For confirmed matches (singles or doubles), allow waitlist applications (skip slot availability check)
+    if (slot.match.status === MatchStatus.CONFIRMED) {
       // Allow application but set status to WAITLISTED immediately
       // Sanitize guest partner name if provided
       const sanitizedGuestName = applyDto.guestPartnerName 
@@ -117,7 +117,7 @@ export class ApplicationsService {
         matchSlotId: slot.id,
         applicantUserId: userId,
         guestPartnerName: sanitizedGuestName,
-        status: ApplicationStatus.WAITLISTED, // Auto-waitlist for confirmed singles matches
+        status: ApplicationStatus.WAITLISTED, // Auto-waitlist for confirmed matches
       });
 
       let savedApplication: Application;
@@ -648,11 +648,6 @@ export class ApplicationsService {
       throw new BadRequestException('Match must be pending to approve from waitlist');
     }
 
-    // Check if match is singles
-    if (application.matchSlot.match.format !== MatchFormat.SINGLES) {
-      throw new BadRequestException('Waitlist approval is only for singles matches');
-    }
-
     // Approve the waitlisted application
     application.status = ApplicationStatus.CONFIRMED;
     await this.applicationRepository.save(application);
@@ -662,31 +657,94 @@ export class ApplicationsService {
     application.matchSlot.confirmedAt = new Date();
     await this.matchSlotRepository.save(application.matchSlot);
 
-    // Confirm match (singles: creator + 1 applicant = 2 total)
     const currentMatch = application.matchSlot.match;
-    currentMatch.status = MatchStatus.CONFIRMED;
-    await this.matchRepository.save(currentMatch);
+    const isSingles = currentMatch.format === MatchFormat.SINGLES;
 
-    // Waitlist all other waitlisted applications (match is now full again)
-    const otherWaitlistedApplications = await this.applicationRepository
-      .createQueryBuilder('app')
-      .innerJoin('app.matchSlot', 'slot')
-      .innerJoin('slot.match', 'm')
-      .where('m.id = :matchId', { matchId: currentMatch.id })
-      .andWhere('app.id != :applicationId', { applicationId: application.id })
-      .andWhere('app.status = :waitlisted', { waitlisted: ApplicationStatus.WAITLISTED })
-      .getMany();
+    // For singles: Match is confirmed when creator + 1 applicant (2 total)
+    // For doubles: Match is confirmed when creator + 3 applicants (4 total)
+    if (isSingles) {
+      // Count confirmed applications (creator + confirmed applicants)
+      const confirmedApplications = await this.applicationRepository
+        .createQueryBuilder('app')
+        .innerJoin('app.matchSlot', 'slot')
+        .innerJoin('slot.match', 'm')
+        .where('m.id = :matchId', { matchId: currentMatch.id })
+        .andWhere('app.status = :confirmed', { confirmed: ApplicationStatus.CONFIRMED })
+        .getCount();
 
-    // They're already waitlisted, just notify them that spot was filled
-    for (const otherApp of otherWaitlistedApplications) {
-      await this.notificationsService.createNotification(
-        otherApp.applicantUserId,
-        NotificationType.MATCH_ACCEPTED,
-        `The waitlist spot for this match has been filled by another player.`,
-        {
-          matchId: currentMatch.id,
-        },
-      );
+      // Creator + 1 confirmed applicant = 2 total (match is full)
+      if (confirmedApplications >= 1) { // At least 1 confirmed applicant (plus creator = 2)
+        currentMatch.status = MatchStatus.CONFIRMED;
+        await this.matchRepository.save(currentMatch);
+
+        // Waitlist all other waitlisted applications (match is now full again)
+        const otherWaitlistedApplications = await this.applicationRepository
+          .createQueryBuilder('app')
+          .innerJoin('app.matchSlot', 'slot')
+          .innerJoin('slot.match', 'm')
+          .where('m.id = :matchId', { matchId: currentMatch.id })
+          .andWhere('app.id != :applicationId', { applicationId: application.id })
+          .andWhere('app.status = :waitlisted', { waitlisted: ApplicationStatus.WAITLISTED })
+          .getMany();
+
+        // They're already waitlisted, just notify them that spot was filled
+        for (const otherApp of otherWaitlistedApplications) {
+          await this.notificationsService.createNotification(
+            otherApp.applicantUserId,
+            NotificationType.MATCH_ACCEPTED,
+            `The waitlist spot for this match has been filled by another player.`,
+            {
+              matchId: currentMatch.id,
+            },
+          );
+        }
+      } else {
+        // Not enough confirmed applications yet, keep match as pending
+        currentMatch.status = MatchStatus.PENDING;
+        await this.matchRepository.save(currentMatch);
+      }
+    } else {
+      // Doubles: Match is confirmed when creator + 3 applicants (4 total)
+      // Count confirmed applications (creator + confirmed applicants)
+      const confirmedApplications = await this.applicationRepository
+        .createQueryBuilder('app')
+        .innerJoin('app.matchSlot', 'slot')
+        .innerJoin('slot.match', 'm')
+        .where('m.id = :matchId', { matchId: currentMatch.id })
+        .andWhere('app.status = :confirmed', { confirmed: ApplicationStatus.CONFIRMED })
+        .getCount();
+
+      // Creator + 3 confirmed applicants = 4 total (match is full)
+      if (confirmedApplications >= 3) { // At least 3 confirmed applicants (plus creator = 4)
+        currentMatch.status = MatchStatus.CONFIRMED;
+        await this.matchRepository.save(currentMatch);
+
+        // Waitlist all other waitlisted applications (match is now full again)
+        const otherWaitlistedApplications = await this.applicationRepository
+          .createQueryBuilder('app')
+          .innerJoin('app.matchSlot', 'slot')
+          .innerJoin('slot.match', 'm')
+          .where('m.id = :matchId', { matchId: currentMatch.id })
+          .andWhere('app.id != :applicationId', { applicationId: application.id })
+          .andWhere('app.status = :waitlisted', { waitlisted: ApplicationStatus.WAITLISTED })
+          .getMany();
+
+        // They're already waitlisted, just notify them that spot was filled
+        for (const otherApp of otherWaitlistedApplications) {
+          await this.notificationsService.createNotification(
+            otherApp.applicantUserId,
+            NotificationType.MATCH_ACCEPTED,
+            `The waitlist spot for this match has been filled by another player.`,
+            {
+              matchId: currentMatch.id,
+            },
+          );
+        }
+      } else {
+        // Not enough confirmed applications yet, keep match as pending
+        currentMatch.status = MatchStatus.PENDING;
+        await this.matchRepository.save(currentMatch);
+      }
     }
 
     // Notify the approved user

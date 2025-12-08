@@ -260,10 +260,11 @@ export default function MatchDetailPage() {
             }`}>
               {currentMatch.status?.toLowerCase() === 'confirmed' && currentMatch.format === 'singles' 
                 ? 'Match Set (2/2)' 
+                : currentMatch.status?.toLowerCase() === 'confirmed' && currentMatch.format === 'doubles'
+                ? 'Match Set (4/4)'
                 : currentMatch.status}
             </span>
             {currentMatch.status?.toLowerCase() === 'confirmed' && 
-             currentMatch.format === 'singles' && 
              !isCreator && 
              !shouldShowRejectionMessage &&
              !currentMatch.slots?.some(slot => 
@@ -406,7 +407,6 @@ export default function MatchDetailPage() {
             const isMatchConfirmed = currentMatch.status?.toLowerCase() === 'confirmed';
             const isMatchPending = currentMatch.status?.toLowerCase() === 'pending';
             const canJoinWaitlist = isMatchConfirmed && 
-              currentMatch.format === 'singles' && 
               !isCreator && 
               !shouldShowRejectionMessage &&
               !currentMatch.slots?.some(slot => 
@@ -465,7 +465,7 @@ export default function MatchDetailPage() {
                   // Grey out if:
                   // 1. Slot is confirmed and user hasn't applied to it AND user cannot join waitlist (other slot confirmed)
                   // 2. User has already applied to this slot (but it's not confirmed yet)
-                  const shouldGreyOut = (isConfirmed && !hasApplicationForSlot && !(isMatchConfirmed && currentMatch.format === 'singles' && canJoinWaitlist)) || (hasApplicationForSlot && !isConfirmed);
+                  const shouldGreyOut = (isConfirmed && !hasApplicationForSlot && !(isMatchConfirmed && canJoinWaitlist)) || (hasApplicationForSlot && !isConfirmed);
                   
                   return (
                     <div
@@ -497,11 +497,11 @@ export default function MatchDetailPage() {
                               return slot.status || 'Unknown';
                             })()}
                           </p>
-                          {isAvailable && !isCreator && (isMatchPending || (isMatchConfirmed && currentMatch.format === 'singles')) && !hasApplicationForSlot && (
+                          {isAvailable && !isCreator && (isMatchPending || isMatchConfirmed) && !hasApplicationForSlot && (
                             <p className="text-xs text-blue-600 mt-1">Click Apply to join this time slot</p>
                           )}
                           {/* Also show helper text for confirmed slots when user can join waitlist */}
-                          {isConfirmed && !isCreator && isMatchConfirmed && currentMatch.format === 'singles' && canJoinWaitlist && !hasApplicationForSlot && (
+                          {isConfirmed && !isCreator && isMatchConfirmed && canJoinWaitlist && !hasApplicationForSlot && (
                             <p className="text-xs text-blue-600 mt-1">Click Apply to join the waitlist for this time slot</p>
                           )}
                           {hasApplicationForSlot && !isConfirmed && !isCreator && (
@@ -512,7 +512,7 @@ export default function MatchDetailPage() {
                           )}
                         </div>
                         {/* Show Apply button for available slots OR confirmed slots when user can join waitlist */}
-                        {!isCreator && (isAvailable || (isConfirmed && isMatchConfirmed && currentMatch.format === 'singles' && canJoinWaitlist)) && (isMatchPending || (isMatchConfirmed && currentMatch.format === 'singles')) && !hasApplicationForSlot && (
+                        {!isCreator && (isAvailable || (isConfirmed && isMatchConfirmed && canJoinWaitlist)) && (isMatchPending || isMatchConfirmed) && !hasApplicationForSlot && (
                           (() => {
                             // Check if user has rejected application and no active applications - disable apply button
                             if (shouldShowRejectionMessage) {
