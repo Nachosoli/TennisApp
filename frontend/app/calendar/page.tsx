@@ -279,7 +279,7 @@ export default function CalendarPage() {
               </Link>
               <button
                 onClick={() => setShowMap(!showMap)}
-                className="px-3 sm:px-4 py-2 sm:py-2.5 bg-white border border-gray-300 rounded-lg text-xs sm:text-sm font-medium text-gray-700 hover:bg-gray-50 min-h-[44px]"
+                className="lg:hidden px-3 sm:px-4 py-2 sm:py-2.5 bg-white border border-gray-300 rounded-lg text-xs sm:text-sm font-medium text-gray-700 hover:bg-gray-50 min-h-[44px]"
               >
                 {showMap ? 'Hide Map' : 'Show Map'}
               </button>
