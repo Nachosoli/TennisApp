@@ -90,7 +90,7 @@ export const CalendarView = ({ filters, matches: propMatches, selectedDate: prop
     if (isPending) {
       if (userConfirmed) {
         // User confirmed (only possible for doubles)
-        return 'bg-emerald-700 border-emerald-800 text-white';
+        return 'bg-green-100 border-green-300 text-green-900';
       } else if (userApplied) {
         // User applied, waiting for approval
         return 'bg-blue-100 border-blue-300 text-blue-900';
@@ -107,7 +107,7 @@ export const CalendarView = ({ filters, matches: propMatches, selectedDate: prop
     if (isConfirmed) {
       if (userConfirmed) {
         // User is the confirmed opponent
-        return 'bg-emerald-700 border-emerald-800 text-white';
+        return 'bg-green-100 border-green-300 text-green-900';
       } else {
         // User is waitlisted or not waitlisted (both use light orange)
         return 'bg-orange-100 border-orange-300 text-orange-900';
