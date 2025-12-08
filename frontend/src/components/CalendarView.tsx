@@ -410,11 +410,11 @@ export const CalendarView = ({ filters, matches: propMatches, selectedDate: prop
                               }
                               
                               if (isConfirmedSingles) {
-                                return "Match full - join waitlist";
+                                return "Join Waitlist";
                               }
                               
                               if (isConfirmed && !isSingles) {
-                                return "Match full";
+                                return "Join Waitlist";
                               }
                               
                               if (match.status?.toLowerCase() === 'pending') {
@@ -688,11 +688,11 @@ export const CalendarView = ({ filters, matches: propMatches, selectedDate: prop
                   }
                   
                   if (isConfirmedSingles) {
-                    return "Match full - join waitlist";
+                    return "Join Waitlist";
                   }
                   
                   if (isConfirmed && !isSingles) {
-                    return "Match full";
+                    return "Join Waitlist";
                   }
                   
                   if (match.status?.toLowerCase() === 'pending') {
