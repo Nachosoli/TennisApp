@@ -41,21 +41,81 @@ export const CalendarView = ({ filters, matches: propMatches, selectedDate: prop
     }
   }, [propSelectedDate]);
   
-  // Helper function to get surface color
-  const getSurfaceColor = (surface?: string): string => {
-    const surfaceLower = surface?.toLowerCase();
-    switch (surfaceLower) {
-      case 'clay':
-        return 'bg-green-100 border-green-300 text-green-900'; // Green for clay
-      case 'hard':
-        return 'bg-blue-100 border-blue-300 text-blue-900'; // Blue for hard
-      case 'grass':
-        return 'bg-emerald-100 border-emerald-300 text-emerald-900'; // Emerald green for grass
-      case 'indoor':
-        return 'bg-amber-700 border-amber-800 text-white'; // Brown/amber for indoor
-      default:
-        return 'bg-gray-100 border-gray-300 text-gray-900';
+  // Helper function to get match card color based on user's relationship to the match
+  const getMatchCardColor = (
+    match: Match, 
+    user: any, 
+    meetsCriteria: boolean,
+    hasUserApplied?: boolean,
+    hasUserWaitlisted?: boolean,
+    hasUserConfirmed?: boolean
+  ): string => {
+    // If user doesn't meet criteria, return greyed out styling (will be handled separately)
+    if (!meetsCriteria) {
+      return 'bg-gray-100 border-gray-300 text-gray-900';
     }
+
+    const isUserCreator = user && match.creatorUserId === user.id;
+    const isConfirmed = match.status?.toLowerCase() === 'confirmed';
+    const isPending = match.status?.toLowerCase() === 'pending';
+
+    // Use passed values or compute if not provided (backward compatibility)
+    const userApplied = hasUserApplied ?? (user && match.slots?.some(s => 
+      s.applications?.some(app => 
+        (app.applicantUserId === user.id || app.userId === user.id) &&
+        app.status?.toLowerCase() === 'pending'
+      )
+    ) || false);
+
+    const userWaitlisted = hasUserWaitlisted ?? (user && match.slots?.some(s => 
+      s.applications?.some(app => 
+        (app.applicantUserId === user.id || app.userId === user.id) &&
+        app.status?.toLowerCase() === 'waitlisted'
+      )
+    ) || false);
+
+    const userConfirmed = hasUserConfirmed ?? (user && match.slots?.some(s => 
+      s.applications?.some(app => 
+        (app.applicantUserId === user.id || app.userId === user.id) &&
+        app.status?.toLowerCase() === 'confirmed'
+      )
+    ) || false);
+
+    // 1. Creator matches - dark blue
+    if (isUserCreator) {
+      return 'bg-blue-900 border-blue-950 text-white';
+    }
+
+    // 2. PENDING matches
+    if (isPending) {
+      if (userConfirmed) {
+        // User confirmed (only possible for doubles)
+        return 'bg-emerald-700 border-emerald-800 text-white';
+      } else if (userApplied) {
+        // User applied, waiting for approval
+        return 'bg-blue-100 border-blue-300 text-blue-900';
+      } else if (userWaitlisted) {
+        // User is waitlisted
+        return 'bg-orange-100 border-orange-300 text-orange-900';
+      } else {
+        // User can apply
+        return 'bg-green-100 border-green-300 text-green-900';
+      }
+    }
+
+    // 3. CONFIRMED matches
+    if (isConfirmed) {
+      if (userConfirmed) {
+        // User is the confirmed opponent
+        return 'bg-emerald-700 border-emerald-800 text-white';
+      } else {
+        // User is waitlisted or not waitlisted (both use light orange)
+        return 'bg-orange-100 border-orange-300 text-orange-900';
+      }
+    }
+
+    // Default fallback
+    return 'bg-gray-100 border-gray-300 text-gray-900';
   };
 
   // Use matches from props if provided, otherwise fetch them
@@ -297,8 +357,6 @@ export const CalendarView = ({ filters, matches: propMatches, selectedDate: prop
                           {dateMatches.map((match) => {
                             const creator = match.creator;
                             const creatorStats = creator?.stats;
-                            const surface = (match as any).surfaceFilter || match.surface || match.court?.surface;
-                            const surfaceColor = getSurfaceColor(surface);
                             
                             const hasUserApplied = user && match.slots?.some(s => 
                               s.applications?.some(app => 
@@ -327,6 +385,9 @@ export const CalendarView = ({ filters, matches: propMatches, selectedDate: prop
                             const isConfirmedSingles = isConfirmed && isSingles;
                             const isConfirmedDoubles = isConfirmed && !isSingles;
                             
+                            const meetsCriteria = (match as any).meetsCriteria !== false;
+                            const matchCardColor = getMatchCardColor(match, user, meetsCriteria, hasUserApplied, hasUserWaitlisted, hasUserConfirmed);
+                            
                             const statusBadge = hasUserWaitlisted ? (
                               <span className="px-2 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
                                 Waitlisted
@@ -349,7 +410,6 @@ export const CalendarView = ({ filters, matches: propMatches, selectedDate: prop
                               </span>
                             );
                             
-                            const meetsCriteria = (match as any).meetsCriteria !== false;
                             const isGreyedOut = !meetsCriteria;
                             
                             const getGreyedOutReason = () => {
@@ -399,11 +459,19 @@ export const CalendarView = ({ filters, matches: propMatches, selectedDate: prop
                               }
                               
                               if (isUserCreator) {
-                                return "You created this match";
+                                return "You created this game";
                               }
                               
                               if (hasUserConfirmed) {
                                 return "You are confirmed";
+                              }
+                              
+                              if (isConfirmed) {
+                                if (hasUserWaitlisted) {
+                                  return "You are already in the waitlist";
+                                } else {
+                                  return "Join waitlist";
+                                }
                               }
                               
                               if (hasUserWaitlisted) {
@@ -412,14 +480,6 @@ export const CalendarView = ({ filters, matches: propMatches, selectedDate: prop
                               
                               if (hasUserApplied) {
                                 return "You already applied";
-                              }
-                              
-                              if (isConfirmedSingles) {
-                                return "Join Waitlist";
-                              }
-                              
-                              if (isConfirmed && !isSingles) {
-                                return "Join Waitlist";
                               }
                               
                               if (match.status?.toLowerCase() === 'pending') {
@@ -432,9 +492,7 @@ export const CalendarView = ({ filters, matches: propMatches, selectedDate: prop
                             return (
                               <div 
                                 key={match.id} 
-                                className={`border-2 rounded-lg p-4 transition-all ${surfaceColor} ${
-                                  isConfirmedSingles ? 'opacity-75 border-gray-300' : ''
-                                } ${
+                                className={`border-2 rounded-lg p-4 transition-all ${matchCardColor} ${
                                   isGreyedOut 
                                     ? 'opacity-70 grayscale cursor-not-allowed pointer-events-none' 
                                     : 'hover:shadow-md cursor-pointer'
@@ -507,8 +565,8 @@ export const CalendarView = ({ filters, matches: propMatches, selectedDate: prop
                                   </div>
                                   {!isGreyedOut && (
                                     (() => {
-                                      // For confirmed matches (singles or doubles), show "Join Waitlist" if user doesn't have confirmed application
-                                      if (isConfirmed && !hasUserConfirmed) {
+                                      // For confirmed matches (singles or doubles), show "Join Waitlist" if user doesn't have confirmed application and is not already waitlisted
+                                      if (isConfirmed && !hasUserConfirmed && !hasUserWaitlisted) {
                                         return (
                                           <Link href={`/matches/${match.id}`}>
                                             <Button 
@@ -572,9 +630,6 @@ export const CalendarView = ({ filters, matches: propMatches, selectedDate: prop
               {selectedDayMatches.map((match) => {
                 const creator = match.creator;
                 const creatorStats = creator?.stats;
-                // Check surfaceFilter (from backend), match.surface, or fallback to court surface
-                const surface = (match as any).surfaceFilter || match.surface || match.court?.surface;
-                const surfaceColor = getSurfaceColor(surface);
                 
                 // Check if current user has applied to this match (pending)
                 const hasUserApplied = user && match.slots?.some(s => 
@@ -606,6 +661,9 @@ export const CalendarView = ({ filters, matches: propMatches, selectedDate: prop
                 const isConfirmedSingles = isConfirmed && isSingles;
                 const isConfirmedDoubles = isConfirmed && !isSingles;
                 
+                const meetsCriteria = (match as any).meetsCriteria !== false; // Default to true if not set
+                const matchCardColor = getMatchCardColor(match, user, meetsCriteria, hasUserApplied, hasUserWaitlisted, hasUserConfirmed);
+                
                 // Determine status badge
                 const statusBadge = hasUserWaitlisted ? (
                   <span className="px-2 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
@@ -629,7 +687,6 @@ export const CalendarView = ({ filters, matches: propMatches, selectedDate: prop
                   </span>
                 );
                 
-                const meetsCriteria = (match as any).meetsCriteria !== false; // Default to true if not set
                 const isGreyedOut = !meetsCriteria;
                 
                 // Determine why match doesn't meet criteria
@@ -682,7 +739,15 @@ export const CalendarView = ({ filters, matches: propMatches, selectedDate: prop
                   }
                   
                   if (isUserCreator) {
-                    return "You created this match";
+                    return "You created this game";
+                  }
+                  
+                  if (isConfirmed) {
+                    if (hasUserWaitlisted) {
+                      return "You are already in the waitlist";
+                    } else {
+                      return "Join waitlist";
+                    }
                   }
                   
                   if (hasUserConfirmed) {
@@ -697,14 +762,6 @@ export const CalendarView = ({ filters, matches: propMatches, selectedDate: prop
                     return "You already applied";
                   }
                   
-                  if (isConfirmedSingles) {
-                    return "Join Waitlist";
-                  }
-                  
-                  if (isConfirmed && !isSingles) {
-                    return "Join Waitlist";
-                  }
-                  
                   if (match.status?.toLowerCase() === 'pending') {
                     return "Apply to join";
                   }
@@ -715,9 +772,7 @@ export const CalendarView = ({ filters, matches: propMatches, selectedDate: prop
                 return (
                   <div 
                     key={match.id} 
-                    className={`border-2 rounded-lg p-4 transition-all ${surfaceColor} ${
-                      isConfirmedSingles ? 'opacity-75 border-gray-300' : ''
-                    } ${
+                    className={`border-2 rounded-lg p-4 transition-all ${matchCardColor} ${
                       isGreyedOut 
                         ? 'opacity-70 grayscale cursor-not-allowed pointer-events-none' 
                         : 'hover:shadow-md cursor-pointer'
@@ -792,8 +847,8 @@ export const CalendarView = ({ filters, matches: propMatches, selectedDate: prop
                       </div>
                       {!isGreyedOut && (
                         (() => {
-                          // For confirmed matches (singles or doubles), show "Join Waitlist" if user doesn't have confirmed application
-                          if (isConfirmed && !hasUserConfirmed) {
+                          // For confirmed matches (singles or doubles), show "Join Waitlist" if user doesn't have confirmed application and is not already waitlisted
+                          if (isConfirmed && !hasUserConfirmed && !hasUserWaitlisted) {
                             return (
                               <Link href={`/matches/${match.id}`}>
                                 <Button 
