@@ -71,7 +71,7 @@ export default function Home() {
         </svg>
       ),
       title: 'Safe & Secure',
-      description: 'Verified players, secure payments, and a trusted platform. Play with confidence knowing you\'re in a safe environment.',
+      description: 'Verified players and a trusted platform. Play with confidence knowing you\'re in a safe environment.',
     },
   ];
 

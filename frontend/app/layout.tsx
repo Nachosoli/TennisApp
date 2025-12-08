@@ -20,6 +20,10 @@ export const metadata: Metadata = {
   title: "CourtBuddy - Tennis Match Scheduling",
   description: "Find and schedule tennis matches with players in your area",
   manifest: "/manifest.json",
+  icons: {
+    icon: "/favicon.svg",
+    apple: "/icon.svg",
+  },
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",

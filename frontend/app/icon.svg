@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Background circle -->
+  <circle cx="256" cy="256" r="240" fill="#2563eb"/>
+  
+  <!-- Tennis racquet frame -->
+  <ellipse cx="256" cy="256" rx="180" ry="200" fill="none" stroke="white" stroke-width="20"/>
+  
+  <!-- Racquet strings (vertical) -->
+  <line x1="150" y1="100" x2="150" y2="412" stroke="white" stroke-width="8"/>
+  <line x1="200" y1="90" x2="200" y2="422" stroke="white" stroke-width="8"/>
+  <line x1="256" y1="85" x2="256" y2="427" stroke="white" stroke-width="8"/>
+  <line x1="312" y1="90" x2="312" y2="422" stroke="white" stroke-width="8"/>
+  <line x1="362" y1="100" x2="362" y2="412" stroke="white" stroke-width="8"/>
+  
+  <!-- Racquet strings (horizontal) -->
+  <line x1="125" y1="150" x2="387" y2="150" stroke="white" stroke-width="8"/>
+  <line x1="135" y1="200" x2="377" y2="200" stroke="white" stroke-width="8"/>
+  <line x1="140" y1="256" x2="372" y2="256" stroke="white" stroke-width="8"/>
+  <line x1="135" y1="312" x2="377" y2="312" stroke="white" stroke-width="8"/>
+  <line x1="125" y1="362" x2="387" y2="362" stroke="white" stroke-width="8"/>
+  
+  <!-- Racquet handle -->
+  <rect x="248" y="410" width="16" height="80" rx="8" fill="white"/>
+  <rect x="244" y="480" width="24" height="16" rx="8" fill="white"/>
+</svg>
+
