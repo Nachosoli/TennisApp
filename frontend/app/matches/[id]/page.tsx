@@ -264,48 +264,6 @@ export default function MatchDetailPage() {
                 ? 'Match Set (4/4)'
                 : currentMatch.status}
             </span>
-            {currentMatch.status?.toLowerCase() === 'confirmed' && 
-             !isCreator && 
-             !shouldShowRejectionMessage &&
-             !currentMatch.slots?.some(slot => 
-               slot.applications?.some(app => 
-                 (app.applicantUserId === user?.id || app.userId === user?.id) &&
-                 (app.status?.toLowerCase() === 'waitlisted' || app.status?.toLowerCase() === 'confirmed')
-               )
-             ) && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={async () => {
-                  try {
-                    setApplyError(null);
-                    setApplySuccess(null);
-                    const firstSlot = currentMatch.slots?.[0];
-                    if (!firstSlot) {
-                      setApplyError('No slots available');
-                      return;
-                    }
-                    setApplyingSlotId(firstSlot.id);
-                    await applicationsApi.applyToSlot({ matchSlotId: firstSlot.id });
-                    setApplySuccess('You have been added to the waitlist!');
-                    setTimeout(() => {
-                      fetchMatchById(matchId);
-                    }, 500);
-                    setTimeout(() => setApplySuccess(null), 5000);
-                  } catch (error: any) {
-                    console.error('Failed to join waitlist:', error);
-                    const errorMessage = error?.response?.data?.message || error?.message || 'Failed to join waitlist. Please try again.';
-                    setApplyError(errorMessage);
-                    setTimeout(() => setApplyError(null), 5000);
-                  } finally {
-                    setApplyingSlotId(null);
-                  }
-                }}
-                isLoading={applyingSlotId !== null}
-              >
-                Join Waitlist
-              </Button>
-            )}
           </div>
         </div>
 
@@ -561,7 +519,7 @@ export default function MatchDetailPage() {
                                   
                                   // Then make API call
                                   await applicationsApi.applyToSlot({ matchSlotId: slot.id });
-                                  const successMessage = isMatchConfirmed && currentMatch.format === 'singles'
+                                  const successMessage = isMatchConfirmed
                                     ? 'You have been added to the waitlist!'
                                     : 'Application submitted successfully! The match creator will review your request.';
                                   setApplySuccess(successMessage);
@@ -584,7 +542,7 @@ export default function MatchDetailPage() {
                                 }
                               }}
                               >
-                                Apply
+                                {isMatchConfirmed && canJoinWaitlist ? 'Join Waitlist' : 'Apply'}
                               </Button>
                             );
                           })()
