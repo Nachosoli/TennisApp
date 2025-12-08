@@ -507,8 +507,8 @@ export const CalendarView = ({ filters, matches: propMatches, selectedDate: prop
                                   </div>
                                   {!isGreyedOut && (
                                     (() => {
-                                      // For confirmed singles matches, show "Join Waitlist" if user doesn't have confirmed application
-                                      if (isConfirmedSingles && !hasUserConfirmed) {
+                                      // For confirmed matches (singles or doubles), show "Join Waitlist" if user doesn't have confirmed application
+                                      if (isConfirmed && !hasUserConfirmed) {
                                         return (
                                           <Link href={`/matches/${match.id}`}>
                                             <Button 
@@ -792,8 +792,8 @@ export const CalendarView = ({ filters, matches: propMatches, selectedDate: prop
                       </div>
                       {!isGreyedOut && (
                         (() => {
-                          // For confirmed singles matches, show "Join Waitlist" if user doesn't have confirmed application
-                          if (isConfirmedSingles && !hasUserConfirmed) {
+                          // For confirmed matches (singles or doubles), show "Join Waitlist" if user doesn't have confirmed application
+                          if (isConfirmed && !hasUserConfirmed) {
                             return (
                               <Link href={`/matches/${match.id}`}>
                                 <Button 

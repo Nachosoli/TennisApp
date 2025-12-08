@@ -268,7 +268,7 @@ export const ApplicationsTable = ({ matchId, matchFormat = 'singles', matchStatu
                       </Button>
                     </>
                   )}
-                  {application.status?.toLowerCase() === 'waitlisted' && matchStatus?.toLowerCase() === 'pending' && matchFormat === 'singles' && (
+                  {application.status?.toLowerCase() === 'waitlisted' && matchStatus?.toLowerCase() === 'pending' && (matchFormat === 'singles' || matchFormat === 'doubles') && (
                     <>
                       <Button
                         variant="primary"
@@ -276,27 +276,7 @@ export const ApplicationsTable = ({ matchId, matchFormat = 'singles', matchStatu
                         onClick={() => handleApproveFromWaitlist(application.id)}
                         className="flex-1"
                       >
-                        Approve
-                      </Button>
-                      <Button
-                        variant="danger"
-                        size="sm"
-                        onClick={() => handleReject(application.id)}
-                        className="flex-1"
-                      >
-                        Reject
-                      </Button>
-                    </>
-                  )}
-                  {application.status?.toLowerCase() === 'waitlisted' && matchStatus?.toLowerCase() === 'pending' && matchFormat === 'doubles' && (
-                    <>
-                      <Button
-                        variant="primary"
-                        size="sm"
-                        onClick={() => handleConfirm(application.id)}
-                        className="flex-1"
-                      >
-                        Confirm
+                        Approve from Waitlist
                       </Button>
                       <Button
                         variant="danger"
@@ -390,7 +370,7 @@ export const ApplicationsTable = ({ matchId, matchFormat = 'singles', matchStatu
                       </Button>
                     </div>
                   )}
-                  {application.status?.toLowerCase() === 'waitlisted' && matchStatus?.toLowerCase() === 'pending' && matchFormat === 'singles' && (
+                  {application.status?.toLowerCase() === 'waitlisted' && matchStatus?.toLowerCase() === 'pending' && (matchFormat === 'singles' || matchFormat === 'doubles') && (
                     <div className="flex gap-2">
                       <Button
                         variant="primary"
@@ -398,24 +378,6 @@ export const ApplicationsTable = ({ matchId, matchFormat = 'singles', matchStatu
                         onClick={() => handleApproveFromWaitlist(application.id)}
                       >
                         Approve from Waitlist
-                      </Button>
-                      <Button
-                        variant="danger"
-                        size="sm"
-                        onClick={() => handleReject(application.id)}
-                      >
-                        Reject
-                      </Button>
-                    </div>
-                  )}
-                  {application.status?.toLowerCase() === 'waitlisted' && matchStatus?.toLowerCase() === 'pending' && matchFormat === 'doubles' && (
-                    <div className="flex gap-2">
-                      <Button
-                        variant="primary"
-                        size="sm"
-                        onClick={() => handleConfirm(application.id)}
-                      >
-                        Confirm
                       </Button>
                       <Button
                         variant="danger"
