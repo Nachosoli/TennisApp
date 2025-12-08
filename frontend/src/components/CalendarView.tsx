@@ -464,22 +464,22 @@ export const CalendarView = ({ filters, matches: propMatches, selectedDate: prop
                               
                               if (isConfirmed) {
                                 if (hasUserWaitlisted) {
-                                  return "You are already in the waitlist";
+                                  return null; // Remove "You are already in the waitlist" text
                                 } else {
                                   return "Join waitlist";
                                 }
                               }
                               
                               if (hasUserWaitlisted) {
-                                return "You are waitlisted";
+                                return null; // Remove "You are waitlisted" text for pending matches
                               }
                               
                               if (hasUserApplied) {
-                                return "You already applied";
+                                return null; // Remove "You already applied" text
                               }
                               
                               if (match.status?.toLowerCase() === 'pending') {
-                                return "Apply to join";
+                                return null; // Remove "Apply to join" text
                               }
                               
                               return null;
@@ -740,22 +740,22 @@ export const CalendarView = ({ filters, matches: propMatches, selectedDate: prop
                   
                   if (isConfirmed) {
                     if (hasUserWaitlisted) {
-                      return "You are already in the waitlist";
+                      return null; // Remove "You are already in the waitlist" text
                     } else {
                       return "Join waitlist";
                     }
                   }
                   
                   if (hasUserWaitlisted) {
-                    return "You are waitlisted";
+                    return null; // Remove "You are waitlisted" text for pending matches
                   }
                   
                   if (hasUserApplied) {
-                    return "You already applied";
+                    return null; // Remove "You already applied" text
                   }
                   
                   if (match.status?.toLowerCase() === 'pending') {
-                    return "Apply to join";
+                    return null; // Remove "Apply to join" text
                   }
                   
                   return null;
