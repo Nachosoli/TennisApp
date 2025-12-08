@@ -382,7 +382,7 @@ export default function DashboardPage() {
                         });
                       });
                       
-                      participantDisplay = `${confirmedCount}/4`;
+                      participantDisplay = `Players: ${confirmedCount}/4`;
                     } else {
                       // For singles: determine opponent name
                       if (isCreator) {
@@ -660,7 +660,7 @@ export default function DashboardPage() {
                     <tr>
                       <th className="px-4 py-3 text-left text-sm font-medium">Date</th>
                       <th className="px-4 py-3 text-left text-sm font-medium">Status</th>
-                      <th className="px-4 py-3 text-left text-sm font-medium">Opponent</th>
+                      <th className="px-4 py-3 text-left text-sm font-medium">Players</th>
                       <th className="px-4 py-3 text-left text-sm font-medium">Score</th>
                       <th className="px-4 py-3 text-left text-sm font-medium">Facility</th>
                       <th className="px-4 py-3 text-left text-sm font-medium">Actions</th>
@@ -688,7 +688,7 @@ export default function DashboardPage() {
                           });
                         });
                         
-                        participantDisplay = `${confirmedCount}/4`;
+                        participantDisplay = `Players: ${confirmedCount}/4`;
                       } else {
                         // For singles: determine opponent name
                         if (isCreator) {
