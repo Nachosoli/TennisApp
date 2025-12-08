@@ -362,32 +362,52 @@ export default function DashboardPage() {
                 {/* Mobile Card View */}
                 <div className="md:hidden space-y-4">
                   {recentMatches.map((match) => {
-                    // Determine opponent
+                    // Determine opponent or participant count
                     const isCreator = match.creatorUserId === user?.id;
+                    const isDoubles = match.format?.toLowerCase() === 'doubles';
                     let opponent: User | null = null;
                     let opponentName = 'TBD';
+                    let participantDisplay = 'TBD';
                     
-                    if (isCreator) {
-                      const confirmedSlot = match.slots?.find(slot => 
-                        slot.status?.toLowerCase() === 'confirmed'
-                      );
-                      if (confirmedSlot?.applications) {
-                        const confirmedApplication = confirmedSlot.applications.find(app => 
-                          app.status?.toLowerCase() === 'confirmed'
+                    if (isDoubles) {
+                      // For doubles: count confirmed participants (creator + confirmed applicants)
+                      let confirmedCount = 1; // Creator always counts as 1
+                      
+                      // Count confirmed applicants across all slots
+                      match.slots?.forEach(slot => {
+                        slot.applications?.forEach(app => {
+                          if (app.status?.toLowerCase() === 'confirmed') {
+                            confirmedCount++;
+                          }
+                        });
+                      });
+                      
+                      participantDisplay = `${confirmedCount}/4`;
+                    } else {
+                      // For singles: determine opponent name
+                      if (isCreator) {
+                        const confirmedSlot = match.slots?.find(slot => 
+                          slot.status?.toLowerCase() === 'confirmed'
                         );
-                        if (confirmedApplication?.applicant) {
-                          opponent = confirmedApplication.applicant;
-                          opponentName = `${opponent.firstName} ${opponent.lastName}`;
-                        } else if (confirmedApplication?.user) {
-                          opponent = confirmedApplication.user;
+                        if (confirmedSlot?.applications) {
+                          const confirmedApplication = confirmedSlot.applications.find(app => 
+                            app.status?.toLowerCase() === 'confirmed'
+                          );
+                          if (confirmedApplication?.applicant) {
+                            opponent = confirmedApplication.applicant;
+                            opponentName = `${opponent.firstName} ${opponent.lastName}`;
+                          } else if (confirmedApplication?.user) {
+                            opponent = confirmedApplication.user;
+                            opponentName = `${opponent.firstName} ${opponent.lastName}`;
+                          }
+                        }
+                      } else {
+                        if (match.creator) {
+                          opponent = match.creator;
                           opponentName = `${opponent.firstName} ${opponent.lastName}`;
                         }
                       }
-                    } else {
-                      if (match.creator) {
-                        opponent = match.creator;
-                        opponentName = `${opponent.firstName} ${opponent.lastName}`;
-                      }
+                      participantDisplay = opponentName;
                     }
 
                     const result = match.results?.[0];
@@ -551,7 +571,7 @@ export default function DashboardPage() {
                                   <path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z" />
                                 </svg>
                               )}
-                              <span>vs {opponentName}</span>
+                              <span>{isDoubles ? participantDisplay : `vs ${participantDisplay}`}</span>
                             </div>
                             {score && (
                               <p className="text-sm text-gray-700 mt-1">Score: {score}</p>
@@ -648,34 +668,54 @@ export default function DashboardPage() {
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
                     {recentMatches.map((match) => {
-                      // Determine opponent
+                      // Determine opponent or participant count
                       const isCreator = match.creatorUserId === user?.id;
+                      const isDoubles = match.format?.toLowerCase() === 'doubles';
                       let opponent: User | null = null;
                       let opponentName = 'TBD';
+                      let participantDisplay = 'TBD';
                       
-                      if (isCreator) {
-                        // User is creator, find applicant from confirmed slot
-                        const confirmedSlot = match.slots?.find(slot => 
-                          slot.status?.toLowerCase() === 'confirmed'
-                        );
-                        if (confirmedSlot?.applications) {
-                          const confirmedApplication = confirmedSlot.applications.find(app => 
-                            app.status?.toLowerCase() === 'confirmed'
+                      if (isDoubles) {
+                        // For doubles: count confirmed participants (creator + confirmed applicants)
+                        let confirmedCount = 1; // Creator always counts as 1
+                        
+                        // Count confirmed applicants across all slots
+                        match.slots?.forEach(slot => {
+                          slot.applications?.forEach(app => {
+                            if (app.status?.toLowerCase() === 'confirmed') {
+                              confirmedCount++;
+                            }
+                          });
+                        });
+                        
+                        participantDisplay = `${confirmedCount}/4`;
+                      } else {
+                        // For singles: determine opponent name
+                        if (isCreator) {
+                          // User is creator, find applicant from confirmed slot
+                          const confirmedSlot = match.slots?.find(slot => 
+                            slot.status?.toLowerCase() === 'confirmed'
                           );
-                          if (confirmedApplication?.applicant) {
-                            opponent = confirmedApplication.applicant;
-                            opponentName = `${opponent.firstName} ${opponent.lastName}`;
-                          } else if (confirmedApplication?.user) {
-                            opponent = confirmedApplication.user;
+                          if (confirmedSlot?.applications) {
+                            const confirmedApplication = confirmedSlot.applications.find(app => 
+                              app.status?.toLowerCase() === 'confirmed'
+                            );
+                            if (confirmedApplication?.applicant) {
+                              opponent = confirmedApplication.applicant;
+                              opponentName = `${opponent.firstName} ${opponent.lastName}`;
+                            } else if (confirmedApplication?.user) {
+                              opponent = confirmedApplication.user;
+                              opponentName = `${opponent.firstName} ${opponent.lastName}`;
+                            }
+                          }
+                        } else {
+                          // User is applicant, opponent is creator
+                          if (match.creator) {
+                            opponent = match.creator;
                             opponentName = `${opponent.firstName} ${opponent.lastName}`;
                           }
                         }
-                      } else {
-                        // User is applicant, opponent is creator
-                        if (match.creator) {
-                          opponent = match.creator;
-                          opponentName = `${opponent.firstName} ${opponent.lastName}`;
-                        }
+                        participantDisplay = opponentName;
                       }
 
                       // Get score from result
@@ -840,7 +880,7 @@ export default function DashboardPage() {
                             </span>
                           </td>
                           <td className="px-4 py-3 text-sm text-blue-600 hover:text-blue-800">
-                            {opponentName}
+                            {participantDisplay}
                           </td>
                           <td className="px-4 py-3 text-sm text-gray-900">
                             {score ? (
