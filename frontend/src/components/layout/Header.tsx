@@ -20,8 +20,18 @@ export const Header = () => {
                 <div className="relative">
                   <div className="absolute inset-0 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg opacity-20 group-hover:opacity-30 transition-opacity"></div>
                   <div className="relative bg-gradient-to-br from-blue-600 to-indigo-700 rounded-lg p-2">
-                    <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                    <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                      <ellipse cx="12" cy="8" rx="5" ry="6" />
+                      <line x1="8" y1="4" x2="8" y2="12" />
+                      <line x1="10" y1="3" x2="10" y2="13" />
+                      <line x1="12" y1="2" x2="12" y2="14" />
+                      <line x1="14" y1="3" x2="14" y2="13" />
+                      <line x1="16" y1="4" x2="16" y2="12" />
+                      <line x1="7" y1="6" x2="17" y2="6" />
+                      <line x1="7.5" y1="8" x2="16.5" y2="8" />
+                      <line x1="8" y1="10" x2="16" y2="10" />
+                      <rect x="11" y="14" width="2" height="6" rx="1" />
+                      <rect x="10.5" y="19" width="3" height="2" rx="1" />
                     </svg>
                   </div>
                 </div>
