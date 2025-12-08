@@ -321,6 +321,7 @@ export const CalendarView = ({ filters, matches: propMatches, selectedDate: prop
                               )
                             ) || false;
                             
+                            const isUserCreator = user && match.creatorUserId === user.id;
                             const isConfirmed = match.status?.toLowerCase() === 'confirmed';
                             const isSingles = match.format === 'singles';
                             const isConfirmedSingles = isConfirmed && isSingles;
@@ -385,6 +386,43 @@ export const CalendarView = ({ filters, matches: propMatches, selectedDate: prop
                             };
                             
                             const greyedOutReason = getGreyedOutReason();
+                            
+                            // Get status message based on user's relationship to the match
+                            const getStatusMessage = () => {
+                              if (isGreyedOut) {
+                                return `Does not meet filter criteria${greyedOutReason ? ` (${greyedOutReason})` : ''}`;
+                              }
+                              
+                              if (isUserCreator) {
+                                return "You created this match";
+                              }
+                              
+                              if (hasUserConfirmed) {
+                                return "You are confirmed";
+                              }
+                              
+                              if (hasUserWaitlisted) {
+                                return "You are waitlisted";
+                              }
+                              
+                              if (hasUserApplied) {
+                                return "You already applied";
+                              }
+                              
+                              if (isConfirmedSingles) {
+                                return "Match full - join waitlist";
+                              }
+                              
+                              if (isConfirmed && !isSingles) {
+                                return "Match full";
+                              }
+                              
+                              if (match.status?.toLowerCase() === 'pending') {
+                                return "Apply to join";
+                              }
+                              
+                              return null;
+                            };
                             
                             return (
                               <div 
@@ -454,15 +492,11 @@ export const CalendarView = ({ filters, matches: propMatches, selectedDate: prop
                                         <span>Format: {match.format === 'singles' ? 'Singles' : match.format === 'doubles' ? 'Doubles' : match.format || 'N/A'}</span>
                                       </div>
                                     )}
-                                    {isGreyedOut ? (
+                                    {getStatusMessage() ? (
                                       <div>
-                                        <span className="text-red-600 font-medium">
-                                          Does not meet filter criteria{greyedOutReason ? ` (${greyedOutReason})` : ''}
+                                        <span className={isGreyedOut ? "text-red-600 font-medium" : ""}>
+                                          {getStatusMessage()}
                                         </span>
-                                      </div>
-                                    ) : !hasUserWaitlisted && match.slots && match.slots.length > 0 ? (
-                                      <div>
-                                        <span>{match.slots.length} time slot{match.slots.length !== 1 ? 's' : ''} available</span>
                                       </div>
                                     ) : null}
                                   </div>
@@ -560,6 +594,7 @@ export const CalendarView = ({ filters, matches: propMatches, selectedDate: prop
                   )
                 ) || false;
                 
+                const isUserCreator = user && match.creatorUserId === user.id;
                 // Check if match is confirmed
                 const isConfirmed = match.status?.toLowerCase() === 'confirmed';
                 const isSingles = match.format === 'singles';
@@ -629,6 +664,43 @@ export const CalendarView = ({ filters, matches: propMatches, selectedDate: prop
                 };
                 
                 const greyedOutReason = getGreyedOutReason();
+                
+                // Get status message based on user's relationship to the match
+                const getStatusMessage = () => {
+                  if (isGreyedOut) {
+                    return `Does not meet filter criteria${greyedOutReason ? ` (${greyedOutReason})` : ''}`;
+                  }
+                  
+                  if (isUserCreator) {
+                    return "You created this match";
+                  }
+                  
+                  if (hasUserConfirmed) {
+                    return "You are confirmed";
+                  }
+                  
+                  if (hasUserWaitlisted) {
+                    return "You are waitlisted";
+                  }
+                  
+                  if (hasUserApplied) {
+                    return "You already applied";
+                  }
+                  
+                  if (isConfirmedSingles) {
+                    return "Match full - join waitlist";
+                  }
+                  
+                  if (isConfirmed && !isSingles) {
+                    return "Match full";
+                  }
+                  
+                  if (match.status?.toLowerCase() === 'pending') {
+                    return "Apply to join";
+                  }
+                  
+                  return null;
+                };
                 
                 return (
                   <div 
@@ -700,15 +772,11 @@ export const CalendarView = ({ filters, matches: propMatches, selectedDate: prop
                             <span>Format: {match.format === 'singles' ? 'Singles' : match.format === 'doubles' ? 'Doubles' : match.format || 'N/A'}</span>
                           </div>
                         )}
-                        {isGreyedOut ? (
+                        {getStatusMessage() ? (
                           <div>
-                            <span className="text-red-600 font-medium">
-                              Does not meet filter criteria{greyedOutReason ? ` (${greyedOutReason})` : ''}
+                            <span className={isGreyedOut ? "text-red-600 font-medium" : ""}>
+                              {getStatusMessage()}
                             </span>
-                          </div>
-                        ) : !hasUserWaitlisted && match.slots && match.slots.length > 0 ? (
-                          <div>
-                            <span>{match.slots.length} time slot{match.slots.length !== 1 ? 's' : ''} available</span>
                           </div>
                         ) : null}
                       </div>
