@@ -108,7 +108,7 @@ export class User {
     enum: Gender,
     nullable: true,
   })
-  gender: Gender;
+  gender: Gender | null;
 
   @Column({ name: 'home_court_id', nullable: true })
   homeCourtId: string;
