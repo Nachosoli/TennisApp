@@ -325,6 +325,7 @@ export const CalendarView = ({ filters, matches: propMatches, selectedDate: prop
                             const isConfirmed = match.status?.toLowerCase() === 'confirmed';
                             const isSingles = match.format === 'singles';
                             const isConfirmedSingles = isConfirmed && isSingles;
+                            const isConfirmedDoubles = isConfirmed && !isSingles;
                             
                             const statusBadge = hasUserWaitlisted ? (
                               <span className="px-2 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
@@ -337,6 +338,10 @@ export const CalendarView = ({ filters, matches: propMatches, selectedDate: prop
                             ) : isConfirmedSingles ? (
                               <span className="px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
                                 Match Set (2/2)
+                              </span>
+                            ) : isConfirmedDoubles ? (
+                              <span className="px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                                Match Set (4/4)
                               </span>
                             ) : (
                               <span className="px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
@@ -599,6 +604,7 @@ export const CalendarView = ({ filters, matches: propMatches, selectedDate: prop
                 const isConfirmed = match.status?.toLowerCase() === 'confirmed';
                 const isSingles = match.format === 'singles';
                 const isConfirmedSingles = isConfirmed && isSingles;
+                const isConfirmedDoubles = isConfirmed && !isSingles;
                 
                 // Determine status badge
                 const statusBadge = hasUserWaitlisted ? (
@@ -612,6 +618,10 @@ export const CalendarView = ({ filters, matches: propMatches, selectedDate: prop
                 ) : isConfirmedSingles ? (
                   <span className="px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
                     Match Set (2/2)
+                  </span>
+                ) : isConfirmedDoubles ? (
+                  <span className="px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                    Match Set (4/4)
                   </span>
                 ) : (
                   <span className="px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
