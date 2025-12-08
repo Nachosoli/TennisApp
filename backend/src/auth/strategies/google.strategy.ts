@@ -107,7 +107,7 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
         passwordHash: null, // OAuth users don't have passwords
         emailVerified: true, // Google emails are verified
         phoneVerified: true, // TODO: Set to false once Twilio is configured
-        gender: Gender.OTHER, // Default to 'other' during registration, user can update on profile page
+        gender: null, // User must set gender in profile before applying to matches
         role: 'user' as any,
       });
       user = await this.userRepository.save(user);

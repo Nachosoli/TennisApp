@@ -70,7 +70,7 @@ export class AuthService {
       lastName: registerDto.lastName,
       phoneVerified: true, // Hardcoded to true for now
       emailVerified: false, // Users must verify their email via the verification link
-      gender: Gender.OTHER, // Default to 'other' during registration, user can update on profile page
+      gender: null, // User must set gender in profile before applying to matches
       role: UserRole.USER,
     });
 
