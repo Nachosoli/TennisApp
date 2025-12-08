@@ -99,7 +99,7 @@ export const CalendarView = ({ filters, matches: propMatches, selectedDate: prop
         return 'bg-orange-100 border-orange-300 text-orange-900';
       } else {
         // User can apply
-        return 'bg-green-100 border-green-300 text-green-900';
+        return 'bg-yellow-100 border-yellow-300 text-yellow-900';
       }
     }
 
@@ -396,17 +396,13 @@ export const CalendarView = ({ filters, matches: propMatches, selectedDate: prop
                               <span className="px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
                                 Applied
                               </span>
-                            ) : isConfirmedSingles ? (
+                            ) : isConfirmedSingles || isConfirmedDoubles ? (
                               <span className="px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-                                Match Set (2/2)
-                              </span>
-                            ) : isConfirmedDoubles ? (
-                              <span className="px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-                                Match Set (4/4)
+                                Confirmed
                               </span>
                             ) : (
                               <span className="px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
-                                Pending
+                                Looking for players
                               </span>
                             );
                             
@@ -463,7 +459,7 @@ export const CalendarView = ({ filters, matches: propMatches, selectedDate: prop
                               }
                               
                               if (hasUserConfirmed) {
-                                return "You are confirmed";
+                                return null; // Remove "You are confirmed" text
                               }
                               
                               if (isConfirmed) {
@@ -673,17 +669,13 @@ export const CalendarView = ({ filters, matches: propMatches, selectedDate: prop
                   <span className="px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
                     Applied
                   </span>
-                ) : isConfirmedSingles ? (
+                ) : isConfirmedSingles || isConfirmedDoubles ? (
                   <span className="px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-                    Match Set (2/2)
-                  </span>
-                ) : isConfirmedDoubles ? (
-                  <span className="px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-                    Match Set (4/4)
+                    Confirmed
                   </span>
                 ) : (
                   <span className="px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
-                    Pending
+                    Looking for players
                   </span>
                 );
                 
@@ -743,7 +735,7 @@ export const CalendarView = ({ filters, matches: propMatches, selectedDate: prop
                   }
                   
                   if (hasUserConfirmed) {
-                    return "You are confirmed";
+                    return null; // Remove "You are confirmed" text
                   }
                   
                   if (isConfirmed) {
