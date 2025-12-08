@@ -268,6 +268,32 @@ export class AdminService {
       reason,
     });
 
+    // Format date and time for notification
+    const matchDateObj = match.date instanceof Date 
+      ? match.date 
+      : new Date(match.date);
+    const matchDate = matchDateObj.toLocaleDateString('en-US', { 
+      weekday: 'long', 
+      year: 'numeric', 
+      month: 'long', 
+      day: 'numeric' 
+    });
+    
+    // Get time from first slot if available
+    let matchTime = 'TBD';
+    if (match.slots && match.slots.length > 0) {
+      const firstSlot = match.slots[0];
+      // Format time from "HH:mm:ss" to "H:MM AM/PM - H:MM AM/PM"
+      const formatTime = (timeStr: string): string => {
+        const [hours, minutes] = timeStr.split(':');
+        const hour = parseInt(hours, 10);
+        const ampm = hour >= 12 ? 'PM' : 'AM';
+        const displayHour = hour % 12 || 12;
+        return `${displayHour}:${minutes} ${ampm}`;
+      };
+      matchTime = `${formatTime(firstSlot.startTime)} - ${formatTime(firstSlot.endTime)}`;
+    }
+
     // Notify participants
     if (match.creatorUserId) {
       await this.notificationsService.createNotification(
@@ -277,8 +303,8 @@ export class AdminService {
         {
           opponentName: 'Admin Override',
           courtName: match.court?.name || 'Court',
-          date: match.date.toLocaleDateString(),
-          time: 'N/A',
+          matchDate: matchDate,
+          matchTime: matchTime,
         },
       );
     }

@@ -517,10 +517,26 @@ export class ApplicationsService {
       where: { id: creatorUserId },
     });
     
-    // Handle date conversion (notificationMatch.date is stored as string to avoid timezone issues)
-    const matchDate = notificationMatch.date instanceof Date 
-      ? notificationMatch.date.toLocaleDateString() 
-      : new Date(notificationMatch.date).toLocaleDateString();
+    // Handle date conversion and formatting (notificationMatch.date is stored as string to avoid timezone issues)
+    const matchDateObj = notificationMatch.date instanceof Date 
+      ? notificationMatch.date 
+      : new Date(notificationMatch.date);
+    const matchDate = matchDateObj.toLocaleDateString('en-US', { 
+      weekday: 'long', 
+      year: 'numeric', 
+      month: 'long', 
+      day: 'numeric' 
+    });
+    
+    // Format time from "HH:mm:ss" to "H:MM AM/PM - H:MM AM/PM"
+    const formatTime = (timeStr: string): string => {
+      const [hours, minutes] = timeStr.split(':');
+      const hour = parseInt(hours, 10);
+      const ampm = hour >= 12 ? 'PM' : 'AM';
+      const displayHour = hour % 12 || 12;
+      return `${displayHour}:${minutes} ${ampm}`;
+    };
+    const matchTime = `${formatTime(application.matchSlot.startTime)} - ${formatTime(application.matchSlot.endTime)}`;
     
     // Send notifications - wrap in try-catch to prevent confirmation failure if notifications fail
     try {
@@ -531,8 +547,8 @@ export class ApplicationsService {
         {
           opponentName: creator ? `${creator.firstName} ${creator.lastName}` : 'Match Creator',
           courtName: notificationMatch.court?.name || 'Court',
-          date: matchDate,
-          time: `${application.matchSlot.startTime} - ${application.matchSlot.endTime}`,
+          matchDate: matchDate,
+          matchTime: matchTime,
           matchId: notificationMatch.id,
         },
       );
@@ -551,8 +567,8 @@ export class ApplicationsService {
         {
           opponentName: `${application.applicant.firstName} ${application.applicant.lastName}`,
           courtName: notificationMatch.court?.name || 'Court',
-          date: matchDate,
-          time: `${application.matchSlot.startTime} - ${application.matchSlot.endTime}`,
+          matchDate: matchDate,
+          matchTime: matchTime,
           matchId: notificationMatch.id,
         },
       );
@@ -747,12 +763,42 @@ export class ApplicationsService {
       }
     }
 
+    // Format date and time for notification
+    const matchDateObj = currentMatch.date instanceof Date 
+      ? currentMatch.date 
+      : new Date(currentMatch.date);
+    const matchDate = matchDateObj.toLocaleDateString('en-US', { 
+      weekday: 'long', 
+      year: 'numeric', 
+      month: 'long', 
+      day: 'numeric' 
+    });
+    
+    // Format time from "HH:mm:ss" to "H:MM AM/PM - H:MM AM/PM"
+    const formatTime = (timeStr: string): string => {
+      const [hours, minutes] = timeStr.split(':');
+      const hour = parseInt(hours, 10);
+      const ampm = hour >= 12 ? 'PM' : 'AM';
+      const displayHour = hour % 12 || 12;
+      return `${displayHour}:${minutes} ${ampm}`;
+    };
+    const matchTime = `${formatTime(application.matchSlot.startTime)} - ${formatTime(application.matchSlot.endTime)}`;
+    
+    // Get creator info for opponent name
+    const creator = await this.userRepository.findOne({
+      where: { id: creatorUserId },
+    });
+
     // Notify the approved user
     await this.notificationsService.createNotification(
       application.applicantUserId,
       NotificationType.MATCH_CONFIRMED,
       `Your waitlist application has been approved! The match is confirmed.`,
       {
+        opponentName: creator ? `${creator.firstName} ${creator.lastName}` : 'Match Creator',
+        courtName: currentMatch.court?.name || 'Court',
+        matchDate: matchDate,
+        matchTime: matchTime,
         matchId: currentMatch.id,
       },
     );
