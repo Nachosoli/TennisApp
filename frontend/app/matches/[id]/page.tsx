@@ -19,6 +19,7 @@ import { useSocket } from '@/hooks/useSocket';
 import { format } from 'date-fns';
 import { Match } from '@/types';
 import { parseLocalDate } from '@/lib/date-utils';
+import { getRatingValueOptions, RatingType } from '@/lib/rating-utils';
 
 export default function MatchDetailPage() {
   const params = useParams();
@@ -111,6 +112,21 @@ export default function MatchDetailPage() {
         }
       }
     }
+  };
+
+  // Helper function to format rating display
+  const formatRatingDisplay = (ratingValue: number | null | undefined, ratingType: RatingType | null | undefined): string => {
+    if (!ratingValue || !ratingType) return 'N/A';
+    
+    // For custom ratings, show the skill level label instead of the numeric value
+    if (ratingType === 'custom') {
+      const options = getRatingValueOptions('custom');
+      const option = options.find(opt => opt.value === ratingValue);
+      return option ? option.label : ratingValue.toString();
+    }
+    
+    // For other rating types, show the value with the type
+    return `${ratingValue} (${ratingType})`;
   };
 
   if (isLoading) {
@@ -327,8 +343,7 @@ export default function MatchDetailPage() {
                       <div>
                         <span className="font-medium text-gray-700">Rating: </span>
                         <span className="text-gray-900">
-                          {currentMatch.creator.ratingValue}
-                          {currentMatch.creator.ratingType && ` (${currentMatch.creator.ratingType})`}
+                          {formatRatingDisplay(currentMatch.creator.ratingValue, currentMatch.creator.ratingType as RatingType)}
                         </span>
                       </div>
                     )}
