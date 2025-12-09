@@ -10,7 +10,7 @@ import Link from 'next/link';
 import { useAuthStore } from '@/stores/auth-store';
 import { parseLocalDate } from '@/lib/date-utils';
 import { sanitizeText } from '@/lib/sanitize';
-import { isRatingInSkillLevel, SkillLevel, RatingType } from '@/lib/rating-utils';
+import { isRatingInSkillLevel, SkillLevel, RatingType, getRatingValueOptions } from '@/lib/rating-utils';
 
 interface CalendarViewProps {
   filters?: {
@@ -116,6 +116,23 @@ export const CalendarView = ({ filters, matches: propMatches, selectedDate: prop
 
     // Default fallback
     return 'bg-gray-100 border-gray-300 text-gray-900';
+  };
+
+  // Helper function to format rating display
+  const formatRatingDisplay = (ratingValue: number | null | undefined, ratingType: RatingType | null | undefined): string => {
+    if (!ratingValue || !ratingType) return '';
+    
+    // For custom ratings, show the skill level label instead of the numeric value
+    if (ratingType === 'custom') {
+      const options = getRatingValueOptions('custom');
+      // Convert ratingValue to integer for comparison (handles 2.00 -> 2)
+      const intValue = Math.round(ratingValue);
+      const option = options.find(opt => opt.value === intValue);
+      return option ? option.label : ratingValue.toString();
+    }
+    
+    // For other rating types, show the value with the type
+    return `${ratingValue} (${ratingType})`;
   };
 
   // Use matches from props if provided, otherwise fetch them
@@ -789,10 +806,7 @@ export const CalendarView = ({ filters, matches: propMatches, selectedDate: prop
                           {creator?.ratingValue && (
                             <div>
                               <span className="font-medium">Rating: </span>
-                              <span>{creator.ratingValue}</span>
-                              {creator.ratingType && (
-                                <span className="text-xs opacity-75"> ({creator.ratingType})</span>
-                              )}
+                              <span>{formatRatingDisplay(creator.ratingValue, creator.ratingType as RatingType)}</span>
                             </div>
                           )}
                           {creatorStats?.singlesElo && (
