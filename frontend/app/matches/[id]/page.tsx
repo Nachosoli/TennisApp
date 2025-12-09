@@ -121,7 +121,9 @@ export default function MatchDetailPage() {
     // For custom ratings, show the skill level label instead of the numeric value
     if (ratingType === 'custom') {
       const options = getRatingValueOptions('custom');
-      const option = options.find(opt => opt.value === ratingValue);
+      // Convert ratingValue to integer for comparison (handles 2.00 -> 2)
+      const intValue = Math.round(ratingValue);
+      const option = options.find(opt => opt.value === intValue);
       return option ? option.label : ratingValue.toString();
     }
     
