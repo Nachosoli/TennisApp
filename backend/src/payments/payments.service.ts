@@ -29,7 +29,7 @@ export class PaymentsService {
       this.logger.warn('STRIPE_SECRET_KEY not configured. Payment features will be disabled.');
     } else {
       this.stripe = new Stripe(stripeSecretKey, {
-        apiVersion: '2025-11-17.clover',
+        apiVersion: '2025-12-15.clover',
       });
     }
   }
