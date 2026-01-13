@@ -6,7 +6,7 @@ import { Match } from '@/types';
 import { Card } from './ui/Card';
 import { Button } from './ui/Button';
 import Link from 'next/link';
-import { format } from 'date-fns';
+import { format, startOfToday, startOfDay, isBefore } from 'date-fns';
 import { parseLocalDate } from '@/lib/date-utils';
 
 const GOOGLE_MAPS_LIBRARIES: ("places" | "geometry")[] = ["places", "geometry"];
@@ -61,11 +61,12 @@ export const MatchesMap = ({ matches, onMapLoad, homeCourt, currentUserId, onCou
     libraries: GOOGLE_MAPS_LIBRARIES,
   });
 
-  // Group matches by court, excluding user's own matches, cancelled matches, and completed matches
+  // Group matches by court, excluding user's own matches, cancelled matches, completed matches, and past matches
   // Note: Confirmed matches are already filtered by the parent component before being passed here
   // When filters are active, only include matches that meet criteria
   const courtMatchesMap = useMemo(() => {
     const map = new Map<string, { court: any; matches: Match[] }>();
+    const today = startOfToday();
     
     matches.forEach((match) => {
       // Exclude cancelled matches (backend stores as lowercase 'cancelled')
@@ -74,6 +75,9 @@ export const MatchesMap = ({ matches, onMapLoad, homeCourt, currentUserId, onCou
       if (match.status?.toLowerCase() === 'completed') return;
       // Exclude matches created by the current user
       if (currentUserId && match.creatorUserId === currentUserId) return;
+      // Exclude past matches (matches with date before today)
+      const matchDate = startOfDay(parseLocalDate(match.date));
+      if (isBefore(matchDate, today)) return;
       // When filters are active, only include matches that meet criteria
       // (matches passed here should already be filtered, but this is a defensive check)
       if ((match as any).meetsCriteria === false) return;

@@ -15,6 +15,8 @@ import { PageLoader } from '@/components/ui/PageLoader';
 import Link from 'next/link';
 import { Button } from '@/components/ui/Button';
 import { isRatingInSkillLevel, SkillLevel, RatingType } from '@/lib/rating-utils';
+import { parseLocalDate } from '@/lib/date-utils';
+import { startOfToday, startOfDay, isBefore } from 'date-fns';
 
 export default function CalendarPage() {
   const { isLoading: authLoading, user } = useRequireAuth();
@@ -102,8 +104,15 @@ export default function CalendarPage() {
   // Now we show all matches but mark which ones meet criteria
   useEffect(() => {
     const applicantGender = user?.gender?.toUpperCase(); // 'MALE' or 'FEMALE'
+    const today = startOfToday();
     
-    const matchesWithCriteria = allMatches.map(match => {
+    const matchesWithCriteria = allMatches
+      // Filter out past matches first
+      .filter(match => {
+        const matchDate = startOfDay(parseLocalDate(match.date));
+        return !isBefore(matchDate, today);
+      })
+      .map(match => {
       let meetsGender = true;
       let meetsSkillLevel = true;
       let meetsSurface = true;
